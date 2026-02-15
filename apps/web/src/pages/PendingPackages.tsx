@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Package, Send, Clock, Box, Scale, Ruler } from 'lucide-react';
 import { Card, Button, Badge, LoadingSkeleton, EmptyState, Modal } from '../components';
 import { Shipment, Package as PackageType } from '../types';
 import toast from 'react-hot-toast';
 
 export const PendingPackages = () => {
-  const navigate = useNavigate();
   const [packages, setPackages] = useState<(Shipment & { packages?: PackageType[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
