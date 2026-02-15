@@ -25,7 +25,7 @@ export class AmplifyFrontendStack extends cdk.Stack {
     this.app = new amplify.CfnApp(this, 'AmplifyApp', {
       name: 'ctcm-web',
       description: 'CTCM Freight Forwarding System',
-      platform: 'WEB_COMPUTE', // Use WEB_COMPUTE for SSR support (even though we're not using it yet)
+      platform: 'WEB', // Static hosting for SPA
       
       // Note: Repository will be connected via AWS Console after stack creation
       // This avoids needing to provide GitHub OAuth token in CDK
