@@ -1,0 +1,356 @@
+{
+ "Description": "CTCM Data layer - RDS PostgreSQL and S3 buckets",
+ "Resources": {
+  "DatabaseSecret86DBB7B3": {
+   "Type": "AWS::SecretsManager::Secret",
+   "Properties": {
+    "Description": "RDS PostgreSQL database credentials",
+    "GenerateSecretString": {
+     "ExcludePunctuation": true,
+     "GenerateStringKey": "password",
+     "IncludeSpace": false,
+     "PasswordLength": 32,
+     "SecretStringTemplate": "{\"username\":\"ctcmadmin\"}"
+    },
+    "Name": "ctcm-dev-database-credentials"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/DatabaseSecret/Resource"
+   }
+  },
+  "DatabaseSecretAttachment9A63A3D4": {
+   "Type": "AWS::SecretsManager::SecretTargetAttachment",
+   "Properties": {
+    "SecretId": {
+     "Ref": "DatabaseSecret86DBB7B3"
+    },
+    "TargetId": {
+     "Ref": "DatabaseB269D8BB"
+    },
+    "TargetType": "AWS::RDS::DBInstance"
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/DatabaseSecret/Attachment/Resource"
+   }
+  },
+  "DatabaseSubnetGroup7D60F180": {
+   "Type": "AWS::RDS::DBSubnetGroup",
+   "Properties": {
+    "DBSubnetGroupDescription": "Subnet group for Database database",
+    "SubnetIds": [
+     "subnet-01e2f7114107a1e9f",
+     "subnet-0ce81d9a30d2344db",
+     "subnet-036f75fa77d00fc1e",
+     "subnet-0557bf2c440609139",
+     "subnet-0c0e310cc02222806",
+     "subnet-031a34371ba0e3872"
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/Database/SubnetGroup/Default"
+   }
+  },
+  "DatabaseB269D8BB": {
+   "Type": "AWS::RDS::DBInstance",
+   "Properties": {
+    "AllocatedStorage": "20",
+    "BackupRetentionPeriod": 7,
+    "CopyTagsToSnapshot": true,
+    "DBInstanceClass": "db.t4g.micro",
+    "DBName": "ctcm",
+    "DBSubnetGroupName": {
+     "Ref": "DatabaseSubnetGroup7D60F180"
+    },
+    "DeleteAutomatedBackups": true,
+    "DeletionProtection": false,
+    "Engine": "postgres",
+    "EngineVersion": "16.6",
+    "MasterUserPassword": {
+     "Fn::Join": [
+      "",
+      [
+       "{{resolve:secretsmanager:",
+       {
+        "Ref": "DatabaseSecret86DBB7B3"
+       },
+       ":SecretString:password::}}"
+      ]
+     ]
+    },
+    "MasterUsername": {
+     "Fn::Join": [
+      "",
+      [
+       "{{resolve:secretsmanager:",
+       {
+        "Ref": "DatabaseSecret86DBB7B3"
+       },
+       ":SecretString:username::}}"
+      ]
+     ]
+    },
+    "MaxAllocatedStorage": 100,
+    "MultiAZ": false,
+    "PubliclyAccessible": true,
+    "StorageEncrypted": true,
+    "StorageType": "gp2",
+    "VPCSecurityGroups": [
+     {
+      "Fn::ImportValue": "CtcmDevNetworkStack:ExportsOutputFnGetAttDatabaseSecurityGroup7319C0F6GroupId72A1B827"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Snapshot",
+   "DeletionPolicy": "Snapshot",
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/Database/Resource"
+   }
+  },
+  "DocumentBucketAE41E5A9": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "BucketName": {
+     "Fn::Join": [
+      "",
+      [
+       "ctcm-dev-documents-",
+       {
+        "Ref": "AWS::AccountId"
+       }
+      ]
+     ]
+    },
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "Id": "MoveToGlacierAfter90Days",
+       "Status": "Enabled",
+       "Transitions": [
+        {
+         "StorageClass": "GLACIER",
+         "TransitionInDays": 90
+        }
+       ]
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/DocumentBucket/Resource"
+   }
+  },
+  "InitDbFunctionServiceRole05110DC9": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/InitDbFunction/ServiceRole/Resource"
+   }
+  },
+  "InitDbFunctionServiceRoleDefaultPolicy54BD6E7E": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "DatabaseSecret86DBB7B3"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "InitDbFunctionServiceRoleDefaultPolicy54BD6E7E",
+    "Roles": [
+     {
+      "Ref": "InitDbFunctionServiceRole05110DC9"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/InitDbFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "InitDbFunction67777D6B": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-404875533723-us-east-1",
+     "S3Key": "613b46e9a5e453fa8be3fb25fcc89f40a8c108b467adfa3c36bbd9d18917214e.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "DATABASE_SECRET_ARN": {
+       "Ref": "DatabaseSecret86DBB7B3"
+      },
+      "DATABASE_HOST": {
+       "Fn::GetAtt": [
+        "DatabaseB269D8BB",
+        "Endpoint.Address"
+       ]
+      },
+      "DATABASE_NAME": "ctcm"
+     }
+    },
+    "FunctionName": "ctcm-dev-init-db-schema",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "InitDbFunctionServiceRole05110DC9",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "InitDbFunctionServiceRoleDefaultPolicy54BD6E7E",
+    "InitDbFunctionServiceRole05110DC9"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/InitDbFunction/Resource",
+    "aws:asset:path": "/Users/christophercorbin/Ctcmweb/CTCMweb",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/2WOzU7DQAyEn6X3jSmpkLg2rUBcADXcI2fjhs2PU629VCjKu6NNUgnB6Rvb47FTSHePsN3gVRJbtUnnShhzRdsavEoxCllPKj0y1uRhzOfaHM68qgUf6GvSvSraz574l+HvZDK+EhiPqFii0AuLIlsyeSiZ9NkP4RKXj9m/xs06GdnBmAXbLo+sakGGQpPpsC8rLHioqBF4nfEU2Kob2DjsYTwNHcXlme9D5+x3LBcVLxQoQiqwj1gD4XDmW8wU7W9BL0HN7MkVa8f1ZOJVaOTuK03h/gG2m0acS3xgdT3BaeEPmKxahngBAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevDataStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "DatabaseEndpoint": {
+   "Description": "RDS Database Endpoint",
+   "Value": {
+    "Fn::GetAtt": [
+     "DatabaseB269D8BB",
+     "Endpoint.Address"
+    ]
+   },
+   "Export": {
+    "Name": "CtcmDevDatabaseEndpoint"
+   }
+  },
+  "DatabaseSecretArn": {
+   "Description": "Database Credentials Secret ARN",
+   "Value": {
+    "Ref": "DatabaseSecret86DBB7B3"
+   },
+   "Export": {
+    "Name": "CtcmDevDatabaseSecretArn"
+   }
+  },
+  "DocumentBucketName": {
+   "Description": "Document Storage Bucket Name",
+   "Value": {
+    "Ref": "DocumentBucketAE41E5A9"
+   },
+   "Export": {
+    "Name": "CtcmDevDocumentBucketName"
+   }
+  },
+  "InitDbFunctionName": {
+   "Description": "Database initialization Lambda function name",
+   "Value": {
+    "Ref": "InitDbFunction67777D6B"
+   },
+   "Export": {
+    "Name": "CtcmDevInitDbFunctionName"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

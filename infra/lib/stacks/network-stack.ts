@@ -11,7 +11,7 @@ export class NetworkStack extends cdk.Stack {
     super(scope, id, props)
 
     // Use default VPC for development to save costs
-    // In production, create a custom VPC with private subnets
+    // Default VPC only has public subnets, so we'll use those but keep DB private via security groups
     this.vpc = ec2.Vpc.fromLookup(this, 'DefaultVpc', {
       isDefault: true,
     })

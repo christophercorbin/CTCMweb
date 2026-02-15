@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "d7d165b24b5ab763ecc6cbbb837a49268a75fcfa1e57997e043e939354f5c25c": {
+      "displayName": "CtcmDevObservabilityStack Template",
+      "source": {
+        "path": "CtcmDevObservabilityStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "404875533723-us-east-1-ff54440a": {
+          "bucketName": "cdk-hnb659fds-assets-404875533723-us-east-1",
+          "objectKey": "d7d165b24b5ab763ecc6cbbb837a49268a75fcfa1e57997e043e939354f5c25c.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::404875533723:role/cdk-hnb659fds-file-publishing-role-404875533723-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

@@ -1,0 +1,36 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "613b46e9a5e453fa8be3fb25fcc89f40a8c108b467adfa3c36bbd9d18917214e": {
+      "displayName": "InitDbFunction/Code",
+      "source": {
+        "path": "/Users/christophercorbin/Ctcmweb/CTCMweb",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "404875533723-us-east-1-aae66987": {
+          "bucketName": "cdk-hnb659fds-assets-404875533723-us-east-1",
+          "objectKey": "613b46e9a5e453fa8be3fb25fcc89f40a8c108b467adfa3c36bbd9d18917214e.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::404875533723:role/cdk-hnb659fds-file-publishing-role-404875533723-us-east-1"
+        }
+      }
+    },
+    "6bfbd879ee1fb00cdd79a07c06c3d491dafdada574ba25b923481b087dfe3d88": {
+      "displayName": "CtcmDevDataStack Template",
+      "source": {
+        "path": "CtcmDevDataStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "404875533723-us-east-1-33ed2724": {
+          "bucketName": "cdk-hnb659fds-assets-404875533723-us-east-1",
+          "objectKey": "6bfbd879ee1fb00cdd79a07c06c3d491dafdada574ba25b923481b087dfe3d88.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::404875533723:role/cdk-hnb659fds-file-publishing-role-404875533723-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

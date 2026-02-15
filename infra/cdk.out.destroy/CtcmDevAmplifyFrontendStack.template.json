@@ -1,0 +1,186 @@
+{
+ "Description": "CTCM Frontend hosting - AWS Amplify",
+ "Resources": {
+  "AmplifyRole7A8FD9BC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "amplify.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Description": "Service role for Amplify Hosting",
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AdministratorAccess-Amplify"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAmplifyFrontendStack/AmplifyRole/Resource"
+   }
+  },
+  "AmplifyApp": {
+   "Type": "AWS::Amplify::App",
+   "Properties": {
+    "BuildSpec": {
+     "Fn::Sub": "version: 1\nfrontend:\n  phases:\n    preBuild:\n      commands:\n        - npm ci\n        - cd apps/web\n        - npm ci\n    build:\n      commands:\n        - npm run build\n  artifacts:\n    baseDirectory: apps/web/dist\n    files:\n      - '**/*'\n  cache:\n    paths:\n      - node_modules/**/*\n      - apps/web/node_modules/**/*"
+    },
+    "CustomRules": [
+     {
+      "Source": "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>",
+      "Status": "200",
+      "Target": "/index.html"
+     }
+    ],
+    "Description": "CTCM Freight Forwarding System",
+    "EnvironmentVariables": [
+     {
+      "Name": "VITE_API_URL",
+      "Value": {
+       "Fn::Join": [
+        "",
+        [
+         "https://",
+         {
+          "Fn::ImportValue": "CtcmDevApiStack:ExportsOutputRefApiF70053CD5653BA4D"
+         },
+         ".execute-api.us-east-1.",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Fn::ImportValue": "CtcmDevApiStack:ExportsOutputRefApiDeploymentStagedev51EE5D5647B3E697"
+         },
+         "/"
+        ]
+       ]
+      }
+     },
+     {
+      "Name": "VITE_COGNITO_USER_POOL_ID",
+      "Value": {
+       "Fn::ImportValue": "CtcmDevAuthStack:ExportsOutputRefUserPool6BA7E5F296FD7236"
+      }
+     },
+     {
+      "Name": "VITE_COGNITO_CLIENT_ID",
+      "Value": {
+       "Fn::ImportValue": "CtcmDevAuthStack:ExportsOutputRefUserPoolWebClient4C9370B02E2C9FF9"
+      }
+     },
+     {
+      "Name": "VITE_AWS_REGION",
+      "Value": "us-east-1"
+     }
+    ],
+    "IAMServiceRole": {
+     "Fn::GetAtt": [
+      "AmplifyRole7A8FD9BC",
+      "Arn"
+     ]
+    },
+    "Name": "ctcm-web",
+    "Platform": "WEB"
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAmplifyFrontendStack/AmplifyApp"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/yXJ0QqDIBQG4GfpXv81Y7Db0QMM2gOMUymcUpPUxRDffcSuvotPQXV3tA0dUU7zKi2PKK9E0yroiO/C5FCGzWrRG39aBblg2XzRG/8IoZ7xzCnkVIXfZo0lXj5K4XpD2yyRWe7ZJ3Yaw98fSOiNSXMAAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAmplifyFrontendStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "AmplifyAppId": {
+   "Description": "Amplify App ID",
+   "Value": {
+    "Fn::GetAtt": [
+     "AmplifyApp",
+     "AppId"
+    ]
+   },
+   "Export": {
+    "Name": "CtcmDevAmplifyAppId"
+   }
+  },
+  "AmplifyConsoleUrl": {
+   "Description": "Amplify Console URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://console.aws.amazon.com/amplify/home?region=us-east-1#/",
+      {
+       "Fn::GetAtt": [
+        "AmplifyApp",
+        "AppId"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "SetupInstructions": {
+   "Description": "Instructions to connect GitHub repository",
+   "Value": "Connect GitHub: Amplify Console > App Settings > General > Connect repository > Select christophercorbin/CTCMweb > Branch: main"
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

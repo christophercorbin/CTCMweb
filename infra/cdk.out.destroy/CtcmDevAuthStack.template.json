@@ -1,0 +1,240 @@
+{
+ "Description": "CTCM Authentication - Cognito User Pool and groups",
+ "Resources": {
+  "UserPool6BA7E5F2": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_email",
+       "Priority": 1
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": false
+    },
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "EnabledMfas": [
+     "SOFTWARE_TOKEN_MFA"
+    ],
+    "MfaConfiguration": "OPTIONAL",
+    "Policies": {
+     "PasswordPolicy": {
+      "MinimumLength": 8,
+      "RequireLowercase": true,
+      "RequireNumbers": true,
+      "RequireSymbols": false,
+      "RequireUppercase": true
+     }
+    },
+    "Schema": [
+     {
+      "Mutable": true,
+      "Name": "email",
+      "Required": true
+     },
+     {
+      "Mutable": true,
+      "Name": "name",
+      "Required": false
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "tenant_id"
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "role"
+     }
+    ],
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "ctcm-dev-users",
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAuthStack/UserPool/Resource"
+   }
+  },
+  "UserPoolWebClient4C9370B0": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AccessTokenValidity": 15,
+    "AllowedOAuthFlows": [
+     "implicit",
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "profile",
+     "phone",
+     "email",
+     "openid",
+     "aws.cognito.signin.user.admin"
+    ],
+    "CallbackURLs": [
+     "https://example.com"
+    ],
+    "ClientName": "ctcm-web-client",
+    "ExplicitAuthFlows": [
+     "ALLOW_USER_PASSWORD_AUTH",
+     "ALLOW_USER_SRP_AUTH",
+     "ALLOW_REFRESH_TOKEN_AUTH"
+    ],
+    "IdTokenValidity": 15,
+    "PreventUserExistenceErrors": "ENABLED",
+    "RefreshTokenValidity": 10080,
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "TokenValidityUnits": {
+     "AccessToken": "minutes",
+     "IdToken": "minutes",
+     "RefreshToken": "minutes"
+    },
+    "UserPoolId": {
+     "Ref": "UserPool6BA7E5F2"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAuthStack/UserPool/WebClient/Resource"
+   }
+  },
+  "AdminGroup": {
+   "Type": "AWS::Cognito::UserPoolGroup",
+   "Properties": {
+    "Description": "Admin users with full system access",
+    "GroupName": "admin",
+    "Precedence": 1,
+    "UserPoolId": {
+     "Ref": "UserPool6BA7E5F2"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAuthStack/AdminGroup"
+   }
+  },
+  "CustomerGroup": {
+   "Type": "AWS::Cognito::UserPoolGroup",
+   "Properties": {
+    "Description": "Customer users with tenant-isolated access",
+    "GroupName": "customer",
+    "Precedence": 2,
+    "UserPoolId": {
+     "Ref": "UserPool6BA7E5F2"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAuthStack/CustomerGroup"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzK20DNQTCwv1k1OydbNyUzSqw4uSUzO1kksL45Pzk/PyyzJ16sOLU4tCsjPz9FxTsuDs2EM55zM1LwSZClMEfei/NKCWpCIf2lJQWlJrU5efkqqXlaxfpmRkZ6hqZ6BYlZxZqZuUWleSWZuql4QhAYA5zxf1KAAAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "CtcmDevAuthStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "UserPoolId": {
+   "Description": "Cognito User Pool ID",
+   "Value": {
+    "Ref": "UserPool6BA7E5F2"
+   },
+   "Export": {
+    "Name": "CtcmDevUserPoolId"
+   }
+  },
+  "UserPoolArn": {
+   "Description": "Cognito User Pool ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "UserPool6BA7E5F2",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "CtcmDevUserPoolArn"
+   }
+  },
+  "UserPoolClientId": {
+   "Description": "Cognito User Pool Client ID",
+   "Value": {
+    "Ref": "UserPoolWebClient4C9370B0"
+   },
+   "Export": {
+    "Name": "CtcmDevUserPoolClientId"
+   }
+  },
+  "ExportsOutputRefUserPool6BA7E5F296FD7236": {
+   "Value": {
+    "Ref": "UserPool6BA7E5F2"
+   },
+   "Export": {
+    "Name": "CtcmDevAuthStack:ExportsOutputRefUserPool6BA7E5F296FD7236"
+   }
+  },
+  "ExportsOutputRefUserPoolWebClient4C9370B02E2C9FF9": {
+   "Value": {
+    "Ref": "UserPoolWebClient4C9370B0"
+   },
+   "Export": {
+    "Name": "CtcmDevAuthStack:ExportsOutputRefUserPoolWebClient4C9370B02E2C9FF9"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

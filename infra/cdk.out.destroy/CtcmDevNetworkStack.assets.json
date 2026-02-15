@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "1aca509e9d2340090cd292ca748022489822fd3fe0364ad77a4c4977f87d5c12": {
+      "displayName": "CtcmDevNetworkStack Template",
+      "source": {
+        "path": "CtcmDevNetworkStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "404875533723-us-east-1-96804187": {
+          "bucketName": "cdk-hnb659fds-assets-404875533723-us-east-1",
+          "objectKey": "1aca509e9d2340090cd292ca748022489822fd3fe0364ad77a4c4977f87d5c12.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::404875533723:role/cdk-hnb659fds-file-publishing-role-404875533723-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

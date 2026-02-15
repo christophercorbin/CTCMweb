@@ -1,8 +1,8 @@
 # CTCM Deployment Status
 
-## Current Status: ✅ Phase 2 Complete - Frontend Deployed
+## Current Status: ✅ Phase 3 Ready - Infrastructure Complete, Begin API Implementation
 
-**Last Updated:** February 14, 2026
+**Last Updated:** February 15, 2026
 
 ---
 
@@ -10,36 +10,42 @@
 
 ### Frontend (AWS Amplify)
 - **Status:** ✅ Deployed and Running
-- **App ID:** d1lo77mj388p7z
-- **URL:** https://main.d1lo77mj388p7z.amplifyapp.com
+- **App ID:** d1yo6c4008x99n
+- **URL:** https://main.d1yo6c4008x99n.amplifyapp.com
 - **Platform:** WEB (Static Hosting)
-- **Build Status:** SUCCEED (Build #6)
-- **Last Deploy:** February 14, 2026 21:26:18
+- **Console:** https://console.aws.amazon.com/amplify/home?region=us-east-1#/d1yo6c4008x99n
 - **Branch:** main
 - **Repository:** christophercorbin/CTCMweb
+- **Build:** Automatic on push to main
 
 ### Authentication (AWS Cognito)
-- **Status:** ✅ Deployed
-- **User Pool ID:** us-east-1_n8pWlYcSS
-- **Client ID:** 7fotk98fhtt003lf9d1728d49g
+- **Status:** ✅ Deployed with Test Users
+- **User Pool ID:** us-east-1_zqM1VNIn3
+- **Client ID:** 3h9u26uesvgc019813nb3dufpq
 - **Region:** us-east-1
+- **Console:** https://console.aws.amazon.com/cognito/v2/idp/user-pools/us-east-1_zqM1VNIn3
 
 ### API (API Gateway + Lambda)
 - **Status:** ✅ Deployed (Placeholder)
-- **API URL:** https://phr2i6vklj.execute-api.us-east-1.amazonaws.com/dev/
+- **API URL:** https://1y447zjdhj.execute-api.us-east-1.amazonaws.com/dev/
+- **API ID:** 1y447zjdhj
 - **Stage:** dev
-- **Note:** API endpoints not yet implemented (Phase 3)
+- **Note:** API endpoints not yet implemented (Phase 3 tasks 4.4-4.31)
 
 ### Database (RDS PostgreSQL)
-- **Status:** ✅ Deployed (Not Connected)
-- **Endpoint:** ctcmdevdatastack-databaseb269d8bb-m4maqdhhpwt9.ckfqwaw86gus.us-east-1.rds.amazonaws.com
+- **Status:** ✅ Deployed with Schema
+- **Endpoint:** ctcmdevdatastack-databaseb269d8bb-5dp0uzejpe9c.ckfqwaw86gus.us-east-1.rds.amazonaws.com
 - **Instance:** db.t4g.micro
-- **Note:** Database schema not yet created (Phase 3)
+- **Database:** ctcm
+- **Schema:** ✅ All tables created (customers, shipments, packages, charges, events, invoices, documents)
+- **Security:** ⚠️ Publicly accessible for dev (port 5432 open to 0.0.0.0/0)
 
 ### Networking (VPC)
 - **Status:** ✅ Deployed
 - **VPC ID:** vpc-02563a885e06b672f
-- **Subnets:** Public and Private subnets across 2 AZs
+- **Lambda Security Group:** sg-0f375f9bf65a657cd
+- **Database Security Group:** sg-09c6349eb2d89cb88
+- **Subnets:** Default VPC public subnets
 
 ---
 
@@ -49,11 +55,13 @@
 - **Email:** admin@ctcm.com
 - **Password:** AdminPass123!
 - **Role:** Administrator
+- **Group:** admin
 
 ### Customer User
 - **Email:** test@ctcm.com
 - **Password:** TestPass123!
 - **Role:** Customer
+- **Group:** customer
 
 ---
 
@@ -62,10 +70,10 @@
 The following environment variables are configured in Amplify:
 
 ```
-VITE_API_URL=https://phr2i6vklj.execute-api.us-east-1.amazonaws.com/dev/
+VITE_API_URL=https://1y447zjdhj.execute-api.us-east-1.amazonaws.com/dev/
 VITE_AWS_REGION=us-east-1
-VITE_COGNITO_CLIENT_ID=7fotk98fhtt003lf9d1728d49g
-VITE_COGNITO_USER_POOL_ID=us-east-1_n8pWlYcSS
+VITE_COGNITO_CLIENT_ID=3h9u26uesvgc019813nb3dufpq
+VITE_COGNITO_USER_POOL_ID=us-east-1_zqM1VNIn3
 ```
 
 ---
@@ -126,25 +134,36 @@ frontend:
 
 ---
 
-## Next Steps (Phase 3)
+## Next Steps (Phase 3 API Implementation)
 
-### Database Setup
-1. Create database schema in RDS
-2. Set up database migrations
-3. Configure connection pooling
-4. Implement data access layer
+### Ready to Begin API Development
+All infrastructure is deployed and the frontend is live. You can now start implementing the API endpoints.
 
-### API Implementation
-1. Create Lambda functions for CRUD operations
-2. Implement API Gateway endpoints
-3. Add authentication middleware
-4. Connect to RDS database
+### API Implementation (Tasks 4.4-4.31)
+1. Implement database connection module (task 4.4)
+2. Implement base repository with tenant isolation (task 4.5)
+3. Implement customer repository, service, and Lambda handler (tasks 4.6-4.7)
+4. Implement shipment repository, service, and Lambda handler (tasks 4.12-4.13)
+5. Implement search, documents, and invoices handlers (tasks 4.19, 4.22, 4.25)
+6. Update API Stack to wire up all Lambda functions (task 4.26)
+7. Update frontend to use real API (task 4.31)
 
-### Frontend Integration
-1. Replace mock data with real API calls
-2. Implement error handling
-3. Add loading states
-4. Test end-to-end flows
+### Database Connection Details
+```bash
+# Get database password
+AWS_PROFILE=kiro-ctcm-dev-admin aws secretsmanager get-secret-value \
+  --secret-id ctcm-dev-database-credentials \
+  --region us-east-1 \
+  --query SecretString \
+  --output text | jq -r '.password'
+
+# Connect to database
+PGPASSWORD='<password>' psql \
+  -h ctcmdevdatastack-databaseb269d8bb-5dp0uzejpe9c.ckfqwaw86gus.us-east-1.rds.amazonaws.com \
+  -U ctcmadmin \
+  -d ctcm \
+  -p 5432
+```
 
 ---
 

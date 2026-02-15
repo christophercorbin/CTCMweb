@@ -131,14 +131,14 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Phase 3: Database and API Migration
-  - [ ] 4.1 Create Network Stack with VPC and Security Groups
+  - [x] 4.1 Create Network Stack with VPC and Security Groups
     - Implement NetworkStack in infra/lib/stacks/network-stack.ts
     - Create VPC with public and private subnets (2 AZs)
     - Create security groups for RDS and Lambda
     - Configure security group rules (Lambda → RDS on port 5432)
     - _Requirements: 11.9_
 
-  - [ ] 4.2 Create Data Stack with RDS and S3
+  - [x] 4.2 Create Data Stack with RDS and S3
     - Implement DataStack in infra/lib/stacks/data-stack.ts
     - Create Secrets Manager secret for database credentials
     - Create RDS PostgreSQL t4g.micro instance with encryption
@@ -147,7 +147,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - Create S3 bucket for frontend hosting
     - _Requirements: 3.9, 3.10, 9.7, 9.8, 9.9_
 
-  - [ ] 4.3 Create database schema migration script
+  - [x] 4.3 Create database schema migration script
     - Write SQL script to create all tables (customers, shipments, packages, charges, events, invoices, documents)
     - Add foreign key constraints
     - Add indexes for performance
@@ -155,26 +155,26 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - Deploy schema to RDS instance
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-  - [ ] 4.4 Implement database connection module
+  - [x] 4.4 Implement database connection module
     - Create database.ts in apps/api/src/lib with connection pooling
     - Use Secrets Manager to retrieve database credentials
     - Implement connection reuse for Lambda
     - Add error handling and retry logic
     - _Requirements: 11.6_
 
-  - [ ] 4.5 Implement base repository with tenant isolation
+  - [x] 4.5 Implement base repository with tenant isolation
     - Create base-repository.ts with common CRUD operations
     - Implement tenant isolation middleware
     - Add query filtering based on user role (admin vs customer)
     - _Requirements: 4.5, 4.6, 4.7, 14.12_
 
-  - [ ] 4.6 Implement customer repository and service
+  - [x] 4.6 Implement customer repository and service
     - Create customer-repository.ts with database operations
     - Create customer-service.ts with business logic
     - Implement email validation and uniqueness checks
     - _Requirements: 5.6, 5.7, 5.8_
 
-  - [ ] 4.7 Implement customers Lambda handler
+  - [x] 4.7 Implement customers Lambda handler
     - Create handlers/customers.ts with GET, POST, PUT endpoints
     - Implement request routing and validation
     - Implement tenant isolation for customer users
