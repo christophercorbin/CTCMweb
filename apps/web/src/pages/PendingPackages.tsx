@@ -50,12 +50,6 @@ export const PendingPackages = () => {
       // TODO: Phase 3 - Update shipment status via API Gateway
       console.log('PendingPackages: API not yet implemented. Using demo mode.');
       toast.success('Coming in Phase 3: Ship package via AWS API');
-        event_type: 'miami_warehouse',
-        event_description: 'Customer approved shipment - moved to processing',
-        location: 'Miami Warehouse',
-      });
-
-      toast.success('Package ready for shipment');
       fetchPendingPackages();
     } catch (error: any) {
       console.error('Error updating shipment:', error);
