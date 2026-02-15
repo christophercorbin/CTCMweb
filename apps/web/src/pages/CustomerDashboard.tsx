@@ -14,17 +14,10 @@ export const CustomerDashboard = () => {
 
   useEffect(() => {
     const fetchCustomerId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (data) {
-          setCustomerId(data.id);
-        }
-      }
+      // TODO: Phase 3 - Fetch customer ID from AWS Cognito + RDS
+      console.log('CustomerDashboard: Auth not yet migrated. Using demo mode.');
+      // For now, use a mock customer ID
+      setCustomerId('demo-customer-1');
     };
     fetchCustomerId();
   }, []);

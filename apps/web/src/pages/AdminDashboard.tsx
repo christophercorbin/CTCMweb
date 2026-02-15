@@ -60,21 +60,6 @@ export const AdminDashboard = () => {
         const data = await getMockShipments() as Shipment[];
         setShipments(data);
       }
-
-          const shipping_method = shipment.tracking_number?.includes('SEA') ? 'sea' : 'air';
-
-          return {
-            ...shipment,
-            customer_name: shipment.customer?.name || 'Unknown',
-            shipping_method,
-            origin: origin || 'N/A',
-            destination: destination || 'N/A',
-            weight: totalWeight,
-          };
-        });
-
-        setShipments(formattedShipments);
-      }
     } catch (error) {
       console.error('Error fetching shipments:', error);
       toast.error('Failed to load shipments');

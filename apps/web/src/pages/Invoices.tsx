@@ -40,40 +40,11 @@ export const Invoices = () => {
       setLoading(true);
       setError(null);
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        setError(`Session error: ${sessionError.message}`);
-        setLoading(false);
-        return;
-      }
-
-      if (!session?.user) {
-        console.error('No session found');
-        setError('Not authenticated - please log in again');
-        setInvoices([]);
-        setLoading(false);
-        return;
-      }
-
-      console.log('Fetching invoices for user:', session.user.id);
-
-      const { data, error: fetchError } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('customer_id', session.user.id)
-        .order('issue_date', { ascending: false });
-
-      if (fetchError) {
-        console.error('Supabase fetch error:', fetchError);
-        setError(`Failed to fetch: ${fetchError.message} (${fetchError.code})`);
-        toast.error('Failed to load invoices');
-        return;
-      }
-
-      console.log('Invoices fetched:', data?.length || 0);
-      setInvoices(data || []);
+      // TODO: Phase 3 - Fetch invoices from AWS RDS via API Gateway
+      console.log('Invoices: Database not yet migrated. Using demo mode.');
+      
+      // Mock data for now
+      setInvoices([]);
     } catch (error: any) {
       console.error('Unexpected error:', error);
       setError(error?.message || 'An unexpected error occurred');

@@ -16,61 +16,19 @@ export const PendingPackages = () => {
   useEffect(() => {
     fetchPendingPackages();
 
-    const channel = supabase
-      .channel('pending-packages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shipments',
-        },
-        () => {
-          fetchPendingPackages();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // TODO: Phase 5 - Real-time updates via AppSync subscriptions
+    console.log('PendingPackages: Real-time not yet implemented. Using polling.');
   }, []);
 
   const fetchPendingPackages = async () => {
     try {
       setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: customer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!customer) return;
-
-      const { data: shipments } = await supabase
-        .from('shipments')
-        .select('*')
-        .eq('customer_id', customer.id)
-        .eq('status', 'received')
-        .order('received_date', { ascending: false });
-
-      if (shipments) {
-        const shipmentsWithPackages = await Promise.all(
-          shipments.map(async (shipment) => {
-            const { data: pkgs } = await supabase
-              .from('packages')
-              .select('*')
-              .eq('shipment_id', shipment.id);
-            return { ...shipment, packages: pkgs || [] };
-          })
-        );
-
-        setPackages(shipmentsWithPackages);
-      }
+      // TODO: Phase 3 - Connect to AWS RDS via API Gateway
+      console.log('PendingPackages: Database not yet migrated. Using demo mode.');
+      
+      // Mock data for now
+      setPackages([]);
     } catch (error) {
       console.error('Error fetching pending packages:', error);
       toast.error('Failed to load pending packages');
@@ -89,15 +47,9 @@ export const PendingPackages = () => {
 
   const handleShipNow = async (shipmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('shipments')
-        .update({ status: 'miami_warehouse' })
-        .eq('id', shipmentId);
-
-      if (error) throw error;
-
-      await supabase.from('shipment_events').insert({
-        shipment_id: shipmentId,
+      // TODO: Phase 3 - Update shipment status via API Gateway
+      console.log('PendingPackages: API not yet implemented. Using demo mode.');
+      toast.success('Coming in Phase 3: Ship package via AWS API');
         event_type: 'miami_warehouse',
         event_description: 'Customer approved shipment - moved to processing',
         location: 'Miami Warehouse',
@@ -120,33 +72,9 @@ export const PendingPackages = () => {
     setConsolidating(true);
 
     try {
-      const mainShipmentId = selectedPackages[0];
-
-      await supabase
-        .from('shipments')
-        .update({
-          status: 'miami_warehouse',
-          notes: `Consolidated shipment with ${selectedPackages.length} packages`,
-        })
-        .eq('id', mainShipmentId);
-
-      for (const shipmentId of selectedPackages) {
-        await supabase.from('shipment_events').insert({
-          shipment_id: shipmentId,
-          event_type: 'miami_warehouse',
-          event_description: `Consolidated with other packages - ready for bulk shipment`,
-          location: 'Miami Warehouse',
-        });
-
-        if (shipmentId !== mainShipmentId) {
-          await supabase
-            .from('shipments')
-            .update({ status: 'miami_warehouse' })
-            .eq('id', shipmentId);
-        }
-      }
-
-      toast.success(`${selectedPackages.length} packages consolidated and ready for shipment`);
+      // TODO: Phase 3 - Consolidate packages via API Gateway
+      console.log('PendingPackages: API not yet implemented. Using demo mode.');
+      toast.success('Coming in Phase 3: Consolidate packages via AWS API');
       setSelectedPackages([]);
       setShowConsolidateModal(false);
       fetchPendingPackages();

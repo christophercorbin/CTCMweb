@@ -65,11 +65,9 @@ export const WarehouseReceiptIntake = () => {
   }, []);
 
   const fetchCustomers = async () => {
-    const { data } = await supabase
-      .from('customers')
-      .select('id, name, email')
-      .order('name');
-    if (data) setCustomers(data);
+    // TODO: Phase 3 - Fetch customers from AWS RDS via API Gateway
+    console.log('WarehouseReceiptIntake: Database not yet migrated. Using demo mode.');
+    setCustomers([]);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -155,51 +153,27 @@ export const WarehouseReceiptIntake = () => {
     setLoading(true);
 
     try {
-      const { data: shipment, error: shipmentError } = await supabase
-        .from('shipments')
-        .insert({
-          ...formData,
-          status: 'received',
-          received_date: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (shipmentError) throw shipmentError;
-
-      const packageInserts = packages.map((pkg) => ({
-        shipment_id: shipment.id,
-        pieces_count: pkg.pieces_count,
-        package_type: pkg.package_type,
-        length: pkg.length ? parseFloat(pkg.length) : null,
-        width: pkg.width ? parseFloat(pkg.width) : null,
-        height: pkg.height ? parseFloat(pkg.height) : null,
-        dimension_unit: 'in',
-        weight: pkg.weight ? parseFloat(pkg.weight) : null,
-        weight_unit: 'lb',
-        weight_kg: pkg.weight ? parseFloat(pkg.weight) * 0.453592 : null,
-        volume: pkg.length && pkg.width && pkg.height
-          ? (parseFloat(pkg.length) * parseFloat(pkg.width) * parseFloat(pkg.height)) / 1728
-          : null,
-        volume_unit: 'ft3',
-        description: pkg.description,
-        storage_location: pkg.storage_location,
-      }));
-
-      const { error: packagesError } = await supabase
-        .from('packages')
-        .insert(packageInserts);
-
-      if (packagesError) throw packagesError;
-
-      const { error: eventError } = await supabase
-        .from('shipment_events')
-        .insert({
-          shipment_id: shipment.id,
-          event_type: 'received',
-          event_description: 'Package received at warehouse',
-          location: formData.warehouse_location,
-          operation_details: `Warehouse Receipt: ${formData.warehouse_receipt_number}`,
+      // TODO: Phase 3 - Create shipment via API Gateway
+      console.log('WarehouseReceiptIntake: API not yet implemented. Using demo mode.');
+      toast.success('Coming in Phase 3: Create warehouse receipt via AWS API');
+      
+      // Reset form
+      setFormData({
+        customer_id: '',
+        warehouse_receipt_number: '',
+        warehouse_location: '',
+        description: '',
+      });
+      setPackages([{
+        pieces_count: 1,
+        package_type: 'box',
+        length: '',
+        width: '',
+        height: '',
+        weight: '',
+        description: '',
+        storage_location: '',
+      }]);
           created_by: formData.received_by,
         });
 
