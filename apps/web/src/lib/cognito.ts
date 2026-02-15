@@ -158,7 +158,7 @@ export async function cognitoGetCurrentUser(): Promise<CognitoUser | null> {
       tenantId: payload?.['custom:tenant_id'] as string | undefined,
       groups: (payload?.['cognito:groups'] as string[]) || [],
     }
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }
@@ -179,7 +179,7 @@ export async function cognitoGetTokens(): Promise<AuthTokens | null> {
       idToken: session.tokens.idToken?.toString() || '',
       refreshToken: '', // Refresh token is not directly accessible in Amplify v6
     }
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }

@@ -43,7 +43,7 @@ export const Register = () => {
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration error:', error);
       toast.error('Registration failed. Please try again.');
     } finally {

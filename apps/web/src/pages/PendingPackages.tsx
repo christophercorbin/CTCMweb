@@ -45,15 +45,16 @@ export const PendingPackages = () => {
     );
   };
 
-  const handleShipNow = async (shipmentId: string) => {
+  const handleShipNow = async () => {
     try {
       // TODO: Phase 3 - Update shipment status via API Gateway
       console.log('PendingPackages: API not yet implemented. Using demo mode.');
       toast.success('Coming in Phase 3: Ship package via AWS API');
       fetchPendingPackages();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating shipment:', error);
-      toast.error(error.message || 'Failed to process shipment');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process shipment';
+      toast.error(errorMessage);
     }
   };
 
@@ -72,9 +73,10 @@ export const PendingPackages = () => {
       setSelectedPackages([]);
       setShowConsolidateModal(false);
       fetchPendingPackages();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error consolidating packages:', error);
-      toast.error(error.message || 'Failed to consolidate packages');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to consolidate packages';
+      toast.error(errorMessage);
     } finally {
       setConsolidating(false);
     }

@@ -3,8 +3,23 @@ import { Upload, FileText, X, Loader2, Sparkles } from 'lucide-react';
 import { Button } from './Button';
 import toast from 'react-hot-toast';
 
+interface ExtractedData {
+  trackingNumber?: string;
+  warehouseReceiptNumber?: string;
+  receivedDate?: string;
+  shipperName?: string;
+  shipperAddress?: string;
+  consigneeName?: string;
+  consigneeAddress?: string;
+  packages?: Array<{
+    piecesCount?: number;
+    weightKg?: number;
+    dimensions?: string;
+  }>;
+}
+
 interface DocumentScannerProps {
-  onExtract: (data: any) => void;
+  onExtract: (data: ExtractedData) => void;
 }
 
 export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
@@ -64,7 +79,8 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
     const loadingToast = toast.loading('Analyzing documents with AI...');
 
     try {
-      const images = await Promise.all(files.map(convertToBase64));
+      // Convert files to base64 for future OCR processing
+      await Promise.all(files.map(convertToBase64));
 
       // TODO: Phase 4 - Connect to AWS Textract via API Gateway
       toast.dismiss(loadingToast);
@@ -72,12 +88,9 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
       
       // Return empty data for now
       onExtract({
-        tracking_number: '',
-        sender_name: '',
-        sender_address: '',
-        weight: 0,
-        dimensions: '',
-        description: '',
+        trackingNumber: '',
+        shipperName: '',
+        shipperAddress: '',
       });
 
       setFiles([]);
@@ -86,9 +99,10 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Extraction error:', error);
-      toast.error(error.message || 'Failed to extract data from document', { id: loadingToast });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to extract data from document';
+      toast.error(errorMessage, { id: loadingToast });
     } finally {
       setLoading(false);
     }

@@ -33,8 +33,6 @@ export const CustomerInfo = () => {
     sea_skybox_address: '',
   });
 
-  const user = getCurrentUser();
-
   useEffect(() => {
     fetchCustomerInfo();
   }, []);

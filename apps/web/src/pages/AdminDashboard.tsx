@@ -102,7 +102,7 @@ export const AdminDashboard = () => {
     color,
     onClick
   }: {
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     title: string;
     value: number;
     subtitle: string;

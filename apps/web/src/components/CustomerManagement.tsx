@@ -29,7 +29,7 @@ export const CustomerManagement = () => {
     fetchCustomers();
   }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {
@@ -198,7 +198,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
       // TODO: Phase 3 - Connect to AWS RDS via API Gateway
       toast.info('Database features coming in Phase 3');
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');
       console.error(error);
     } finally {

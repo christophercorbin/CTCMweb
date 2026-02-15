@@ -106,8 +106,8 @@ export const WarehouseReceiptIntake = () => {
     setPackages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleExtractedData = (data: any) => {
-    const updatedFormData: any = {};
+  const handleExtractedData = (data: Record<string, unknown>) => {
+    const updatedFormData: Record<string, unknown> = {};
 
     if (data.tracking_number) updatedFormData.tracking_number = data.tracking_number;
     if (data.warehouse_receipt_number) updatedFormData.warehouse_receipt_number = data.warehouse_receipt_number;
@@ -124,15 +124,15 @@ export const WarehouseReceiptIntake = () => {
 
     setFormData((prev) => ({ ...prev, ...updatedFormData }));
 
-    if (data.packages && data.packages.length > 0) {
-      const extractedPackages = data.packages.map((pkg: any) => ({
-        pieces_count: pkg.pieces_count || 1,
-        package_type: (pkg.package_type?.toLowerCase() || 'box') as PackageType,
+    if (data.packages && Array.isArray(data.packages) && data.packages.length > 0) {
+      const extractedPackages = data.packages.map((pkg: Record<string, unknown>) => ({
+        pieces_count: (pkg.pieces_count as number) || 1,
+        package_type: ((pkg.package_type as string)?.toLowerCase() || 'box') as PackageType,
         length: pkg.length?.toString() || '',
         width: pkg.width?.toString() || '',
         height: pkg.height?.toString() || '',
         weight: pkg.weight?.toString() || '',
-        description: pkg.description || '',
+        description: (pkg.description as string) || '',
         storage_location: 'SP',
       }));
       setPackages(extractedPackages);
@@ -174,9 +174,10 @@ export const WarehouseReceiptIntake = () => {
         description: '',
         storage_location: '',
       }]);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating shipment:', error);
-      toast.error(error.message || 'Failed to process warehouse receipt');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process warehouse receipt';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

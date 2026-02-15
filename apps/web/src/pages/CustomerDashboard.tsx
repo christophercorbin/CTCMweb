@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Gift, Heart, Snowflake, Sparkles, Package as PackageIcon } from 'lucide-react';
 import { Button, LoadingSkeleton, EmptyState, Badge, Card } from '../components';
-import { Shipment, ShipmentStatus } from '../types';
+import { ShipmentStatus } from '../types';
 import { useRealtimeShipments } from '../hooks/useRealtimeShipments';
 import { SearchBar } from '../components/SearchBar';
 

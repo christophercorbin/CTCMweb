@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Button, Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components';
 import { apiClient } from '../api/axios';
 import { Shipment, TrackingItem, ShipmentStatus } from '../types';

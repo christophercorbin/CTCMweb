@@ -50,7 +50,7 @@ export const Login = () => {
       setTimeout(() => {
         navigate(user?.role === 'admin' ? '/admin/dashboard' : '/dashboard')
       }, 500)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error)
       
       // Handle specific Cognito errors

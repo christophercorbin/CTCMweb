@@ -45,9 +45,10 @@ export const Invoices = () => {
       
       // Mock data for now
       setInvoices([]);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Unexpected error:', error);
-      setError(error?.message || 'An unexpected error occurred');
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setError(errorMessage);
       toast.error('Failed to load invoices');
     } finally {
       setLoading(false);

@@ -61,7 +61,6 @@ export const ShipmentProgress = ({ status, shippingMethod }: ShipmentProgressPro
               {steps.map((step, index) => {
                 const isComplete = index < currentStepIndex;
                 const isCurrent = index === currentStepIndex;
-                const isUpcoming = index > currentStepIndex;
 
                 return (
                   <div key={step.key} className="flex flex-col items-center" style={{ flex: 1 }}>
