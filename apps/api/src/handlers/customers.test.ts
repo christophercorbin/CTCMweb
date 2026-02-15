@@ -29,7 +29,7 @@ describe('Customers Lambda Handler', () => {
             'cognito:groups': 'admin',
           },
         },
-      } as any,
+      } as APIGatewayProxyEvent['requestContext'],
     };
 
     vi.clearAllMocks();
@@ -41,7 +41,7 @@ describe('Customers Lambda Handler', () => {
       const mockGetAllCustomers = vi.fn().mockResolvedValue([]);
       vi.mocked(CustomerService).mockImplementation(() => ({
         getAllCustomers: mockGetAllCustomers,
-      } as any));
+      } as unknown as InstanceType<typeof CustomerService>));
 
       const result = await handler(mockEvent as APIGatewayProxyEvent);
 
@@ -56,7 +56,7 @@ describe('Customers Lambda Handler', () => {
       const mockGetCustomerById = vi.fn().mockResolvedValue({ id: 'customer-123' });
       vi.mocked(CustomerService).mockImplementation(() => ({
         getCustomerById: mockGetCustomerById,
-      } as any));
+      } as unknown as InstanceType<typeof CustomerService>));
 
       const result = await handler(mockEvent as APIGatewayProxyEvent);
 
@@ -76,7 +76,7 @@ describe('Customers Lambda Handler', () => {
       const mockCreateCustomer = vi.fn().mockResolvedValue({ id: 'new-customer' });
       vi.mocked(CustomerService).mockImplementation(() => ({
         createCustomer: mockCreateCustomer,
-      } as any));
+      } as unknown as InstanceType<typeof CustomerService>));
 
       const result = await handler(mockEvent as APIGatewayProxyEvent);
 
@@ -134,7 +134,7 @@ describe('Customers Lambda Handler', () => {
       const mockGetAllCustomers = vi.fn().mockRejectedValue(new Error('Database error'));
       vi.mocked(CustomerService).mockImplementation(() => ({
         getAllCustomers: mockGetAllCustomers,
-      } as any));
+      } as unknown as InstanceType<typeof CustomerService>));
 
       const result = await handler(mockEvent as APIGatewayProxyEvent);
 
@@ -151,7 +151,7 @@ describe('Customers Lambda Handler', () => {
       const { CustomerService } = await import('../services/customer-service');
       vi.mocked(CustomerService).mockImplementation(() => ({
         getAllCustomers: vi.fn().mockResolvedValue(mockCustomers),
-      } as any));
+      } as unknown as InstanceType<typeof CustomerService>));
 
       const result = await handler(mockEvent as APIGatewayProxyEvent);
 

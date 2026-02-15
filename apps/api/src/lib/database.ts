@@ -93,9 +93,9 @@ export function getPool(): Pool {
 /**
  * Executes a query with automatic retry logic
  */
-export async function query<T = any>(
+export async function query<T = unknown>(
   text: string,
-  params?: any[],
+  params?: unknown[],
   retries = 2
 ): Promise<QueryResult<T>> {
   const pool = getPool();
@@ -103,16 +103,17 @@ export async function query<T = any>(
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await pool.query<T>(text, params);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const isLastAttempt = attempt === retries;
-      const isRetryable = error.code === 'ECONNRESET' || 
-                          error.code === 'ETIMEDOUT' ||
-                          error.code === '57P03'; // cannot_connect_now
+      const err = error as { code?: string; message?: string };
+      const isRetryable = err.code === 'ECONNRESET' || 
+                          err.code === 'ETIMEDOUT' ||
+                          err.code === '57P03'; // cannot_connect_now
 
       if (isLastAttempt || !isRetryable) {
         console.error('Database query failed:', {
-          error: error.message,
-          code: error.code,
+          error: err.message,
+          code: err.code,
           attempt: attempt + 1,
         });
         throw error;

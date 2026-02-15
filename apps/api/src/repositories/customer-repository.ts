@@ -94,7 +94,7 @@ export class CustomerRepository extends BaseRepository {
   /**
    * Creates a new customer
    */
-  async create(input: CreateCustomerInput, userContext: UserContext): Promise<Customer> {
+  async create(input: CreateCustomerInput, _userContext: UserContext): Promise<Customer> {
     const insertQuery = `
       INSERT INTO ${this.tableName} (
         user_id, name, email, phone, company, address,
@@ -131,7 +131,7 @@ export class CustomerRepository extends BaseRepository {
   ): Promise<Customer | null> {
     // Build dynamic SET clause based on provided fields
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     if (input.name !== undefined) {
@@ -214,7 +214,7 @@ export class CustomerRepository extends BaseRepository {
    */
   async emailExists(email: string, excludeId?: string): Promise<boolean> {
     let checkQuery = `SELECT 1 FROM ${this.tableName} WHERE email = $1`;
-    const params: any[] = [email];
+    const params: unknown[] = [email];
 
     if (excludeId) {
       checkQuery += ` AND id != $2`;

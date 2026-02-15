@@ -45,7 +45,7 @@ export function getUserContext(event: APIGatewayProxyEvent): UserContext {
 export function requireAuth(event: APIGatewayProxyEvent): UserContext {
   try {
     return getUserContext(event);
-  } catch (error) {
+  } catch {
     throw new Error('Authentication required');
   }
 }

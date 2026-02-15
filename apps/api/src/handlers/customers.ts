@@ -76,7 +76,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
  * GET /customers
  * Lists all customers (with tenant isolation)
  */
-async function handleListCustomers(userContext: any): Promise<APIGatewayProxyResult> {
+async function handleListCustomers(userContext: UserContext): Promise<APIGatewayProxyResult> {
   const service = new CustomerService();
   const customers = await service.getAllCustomers(userContext);
   return successResponse(customers);
@@ -88,7 +88,7 @@ async function handleListCustomers(userContext: any): Promise<APIGatewayProxyRes
  */
 async function handleGetCustomer(
   id: string,
-  userContext: any
+  userContext: UserContext
 ): Promise<APIGatewayProxyResult> {
   const service = new CustomerService();
   const customer = await service.getCustomerById(id, userContext);
@@ -101,7 +101,7 @@ async function handleGetCustomer(
  */
 async function handleCreateCustomer(
   event: APIGatewayProxyEvent,
-  userContext: any
+  userContext: UserContext
 ): Promise<APIGatewayProxyResult> {
   if (!event.body) {
     return errorResponse('Request body is required', 400);
@@ -110,7 +110,7 @@ async function handleCreateCustomer(
   let input: CreateCustomerInput;
   try {
     input = JSON.parse(event.body);
-  } catch (error) {
+  } catch {
     return errorResponse('Invalid JSON in request body', 400);
   }
 
@@ -131,7 +131,7 @@ async function handleCreateCustomer(
 async function handleUpdateCustomer(
   id: string,
   event: APIGatewayProxyEvent,
-  userContext: any
+  userContext: UserContext
 ): Promise<APIGatewayProxyResult> {
   if (!event.body) {
     return errorResponse('Request body is required', 400);
@@ -140,7 +140,7 @@ async function handleUpdateCustomer(
   let input: UpdateCustomerInput;
   try {
     input = JSON.parse(event.body);
-  } catch (error) {
+  } catch {
     return errorResponse('Invalid JSON in request body', 400);
   }
 
@@ -155,7 +155,7 @@ async function handleUpdateCustomer(
  */
 async function handleDeleteCustomer(
   id: string,
-  userContext: any
+  userContext: UserContext
 ): Promise<APIGatewayProxyResult> {
   const service = new CustomerService();
   await service.deleteCustomer(id, userContext);

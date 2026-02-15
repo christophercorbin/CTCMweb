@@ -35,7 +35,7 @@ export function errorResponse(
   message: string,
   statusCode: number = 500,
   code?: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): APIGatewayProxyResult {
   const response: ApiErrorResponse = {
     success: false,
@@ -97,11 +97,11 @@ function generateRequestId(): string {
 /**
  * Handles errors and returns appropriate response
  */
-export function handleError(error: any): APIGatewayProxyResult {
+export function handleError(error: unknown): APIGatewayProxyResult {
   console.error('Handler error:', error);
 
   // Handle known error types
-  if (error.message) {
+  if (error instanceof Error && error.message) {
     if (error.message.includes('not found') || error.message.includes('Not found')) {
       return errorResponse(error.message, 404);
     }

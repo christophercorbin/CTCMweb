@@ -1,4 +1,3 @@
-import { QueryResult } from 'pg';
 import { query, transaction } from '../lib/database';
 import type { UserContext } from '@ctcm/types';
 
@@ -23,9 +22,9 @@ export abstract class BaseRepository {
    */
   protected applyTenantFilter(
     whereClause: string,
-    params: any[],
+    params: unknown[],
     options: QueryOptions
-  ): { whereClause: string; params: any[] } {
+  ): { whereClause: string; params: unknown[] } {
     const { userContext, tenantIsolation } = options;
 
     // Admin users bypass tenant isolation
@@ -59,7 +58,7 @@ export abstract class BaseRepository {
    */
   protected async findMany<T>(
     baseQuery: string,
-    params: any[],
+    params: unknown[],
     options: QueryOptions
   ): Promise<T[]> {
     const { whereClause, params: filteredParams } = this.applyTenantFilter(
@@ -78,7 +77,7 @@ export abstract class BaseRepository {
    */
   protected async findOne<T>(
     baseQuery: string,
-    params: any[],
+    params: unknown[],
     options: QueryOptions
   ): Promise<T | null> {
     const results = await this.findMany<T>(baseQuery, params, options);
@@ -90,7 +89,7 @@ export abstract class BaseRepository {
    */
   protected async insert<T>(
     tableName: string,
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     options: QueryOptions
   ): Promise<T> {
     const { userContext, tenantIsolation } = options;
@@ -123,7 +122,7 @@ export abstract class BaseRepository {
   protected async update<T>(
     tableName: string,
     id: string,
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     options: QueryOptions
   ): Promise<T | null> {
     const { userContext, tenantIsolation } = options;
@@ -136,7 +135,7 @@ export abstract class BaseRepository {
 
     // Build WHERE clause with tenant isolation
     let whereClause = `WHERE id = $${values.length + 1}`;
-    let params = [...values, id];
+    const params: unknown[] = [...values, id];
 
     if (userContext.role === 'customer' && tenantIsolation) {
       if (!userContext.tenantId) {
@@ -169,7 +168,7 @@ export abstract class BaseRepository {
 
     // Build WHERE clause with tenant isolation
     let whereClause = `WHERE id = $1`;
-    let params: any[] = [id];
+    const params: unknown[] = [id];
 
     if (userContext.role === 'customer' && tenantIsolation) {
       if (!userContext.tenantId) {
@@ -230,7 +229,7 @@ export abstract class BaseRepository {
   protected async count(
     tableName: string,
     whereClause: string,
-    params: any[],
+    params: unknown[],
     options: QueryOptions
   ): Promise<number> {
     const { whereClause: filteredWhere, params: filteredParams } = this.applyTenantFilter(

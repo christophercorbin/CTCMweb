@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Pool } from 'pg';
 
 // Mock pg and AWS SDK
 vi.mock('pg');
@@ -31,7 +30,7 @@ describe('Database Module', () => {
     const { SecretsManagerClient } = await import('@aws-sdk/client-secrets-manager');
     vi.mocked(SecretsManagerClient).mockImplementation(() => ({
       send: mockSend,
-    } as any));
+    } as unknown as InstanceType<typeof SecretsManagerClient>));
 
     const { initializePool } = await import('./database');
     
@@ -58,7 +57,7 @@ describe('Database Module', () => {
     const { SecretsManagerClient } = await import('@aws-sdk/client-secrets-manager');
     vi.mocked(SecretsManagerClient).mockImplementation(() => ({
       send: mockSend,
-    } as any));
+    } as unknown as InstanceType<typeof SecretsManagerClient>));
 
     const { initializePool } = await import('./database');
     

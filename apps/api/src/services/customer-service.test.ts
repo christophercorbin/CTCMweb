@@ -8,7 +8,7 @@ vi.mock('../repositories/customer-repository');
 
 describe('CustomerService', () => {
   let service: CustomerService;
-  let mockRepository: any;
+  let mockRepository: InstanceType<typeof CustomerRepository>;
   let adminUser: UserContext;
   let customerUser: UserContext;
 
