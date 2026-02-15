@@ -174,13 +174,6 @@ export const WarehouseReceiptIntake = () => {
         description: '',
         storage_location: '',
       }]);
-          created_by: formData.received_by,
-        });
-
-      if (eventError) throw eventError;
-
-      toast.success('Warehouse receipt processed successfully');
-      navigate(`/admin/shipments/${shipment.id}`);
     } catch (error: any) {
       console.error('Error creating shipment:', error);
       toast.error(error.message || 'Failed to process warehouse receipt');
