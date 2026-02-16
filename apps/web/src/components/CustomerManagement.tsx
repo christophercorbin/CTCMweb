@@ -34,7 +34,7 @@ export const CustomerManagement = () => {
 
     try {
       // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      toast.info('Database features coming in Phase 3');
+      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
     } catch (error) {
       toast.error('Failed to delete customer');
       console.error(error);
@@ -196,7 +196,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
 
     try {
       // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      toast.info('Database features coming in Phase 3');
+      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
       onSuccess();
     } catch (error) {
       toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');

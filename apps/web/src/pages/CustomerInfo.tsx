@@ -74,7 +74,7 @@ export const CustomerInfo = () => {
       }
 
       // TODO: Phase 3 - Save to AWS RDS via API Gateway
-      toast.info('Database features coming in Phase 3');
+      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
       setEditing(false);
     } catch (error) {
       console.error('Error saving customer info:', error);

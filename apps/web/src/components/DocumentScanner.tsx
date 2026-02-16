@@ -84,7 +84,7 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
 
       // TODO: Phase 4 - Connect to AWS Textract via API Gateway
       toast.dismiss(loadingToast);
-      toast.info('OCR features coming in Phase 4');
+      toast('OCR features coming in Phase 4', { icon: 'ℹ️' });
       
       // Return empty data for now
       onExtract({
