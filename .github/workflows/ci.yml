@@ -68,6 +68,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build packages
+        run: npm run build --workspace=@ctcm/types --workspace=@ctcm/utils
+
       - name: Run tests
         run: npm run test
 
