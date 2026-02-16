@@ -19,12 +19,12 @@ export class ShipmentService {
    */
   async createShipment(
     input: CreateShipmentInput,
-    userContext: UserContext
+    userContext?: UserContext
   ): Promise<Shipment> {
     // Validate customer exists (in a real implementation)
     // For now, we'll trust the input
 
-    return this.repository.create(input, userContext);
+    return this.repository.create(input, userContext!);
   }
 
   /**
@@ -33,16 +33,16 @@ export class ShipmentService {
   async updateShipment(
     id: string,
     input: UpdateShipmentInput,
-    userContext: UserContext
+    userContext?: UserContext
   ): Promise<Shipment | null> {
-    return this.repository.updateShipment(id, input, userContext);
+    return this.repository.updateShipment(id, input, userContext!);
   }
 
   /**
    * Get shipment by ID
    */
-  async getShipmentById(id: string, userContext: UserContext): Promise<Shipment | null> {
-    return this.repository.findById(id, userContext);
+  async getShipmentById(id: string, _userContext?: UserContext): Promise<Shipment | null> {
+    return this.repository.findById(id);
   }
 
   /**
@@ -50,9 +50,9 @@ export class ShipmentService {
    */
   async getShipments(
     filters: ShipmentFilters,
-    userContext: UserContext
+    userContext?: UserContext
   ): Promise<Shipment[]> {
-    return this.repository.findWithFilters(filters, userContext);
+    return this.repository.findWithFilters(filters, userContext!);
   }
 
   /**
@@ -60,9 +60,9 @@ export class ShipmentService {
    */
   async getShipmentByTrackingNumber(
     trackingNumber: string,
-    userContext: UserContext
+    userContext?: UserContext
   ): Promise<Shipment | null> {
-    return this.repository.findByTrackingNumber(trackingNumber, userContext);
+    return this.repository.findByTrackingNumber(trackingNumber, userContext!);
   }
 
   /**

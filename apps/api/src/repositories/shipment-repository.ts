@@ -1,4 +1,5 @@
 import { BaseRepository } from './base-repository.js';
+import { query } from '../lib/database.js';
 import type {
   Shipment,
   CreateShipmentInput,
@@ -28,9 +29,9 @@ interface ShipmentRow extends QueryResultRow {
   updated_at: string;
 }
 
-export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentInput, UpdateShipmentInput> {
+export class ShipmentRepository extends BaseRepository {
   constructor() {
-    super('shipments');
+    super();
   }
 
   /**
@@ -45,7 +46,7 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
     const datePrefix = `${year}${month}${day}`;
 
     // Find the highest sequence number for today
-    const result = await this.db.query<QueryResultRow>(
+    const result = await query<QueryResultRow>(
       `SELECT tracking_number 
        FROM shipments 
        WHERE tracking_number LIKE $1 
@@ -103,10 +104,10 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
   /**
    * Create a new shipment with generated tracking number
    */
-  async create(input: CreateShipmentInput, userContext: UserContext): Promise<Shipment> {
+  async create(input: CreateShipmentInput, _userContext: UserContext): Promise<Shipment> {
     const trackingNumber = await this.generateTrackingNumber();
 
-    const result = await this.db.query<ShipmentRow>(
+    const result = await query<ShipmentRow>(
       `INSERT INTO shipments (
         tracking_number, warehouse_receipt_number, customer_id, status,
         received_date, shipper_name, shipper_address, consignee_name,
@@ -141,12 +142,12 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
   async updateShipment(
     id: string,
     input: UpdateShipmentInput,
-    userContext: UserContext
+    _userContext: UserContext
   ): Promise<Shipment | null> {
     // If status is being updated, validate the transition
     if (input.status) {
       // Get current shipment to check status
-      const currentResult = await this.db.query<ShipmentRow>(
+      const currentResult = await query<ShipmentRow>(
         `SELECT * FROM shipments WHERE id = $1`,
         [id]
       );
@@ -219,7 +220,7 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
 
     if (updates.length === 0) {
       // No updates, just return current shipment
-      const result = await this.db.query<ShipmentRow>(
+      const result = await query<ShipmentRow>(
         `SELECT * FROM shipments WHERE id = $1`,
         [id]
       );
@@ -229,12 +230,28 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     values.push(id);
 
-    const result = await this.db.query<ShipmentRow>(
+    const result = await query<ShipmentRow>(
       `UPDATE shipments 
        SET ${updates.join(', ')} 
        WHERE id = $${paramIndex}
        RETURNING *`,
       values
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return this.mapRowToEntity(result.rows[0]);
+  }
+
+  /**
+   * Find shipment by ID
+   */
+  async findById(id: string): Promise<Shipment | null> {
+    const result = await query<ShipmentRow>(
+      `SELECT * FROM shipments WHERE id = $1`,
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -291,7 +308,7 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const result = await this.db.query<ShipmentRow>(
+    const result = await query<ShipmentRow>(
       `SELECT * FROM shipments ${whereClause} ORDER BY created_at DESC`,
       values
     );
@@ -316,7 +333,7 @@ export class ShipmentRepository extends BaseRepository<Shipment, CreateShipmentI
         ? [trackingNumber, userContext.tenantId]
         : [trackingNumber];
 
-    const result = await this.db.query<ShipmentRow>(
+    const result = await query<ShipmentRow>(
       `SELECT * FROM shipments WHERE tracking_number = $1 ${tenantFilter}`,
       values
     );

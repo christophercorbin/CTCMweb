@@ -27,7 +27,6 @@ describe('ShipmentService', () => {
     validateStatusTransition: ReturnType<typeof vi.fn>;
   };
   let adminContext: UserContext;
-  let customerContext: UserContext;
 
   beforeEach(() => {
     service = new ShipmentService();
@@ -38,14 +37,6 @@ describe('ShipmentService', () => {
       email: 'admin@ctcm.com',
       role: 'admin',
       groups: ['admin'],
-    };
-
-    customerContext = {
-      sub: 'customer-123',
-      email: 'customer@ctcm.com',
-      role: 'customer',
-      tenantId: 'cust-456',
-      groups: ['customer'],
     };
   });
 

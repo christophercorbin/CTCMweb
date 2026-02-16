@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { ShipmentService } from '../services/shipment-service.js';
-import { extractUserContext } from '../lib/auth.js';
+import { getUserContext } from '../lib/auth.js';
 import { successResponse, errorResponse } from '../lib/response.js';
 import type {
   CreateShipmentInput,
@@ -23,7 +23,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   });
 
   try {
-    const userContext = extractUserContext(event);
+    const userContext = getUserContext(event);
     const method = event.httpMethod;
     const pathParts = event.path.split('/').filter(Boolean);
 
@@ -59,7 +59,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
  */
 async function listShipments(
   event: APIGatewayProxyEvent,
-  userContext: ReturnType<typeof extractUserContext>
+  _userContext: ReturnType<typeof getUserContext>
 ): Promise<APIGatewayProxyResult> {
   const queryParams = event.queryStringParameters || {};
 
@@ -81,7 +81,7 @@ async function listShipments(
  */
 async function getShipment(
   identifier: string,
-  userContext: ReturnType<typeof extractUserContext>
+  _userContext: ReturnType<typeof getUserContext>
 ): Promise<APIGatewayProxyResult> {
   // Check if identifier is a tracking number (starts with CTCM-)
   let shipment;
@@ -103,7 +103,7 @@ async function getShipment(
  */
 async function createShipment(
   event: APIGatewayProxyEvent,
-  userContext: ReturnType<typeof extractUserContext>
+  _userContext: ReturnType<typeof getUserContext>
 ): Promise<APIGatewayProxyResult> {
   if (!event.body) {
     return errorResponse('Request body is required', 400);
@@ -132,7 +132,7 @@ async function createShipment(
 async function updateShipment(
   id: string,
   event: APIGatewayProxyEvent,
-  userContext: ReturnType<typeof extractUserContext>
+  _userContext: ReturnType<typeof getUserContext>
 ): Promise<APIGatewayProxyResult> {
   if (!event.body) {
     return errorResponse('Request body is required', 400);

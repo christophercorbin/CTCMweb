@@ -39,7 +39,7 @@ describe('ShipmentRepository', () => {
 
   describe('generateTrackingNumber', () => {
     it('should generate tracking number with correct format', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const trackingNumber = await repository.generateTrackingNumber();
 
@@ -55,7 +55,7 @@ describe('ShipmentRepository', () => {
 
       mockDb.query.mockResolvedValue({
         rows: [{ tracking_number: `CTCM-${datePrefix}-0005` }],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       const trackingNumber = await repository.generateTrackingNumber();
 
@@ -63,7 +63,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should start at 0001 for new day', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const trackingNumber = await repository.generateTrackingNumber();
 
@@ -123,7 +123,7 @@ describe('ShipmentRepository', () => {
       };
 
       mockDb.query
-        .mockResolvedValueOnce({ rows: [] } as QueryResult<QueryResultRow>) // generateTrackingNumber
+        .mockResolvedValueOnce({ rows: [] } as unknown as QueryResult<QueryResultRow>) // generateTrackingNumber
         .mockResolvedValueOnce({
           rows: [
             {
@@ -146,7 +146,7 @@ describe('ShipmentRepository', () => {
               updated_at: new Date().toISOString(),
             },
           ],
-        } as QueryResult<QueryResultRow>);
+        } as unknown as QueryResult<QueryResultRow>);
 
       const shipment = await repository.create(input, adminContext);
 
@@ -182,7 +182,7 @@ describe('ShipmentRepository', () => {
             updated_at: new Date().toISOString(),
           },
         ],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       // Mock query for update
       mockDb.query.mockResolvedValueOnce({
@@ -207,7 +207,7 @@ describe('ShipmentRepository', () => {
             updated_at: new Date().toISOString(),
           },
         ],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       const updated = await repository.updateShipment(
         'ship-123',
@@ -242,7 +242,7 @@ describe('ShipmentRepository', () => {
             updated_at: new Date().toISOString(),
           },
         ],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       await expect(
         repository.updateShipment('ship-123', { status: 'delivered' }, adminContext)
@@ -251,7 +251,7 @@ describe('ShipmentRepository', () => {
 
     it('should return null if shipment not found', async () => {
       // Mock query for getting current shipment (not found)
-      mockDb.query.mockResolvedValueOnce({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValueOnce({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const updated = await repository.updateShipment(
         'nonexistent',
@@ -287,7 +287,7 @@ describe('ShipmentRepository', () => {
             updated_at: new Date().toISOString(),
           },
         ],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       const shipments = await repository.findWithFilters(
         { status: 'processing' },
@@ -299,7 +299,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should apply tenant isolation for customer users', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findWithFilters({}, customerContext);
 
@@ -310,7 +310,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should filter by date range', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-12-31');
@@ -324,7 +324,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should search by tracking number or receipt number', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findWithFilters({ search: 'CTCM-2026' }, adminContext);
 
@@ -359,7 +359,7 @@ describe('ShipmentRepository', () => {
             updated_at: new Date().toISOString(),
           },
         ],
-      } as QueryResult<QueryResultRow>);
+      } as unknown as QueryResult<QueryResultRow>);
 
       const shipment = await repository.findByTrackingNumber(
         'CTCM-20260215-0001',
@@ -371,7 +371,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should apply tenant isolation for customer users', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findByTrackingNumber('CTCM-20260215-0001', customerContext);
 
@@ -382,7 +382,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should return null if not found', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as QueryResult<QueryResultRow>);
+      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const shipment = await repository.findByTrackingNumber('nonexistent', adminContext);
 
