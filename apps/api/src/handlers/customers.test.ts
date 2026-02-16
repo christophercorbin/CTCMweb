@@ -32,7 +32,7 @@ describe('Customers Lambda Handler', () => {
         requestTimeEpoch: Date.now(),
         resourceId: 'test-resource',
         resourcePath: '/customers',
-        identity: {} as any,
+        identity: {} as APIGatewayProxyEvent['requestContext']['identity'],
         authorizer: {
           claims: {
             sub: 'user-123',
