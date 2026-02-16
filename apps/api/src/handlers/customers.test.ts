@@ -22,6 +22,17 @@ describe('Customers Lambda Handler', () => {
       body: null,
       headers: {},
       requestContext: {
+        accountId: '123456789012',
+        apiId: 'test-api',
+        protocol: 'HTTP/1.1',
+        httpMethod: 'GET',
+        path: '/customers',
+        stage: 'test',
+        requestId: 'test-request-id',
+        requestTimeEpoch: Date.now(),
+        resourceId: 'test-resource',
+        resourcePath: '/customers',
+        identity: {} as any,
         authorizer: {
           claims: {
             sub: 'user-123',

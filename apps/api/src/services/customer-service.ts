@@ -112,7 +112,7 @@ export class CustomerService {
       throw new Error('Customer name cannot be empty');
     }
 
-    const updated = await this.repository.update(id, input, userContext);
+    const updated = await this.repository.updateCustomer(id, input, userContext);
     
     if (!updated) {
       throw new Error('Failed to update customer');
@@ -132,7 +132,7 @@ export class CustomerService {
     // Verify customer exists
     await this.getCustomerById(id, userContext);
 
-    const deleted = await this.repository.delete(id, userContext);
+    const deleted = await this.repository.deleteCustomer(id, userContext);
     
     if (!deleted) {
       throw new Error('Failed to delete customer');

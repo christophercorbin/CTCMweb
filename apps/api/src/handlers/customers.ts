@@ -3,7 +3,7 @@ import { initializePool } from '../lib/database';
 import { getUserContext } from '../lib/auth';
 import { successResponse, errorResponse, handleError } from '../lib/response';
 import { CustomerService } from '../services/customer-service';
-import type { CreateCustomerInput, UpdateCustomerInput } from '@ctcm/types';
+import type { CreateCustomerInput, UpdateCustomerInput, UserContext } from '@ctcm/types';
 
 // Initialize database pool (reused across Lambda invocations)
 let poolInitialized = false;

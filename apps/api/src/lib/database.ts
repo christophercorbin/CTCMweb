@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
 interface DatabaseCredentials {
@@ -93,7 +93,7 @@ export function getPool(): Pool {
 /**
  * Executes a query with automatic retry logic
  */
-export async function query<T = unknown>(
+export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params?: unknown[],
   retries = 2
@@ -168,7 +168,7 @@ export async function closePool(): Promise<void> {
  */
 export async function healthCheck(): Promise<boolean> {
   try {
-    const result = await query('SELECT 1 as health');
+    const result = await query<{ health: number }>('SELECT 1 as health');
     return result.rows.length === 1 && result.rows[0].health === 1;
   } catch (error) {
     console.error('Database health check failed:', error);

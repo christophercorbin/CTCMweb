@@ -1,4 +1,5 @@
 import { query, transaction } from '../lib/database';
+import type { QueryResultRow } from 'pg';
 import type { UserContext } from '@ctcm/types';
 
 export interface TenantIsolationConfig {
@@ -56,7 +57,7 @@ export abstract class BaseRepository {
   /**
    * Executes a SELECT query with automatic tenant isolation
    */
-  protected async findMany<T>(
+  protected async findMany<T extends QueryResultRow>(
     baseQuery: string,
     params: unknown[],
     options: QueryOptions
@@ -75,7 +76,7 @@ export abstract class BaseRepository {
   /**
    * Executes a SELECT query expecting a single result with tenant isolation
    */
-  protected async findOne<T>(
+  protected async findOne<T extends QueryResultRow>(
     baseQuery: string,
     params: unknown[],
     options: QueryOptions
@@ -87,7 +88,7 @@ export abstract class BaseRepository {
   /**
    * Executes an INSERT query with automatic tenant ID injection for customer users
    */
-  protected async insert<T>(
+  protected async insert<T extends QueryResultRow>(
     tableName: string,
     data: Record<string, unknown>,
     options: QueryOptions
@@ -119,7 +120,7 @@ export abstract class BaseRepository {
   /**
    * Executes an UPDATE query with tenant isolation verification
    */
-  protected async update<T>(
+  protected async update<T extends QueryResultRow>(
     tableName: string,
     id: string,
     data: Record<string, unknown>,

@@ -106,7 +106,7 @@ describe('CustomerService', () => {
 
       mockRepository.findById = vi.fn().mockResolvedValue(existingCustomer);
       mockRepository.emailExists = vi.fn().mockResolvedValue(false);
-      mockRepository.update = vi.fn().mockResolvedValue({
+      mockRepository.updateCustomer = vi.fn().mockResolvedValue({
         ...existingCustomer,
         name: 'Updated Name',
       });
@@ -156,7 +156,7 @@ describe('CustomerService', () => {
 
     it('should allow admin to delete customers', async () => {
       mockRepository.findById = vi.fn().mockResolvedValue({ id: '1' });
-      mockRepository.delete = vi.fn().mockResolvedValue(true);
+      mockRepository.deleteCustomer = vi.fn().mockResolvedValue(true);
 
       await expect(
         service.deleteCustomer('1', adminUser)

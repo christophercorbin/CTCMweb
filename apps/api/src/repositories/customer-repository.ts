@@ -124,7 +124,7 @@ export class CustomerRepository extends BaseRepository {
   /**
    * Updates a customer with tenant isolation
    */
-  async update(
+  async updateCustomer(
     id: string,
     input: UpdateCustomerInput,
     userContext: UserContext
@@ -199,7 +199,7 @@ export class CustomerRepository extends BaseRepository {
   /**
    * Deletes a customer (admin only)
    */
-  async delete(id: string, userContext: UserContext): Promise<boolean> {
+  async deleteCustomer(id: string, userContext: UserContext): Promise<boolean> {
     if (userContext.role !== 'admin') {
       throw new Error('Only administrators can delete customers');
     }

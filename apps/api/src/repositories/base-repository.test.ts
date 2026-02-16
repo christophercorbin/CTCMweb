@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BaseRepository, getTenantId, validateCustomerAccess } from './base-repository';
+import type { QueryResultRow } from 'pg';
 import type { UserContext } from '@ctcm/types';
 
 // Mock the database module
@@ -10,21 +11,21 @@ vi.mock('../lib/database', () => ({
 
 // Test implementation of BaseRepository
 class TestRepository extends BaseRepository {
-  async testFindMany<T>(baseQuery: string, params: unknown[], userContext: UserContext) {
+  async testFindMany<T extends QueryResultRow>(baseQuery: string, params: unknown[], userContext: UserContext) {
     return this.findMany<T>(baseQuery, params, {
       userContext,
       tenantIsolation: { tableName: 'test_table', tenantColumn: 'customer_id' },
     });
   }
 
-  async testInsert<T>(data: Record<string, unknown>, userContext: UserContext) {
+  async testInsert<T extends QueryResultRow>(data: Record<string, unknown>, userContext: UserContext) {
     return this.insert<T>('test_table', data, {
       userContext,
       tenantIsolation: { tableName: 'test_table', tenantColumn: 'customer_id' },
     });
   }
 
-  async testUpdate<T>(id: string, data: Record<string, unknown>, userContext: UserContext) {
+  async testUpdate<T extends QueryResultRow>(id: string, data: Record<string, unknown>, userContext: UserContext) {
     return this.update<T>('test_table', id, data, {
       userContext,
       tenantIsolation: { tableName: 'test_table', tenantColumn: 'customer_id' },
@@ -68,7 +69,7 @@ describe('BaseRepository', () => {
   describe('Tenant Isolation', () => {
     it('should allow admin users to query all data without tenant filter', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0 });
+      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       await repository.testFindMany('SELECT * FROM test_table', [], adminUser);
 
@@ -80,7 +81,7 @@ describe('BaseRepository', () => {
 
     it('should apply tenant filter for customer users', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0 });
+      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       await repository.testFindMany('SELECT * FROM test_table', [], customerUser);
 
@@ -103,7 +104,7 @@ describe('BaseRepository', () => {
 
     it('should inject tenant ID when customer user inserts data', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1 });
+      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1, command: 'INSERT', oid: 0, fields: [] });
 
       const data = { name: 'Test' };
       await repository.testInsert(data, customerUser);
@@ -116,7 +117,7 @@ describe('BaseRepository', () => {
 
     it('should not inject tenant ID for admin user inserts', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1 });
+      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1, command: 'INSERT', oid: 0, fields: [] });
 
       const data = { name: 'Test', customer_id: 'custom-tenant' };
       await repository.testInsert(data, adminUser);
@@ -129,7 +130,7 @@ describe('BaseRepository', () => {
 
     it('should verify tenant access for customer users on update', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1 });
+      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] });
 
       await repository.testUpdate('1', { name: 'Updated' }, customerUser);
 
@@ -141,7 +142,7 @@ describe('BaseRepository', () => {
 
     it('should allow admin users to update any record', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1 });
+      vi.mocked(query).mockResolvedValue({ rows: [{ id: '1' }], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] });
 
       await repository.testUpdate('1', { name: 'Updated' }, adminUser);
 
@@ -165,7 +166,7 @@ describe('BaseRepository', () => {
 
     it('should verify customer user has access to resource', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [{ exists: 1 }], rowCount: 1 });
+      vi.mocked(query).mockResolvedValue({ rows: [{ exists: 1 }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
 
       await expect(
         repository.testVerifyAccess('resource-123', customerUser)
@@ -179,7 +180,7 @@ describe('BaseRepository', () => {
 
     it('should throw error if customer user does not have access', async () => {
       const { query } = await import('../lib/database');
-      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0 });
+      vi.mocked(query).mockResolvedValue({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       await expect(
         repository.testVerifyAccess('resource-123', customerUser)
