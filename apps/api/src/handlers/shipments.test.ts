@@ -24,7 +24,7 @@ vi.mock('../services/shipment-service.js', () => ({
 
 // Mock auth
 vi.mock('../lib/auth.js', () => ({
-  extractUserContext: vi.fn(() => ({
+  getUserContext: vi.fn(() => ({
     sub: 'user-123',
     email: 'admin@ctcm.com',
     role: 'admin',

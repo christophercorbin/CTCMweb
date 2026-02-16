@@ -124,7 +124,7 @@ describe('ShipmentService', () => {
       const result = await service.getShipmentById('ship-123', adminContext);
 
       expect(result).toEqual(mockShipment);
-      expect(mockRepository.findById).toHaveBeenCalledWith('ship-123', adminContext);
+      expect(mockRepository.findById).toHaveBeenCalledWith('ship-123');
     });
 
     it('should return null if not found', async () => {
