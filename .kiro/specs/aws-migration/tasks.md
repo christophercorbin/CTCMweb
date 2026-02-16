@@ -197,7 +197,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - **Property 20: Email uniqueness enforcement**
     - **Validates: Requirements 5.7**
 
-  - [ ] 4.12 Implement shipment repository and service
+  - [x] 4.12 Implement shipment repository and service
     - Create shipment-repository.ts with database operations
     - Create shipment-service.ts with business logic
     - Implement tracking number generation
@@ -205,7 +205,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - Implement volumetric weight calculation
     - _Requirements: 6.3, 6.6, 6.10_
 
-  - [ ] 4.13 Implement shipments Lambda handler
+  - [x] 4.13 Implement shipments Lambda handler
     - Create handlers/shipments.ts with GET, POST, PUT endpoints
     - Implement filtering by status, date range, customer
     - Implement search by tracking number and receipt number
