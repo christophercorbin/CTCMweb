@@ -3,23 +3,25 @@ import { ShipmentRepository } from './shipment-repository.js';
 import type { UserContext, CreateShipmentInput } from '@ctcm/types';
 import type { QueryResult, QueryResultRow } from 'pg';
 
+// Create mock query function using vi.hoisted to avoid hoisting issues
+const mockQuery = vi.hoisted(() => vi.fn());
+
 // Mock the database module
 vi.mock('../lib/database.js', () => ({
-  getDatabase: vi.fn(() => ({
+  query: mockQuery,
+  getPool: vi.fn(() => ({
     query: vi.fn(),
   })),
 }));
 
 describe('ShipmentRepository', () => {
   let repository: ShipmentRepository;
-  let mockDb: { query: ReturnType<typeof vi.fn> };
   let adminContext: UserContext;
   let customerContext: UserContext;
 
   beforeEach(() => {
     repository = new ShipmentRepository();
-    mockDb = { query: vi.fn() };
-    (repository as unknown as { db: typeof mockDb }).db = mockDb;
+    vi.clearAllMocks();
 
     adminContext = {
       sub: 'admin-123',
@@ -39,7 +41,7 @@ describe('ShipmentRepository', () => {
 
   describe('generateTrackingNumber', () => {
     it('should generate tracking number with correct format', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const trackingNumber = await repository.generateTrackingNumber();
 
@@ -53,7 +55,7 @@ describe('ShipmentRepository', () => {
       const day = String(date.getDate()).padStart(2, '0');
       const datePrefix = `${year}${month}${day}`;
 
-      mockDb.query.mockResolvedValue({
+      mockQuery.mockResolvedValue({
         rows: [{ tracking_number: `CTCM-${datePrefix}-0005` }],
       } as unknown as QueryResult<QueryResultRow>);
 
@@ -63,7 +65,7 @@ describe('ShipmentRepository', () => {
     });
 
     it('should start at 0001 for new day', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const trackingNumber = await repository.generateTrackingNumber();
 
@@ -122,7 +124,7 @@ describe('ShipmentRepository', () => {
         consigneeName: 'Test Consignee',
       };
 
-      mockDb.query
+      mockQuery
         .mockResolvedValueOnce({ rows: [] } as unknown as QueryResult<QueryResultRow>) // generateTrackingNumber
         .mockResolvedValueOnce({
           rows: [
@@ -160,7 +162,7 @@ describe('ShipmentRepository', () => {
   describe('updateShipment', () => {
     it('should update shipment with valid status transition', async () => {
       // Mock query for getting current shipment
-      mockDb.query.mockResolvedValueOnce({
+      mockQuery.mockResolvedValueOnce({
         rows: [
           {
             id: 'ship-123',
@@ -185,7 +187,7 @@ describe('ShipmentRepository', () => {
       } as unknown as QueryResult<QueryResultRow>);
 
       // Mock query for update
-      mockDb.query.mockResolvedValueOnce({
+      mockQuery.mockResolvedValueOnce({
         rows: [
           {
             id: 'ship-123',
@@ -220,7 +222,7 @@ describe('ShipmentRepository', () => {
 
     it('should throw error for invalid status transition', async () => {
       // Mock query for getting current shipment
-      mockDb.query.mockResolvedValueOnce({
+      mockQuery.mockResolvedValueOnce({
         rows: [
           {
             id: 'ship-123',
@@ -251,7 +253,7 @@ describe('ShipmentRepository', () => {
 
     it('should return null if shipment not found', async () => {
       // Mock query for getting current shipment (not found)
-      mockDb.query.mockResolvedValueOnce({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValueOnce({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const updated = await repository.updateShipment(
         'nonexistent',
@@ -265,7 +267,7 @@ describe('ShipmentRepository', () => {
 
   describe('findWithFilters', () => {
     it('should filter by status', async () => {
-      mockDb.query.mockResolvedValue({
+      mockQuery.mockResolvedValue({
         rows: [
           {
             id: 'ship-123',
@@ -299,36 +301,36 @@ describe('ShipmentRepository', () => {
     });
 
     it('should apply tenant isolation for customer users', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findWithFilters({}, customerContext);
 
-      expect(mockDb.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('customer_id = $1'),
         expect.arrayContaining(['cust-456'])
       );
     });
 
     it('should filter by date range', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-12-31');
 
       await repository.findWithFilters({ startDate, endDate }, adminContext);
 
-      expect(mockDb.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('received_date >= $1'),
         expect.arrayContaining([startDate])
       );
     });
 
     it('should search by tracking number or receipt number', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findWithFilters({ search: 'CTCM-2026' }, adminContext);
 
-      expect(mockDb.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('tracking_number ILIKE'),
         expect.arrayContaining(['%CTCM-2026%'])
       );
@@ -337,7 +339,7 @@ describe('ShipmentRepository', () => {
 
   describe('findByTrackingNumber', () => {
     it('should find shipment by tracking number', async () => {
-      mockDb.query.mockResolvedValue({
+      mockQuery.mockResolvedValue({
         rows: [
           {
             id: 'ship-123',
@@ -371,18 +373,18 @@ describe('ShipmentRepository', () => {
     });
 
     it('should apply tenant isolation for customer users', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       await repository.findByTrackingNumber('CTCM-20260215-0001', customerContext);
 
-      expect(mockDb.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('AND customer_id = $2'),
         expect.arrayContaining(['CTCM-20260215-0001', 'cust-456'])
       );
     });
 
     it('should return null if not found', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
+      mockQuery.mockResolvedValue({ rows: [] } as unknown as QueryResult<QueryResultRow>);
 
       const shipment = await repository.findByTrackingNumber('nonexistent', adminContext);
 
