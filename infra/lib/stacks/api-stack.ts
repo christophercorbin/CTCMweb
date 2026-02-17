@@ -80,6 +80,21 @@ export class ApiStack extends cdk.Stack {
         nodeModules: ['pg', '@aws-sdk/client-secrets-manager'],
         minify: true,
         sourceMap: true,
+        // Ensure monorepo packages are bundled correctly
+        commandHooks: {
+          beforeBundling(inputDir: string, outputDir: string): string[] {
+            return [
+              // Build types package before bundling
+              `cd ${inputDir} && npm run build --workspace=@ctcm/types --if-present`,
+            ]
+          },
+          afterBundling(_inputDir: string, _outputDir: string): string[] {
+            return []
+          },
+          beforeInstall(_inputDir: string, _outputDir: string): string[] {
+            return []
+          },
+        },
       },
     }
 
