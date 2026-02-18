@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "clean": "rm -rf dist cdk.out",
     "cdk": "cdk",
     "synth": "cdk synth",
     "deploy": "cdk deploy --all --require-approval never",
