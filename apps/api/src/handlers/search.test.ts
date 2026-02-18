@@ -18,7 +18,7 @@ describe('Search Handler', () => {
     process.env.DB_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:test';
 
     // Mock database initialization
-    vi.mocked(database.initializePool).mockResolvedValue(null as any);
+    vi.mocked(database.initializePool).mockResolvedValue(undefined);
 
     // Mock user context
     vi.mocked(auth.getUserContext).mockReturnValue({
@@ -39,7 +39,7 @@ describe('Search Handler', () => {
     headers: {},
     body: null,
     isBase64Encoded: false,
-    requestContext: {} as any,
+    requestContext: {} as APIGatewayProxyEvent['requestContext'],
     resource: '',
     stageVariables: null,
     multiValueHeaders: {},

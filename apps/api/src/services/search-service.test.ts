@@ -28,7 +28,7 @@ describe('SearchService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new SearchService();
-    mockRepository = (service as any).repository;
+    mockRepository = (service as { repository: typeof mockRepository }).repository;
   });
 
   describe('searchShipments', () => {

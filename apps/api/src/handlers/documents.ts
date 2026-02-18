@@ -209,12 +209,12 @@ async function handleDownloadRequest(
     WHERE d.id = $1
   `;
 
-  const queryParams: any[] = [id];
+  const queryParams: string[] = [id];
 
   // Enforce tenant isolation for customer users
   if (userContext.role === 'customer') {
     queryText += ' AND d.customer_id = $2';
-    queryParams.push(userContext.tenantId);
+    queryParams.push(userContext.tenantId!);
   }
 
   const result = await query(queryText, queryParams);
@@ -262,13 +262,13 @@ async function handleListDocuments(
     WHERE 1=1
   `;
 
-  const params: any[] = [];
+  const params: string[] = [];
   let paramIndex = 1;
 
   // Enforce tenant isolation for customer users
   if (userContext.role === 'customer') {
     queryText += ` AND d.customer_id = $${paramIndex}`;
-    params.push(userContext.tenantId);
+    params.push(userContext.tenantId!);
     paramIndex++;
   } else if (customerId) {
     // Admin can filter by customer
