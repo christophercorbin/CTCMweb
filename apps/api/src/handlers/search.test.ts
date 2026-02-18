@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
+import type { Pool } from 'pg';
 import { handler } from './search';
 import * as database from '../lib/database';
 import * as auth from '../lib/auth';
@@ -18,7 +19,7 @@ describe('Search Handler', () => {
     process.env.DB_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:test';
 
     // Mock database initialization
-    vi.mocked(database.initializePool).mockResolvedValue(undefined);
+    vi.mocked(database.initializePool).mockResolvedValue(null as unknown as Pool);
 
     // Mock user context
     vi.mocked(auth.getUserContext).mockReturnValue({
