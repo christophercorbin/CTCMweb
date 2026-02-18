@@ -18,7 +18,7 @@ describe('Search Handler', () => {
     process.env.DB_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:test';
 
     // Mock database initialization
-    vi.mocked(database.initializePool).mockResolvedValue(undefined);
+    vi.mocked(database.initializePool).mockResolvedValue(null as any);
 
     // Mock user context
     vi.mocked(auth.getUserContext).mockReturnValue({
@@ -59,6 +59,7 @@ describe('Search Handler', () => {
             updatedAt: new Date(),
           },
         ],
+        total: 1,
         pagination: {
           page: 1,
           limit: 20,
@@ -104,6 +105,7 @@ describe('Search Handler', () => {
     it('should use default pagination values', async () => {
       const mockSearchResult = {
         shipments: [],
+        total: 1,
         pagination: {
           page: 1,
           limit: 20,
@@ -130,6 +132,7 @@ describe('Search Handler', () => {
     it('should use custom pagination values', async () => {
       const mockSearchResult = {
         shipments: [],
+        total: 1,
         pagination: {
           page: 2,
           limit: 50,
@@ -196,6 +199,7 @@ describe('Search Handler', () => {
 
       const mockSearchResult = {
         shipments: [],
+        total: 1,
         pagination: {
           page: 1,
           limit: 20,

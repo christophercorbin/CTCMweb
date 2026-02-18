@@ -375,6 +375,7 @@ export interface SearchParams {
 
 export interface SearchResult {
   shipments: Shipment[]
+  total: number
   pagination: {
     page: number
     limit: number

@@ -1,5 +1,5 @@
 import { SearchRepository } from '../repositories/search-repository';
-import type { UserContext, Shipment, SearchResult } from '@ctcm/types';
+import type { UserContext, SearchResult } from '@ctcm/types';
 
 /**
  * Service layer for search operations
@@ -40,6 +40,7 @@ export class SearchService {
 
     return {
       shipments,
+      total,
       pagination: {
         page,
         limit,
