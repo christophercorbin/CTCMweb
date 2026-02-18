@@ -17,7 +17,8 @@ export function getUserContext(event: APIGatewayProxyEvent): UserContext {
   // Extract user information from JWT claims
   const sub = claims.sub;
   const email = claims.email;
-  const groups = claims['cognito:groups'] ? claims['cognito:groups'].split(',') : [];
+  const groupsString = claims['cognito:groups'] || '';
+  const groups = groupsString ? groupsString.split(',') : [];
 
   if (!sub || !email) {
     throw new Error('Unauthorized: Invalid token claims');

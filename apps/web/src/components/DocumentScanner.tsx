@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload, FileText, X, Loader2, Sparkles } from 'lucide-react';
 import { Button } from './Button';
 import toast from 'react-hot-toast';
+import { uploadDocument } from '../lib/storage';
 
 interface ExtractedData {
   trackingNumber?: string;
@@ -20,12 +21,15 @@ interface ExtractedData {
 
 interface DocumentScannerProps {
   onExtract: (data: ExtractedData) => void;
+  entityId?: string; // Entity ID for document storage (shipment ID, customer ID, etc.)
+  documentType?: 'invoices' | 'receipts' | 'documents' | 'shipments';
 }
 
-export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
+export const DocumentScanner = ({ onExtract, entityId, documentType = 'receipts' }: DocumentScannerProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,18 +61,6 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
     setPreviews(newPreviews);
   };
 
-  const convertToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64String = (reader.result as string).split(',')[1];
-        resolve({ base64: base64String, mimeType: file.type });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleExtract = async () => {
     if (files.length === 0) {
       toast.error('Please select at least one document image');
@@ -76,32 +68,51 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
     }
 
     setLoading(true);
-    const loadingToast = toast.loading('Analyzing documents with AI...');
+    const loadingToast = toast.loading('Uploading documents...');
 
     try {
-      // Convert files to base64 for future OCR processing
-      await Promise.all(files.map(convertToBase64));
-
-      // TODO: Phase 4 - Connect to AWS Textract via API Gateway
-      toast.dismiss(loadingToast);
-      toast('OCR features coming in Phase 4', { icon: 'ℹ️' });
+      // Upload files to Amplify Storage
+      const uploadedDocuments = [];
       
-      // Return empty data for now
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const tempEntityId = entityId || `temp-${Date.now()}`;
+        
+        const result = await uploadDocument({
+          documentType,
+          entityId: tempEntityId,
+          file,
+          onProgress: (progress) => {
+            const overallProgress = ((i / files.length) * 100) + (progress / files.length);
+            setUploadProgress(Math.round(overallProgress));
+          },
+        });
+        
+        uploadedDocuments.push(result);
+      }
+
+      toast.dismiss(loadingToast);
+      toast.success(`${files.length} document(s) uploaded successfully`);
+      
+      // TODO: Phase 6 - Trigger OCR processing via API
+      // For now, just return empty data
       onExtract({
         trackingNumber: '',
         shipperName: '',
         shipperAddress: '',
       });
 
+      // Clean up
       setFiles([]);
       previews.forEach(url => URL.revokeObjectURL(url));
       setPreviews([]);
+      setUploadProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Extraction error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to extract data from document';
+      console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload documents';
       toast.error(errorMessage, { id: loadingToast });
     } finally {
       setLoading(false);
@@ -189,12 +200,12 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Uploading... {uploadProgress}%
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Extract Data with AI
+                      Upload & Extract Data
                     </>
                   )}
                 </Button>
@@ -207,6 +218,17 @@ export const DocumentScanner = ({ onExtract }: DocumentScannerProps) => {
                   <FileText className="w-4 h-4" />
                 </Button>
               </div>
+              
+              {loading && uploadProgress > 0 && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

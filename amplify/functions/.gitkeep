@@ -1,0 +1,9 @@
+# Function resources will be added in Phase 4
+# This directory will contain subdirectories for each function:
+# - shipments/: Shipment CRUD operations
+# - customers/: Customer CRUD operations
+# - invoices/: Invoice CRUD operations
+# - documents/: Document upload/retrieval
+# - search/: Search across entities
+# - ocr/: OCR processing (Phase 6)
+# - shared/: Shared utilities (database connection, etc.)
