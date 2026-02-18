@@ -74,7 +74,7 @@ const amplifyFrontendStack = new AmplifyFrontendStack(app, `${stackPrefix}Amplif
   cognitoUserPoolId: authStack.userPool.userPoolId,
   cognitoClientId: authStack.userPoolClient.userPoolClientId,
   githubRepo: 'christophercorbin/CTCMweb',
-  githubBranch: 'main',
+  githubBranch: 'develop', // Deploy from develop branch for dev environment
 })
 
 // OCR Stack - Textract, Step Functions
