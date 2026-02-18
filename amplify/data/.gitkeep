@@ -1,0 +1,4 @@
+# Data resources (optional)
+# This directory may contain:
+# - resource.ts: Database connection configuration or AppSync schema
+# Note: Currently using RDS PostgreSQL directly from functions

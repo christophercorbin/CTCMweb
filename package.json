@@ -21,8 +21,11 @@
     "preview": "npm run preview --workspace=apps/web"
   },
   "dependencies": {
+    "@aws-amplify/backend": "^1.21.0",
+    "@aws-amplify/backend-cli": "^1.8.2",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.57.4",
+    "aws-amplify": "^6.16.2",
     "axios": "^1.13.4",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.344.0",

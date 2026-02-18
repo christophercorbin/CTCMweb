@@ -1,0 +1,3 @@
+# Storage resources will be added in Phase 3
+# This directory will contain:
+# - resource.ts: S3 bucket configuration with access controls

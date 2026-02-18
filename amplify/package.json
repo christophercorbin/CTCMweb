@@ -1,0 +1,20 @@
+{
+  "name": "ctcm-amplify-backend",
+  "version": "1.0.0",
+  "description": "AWS Amplify Gen 2 backend for CTCM freight forwarding application",
+  "type": "module",
+  "scripts": {
+    "sandbox": "ampx sandbox",
+    "deploy": "ampx deploy",
+    "delete-sandbox": "ampx sandbox delete"
+  },
+  "dependencies": {
+    "@aws-amplify/backend": "^1.0.0",
+    "@aws-amplify/backend-cli": "^1.0.0",
+    "aws-amplify": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

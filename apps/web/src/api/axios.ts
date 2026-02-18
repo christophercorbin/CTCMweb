@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import { toast } from 'react-hot-toast'
-import { cognitoGetAccessToken } from '../lib/cognito'
+import { getAccessToken } from '../lib/auth'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -11,10 +11,10 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor to add Cognito access token
+// Request interceptor to add Amplify Auth access token
 apiClient.interceptors.request.use(async (config) => {
   try {
-    const token = await cognitoGetAccessToken()
+    const token = await getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
