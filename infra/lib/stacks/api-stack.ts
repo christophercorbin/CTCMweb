@@ -124,6 +124,46 @@ export class ApiStack extends cdk.Stack {
     props.databaseSecret.grantRead(shipmentsFunction)
     this.lambdaFunctions.push(shipmentsFunction)
 
+    // Search Lambda Function
+    const searchFunction = new nodejs.NodejsFunction(this, 'SearchFunction', {
+      ...commonLambdaProps,
+      functionName: 'ctcm-dev-search',
+      entry: join(__dirname, '../../../apps/api/src/handlers/search.ts'),
+      handler: 'handler',
+      description: 'CTCM Search API handler',
+    })
+
+    // Grant permissions
+    props.databaseSecret.grantRead(searchFunction)
+    this.lambdaFunctions.push(searchFunction)
+
+    // Documents Lambda Function
+    const documentsFunction = new nodejs.NodejsFunction(this, 'DocumentsFunction', {
+      ...commonLambdaProps,
+      functionName: 'ctcm-dev-documents',
+      entry: join(__dirname, '../../../apps/api/src/handlers/documents.ts'),
+      handler: 'handler',
+      description: 'CTCM Documents API handler',
+    })
+
+    // Grant permissions
+    props.databaseSecret.grantRead(documentsFunction)
+    props.documentBucket.grantReadWrite(documentsFunction)
+    this.lambdaFunctions.push(documentsFunction)
+
+    // Invoices Lambda Function
+    const invoicesFunction = new nodejs.NodejsFunction(this, 'InvoicesFunction', {
+      ...commonLambdaProps,
+      functionName: 'ctcm-dev-invoices',
+      entry: join(__dirname, '../../../apps/api/src/handlers/invoices.ts'),
+      handler: 'handler',
+      description: 'CTCM Invoices API handler',
+    })
+
+    // Grant permissions
+    props.databaseSecret.grantRead(invoicesFunction)
+    this.lambdaFunctions.push(invoicesFunction)
+
     // API Resources and Methods
 
     // /customers resource
@@ -170,6 +210,64 @@ export class ApiStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.COGNITO,
     })
 
+    // /search resource
+    const searchResource = this.api.root.addResource('search')
+    searchResource.addMethod('GET', new apigateway.LambdaIntegration(searchFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // /documents resource
+    const documentsResource = this.api.root.addResource('documents')
+    documentsResource.addMethod('GET', new apigateway.LambdaIntegration(documentsFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+    documentsResource.addMethod('POST', new apigateway.LambdaIntegration(documentsFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // /documents/upload resource
+    const documentsUploadResource = documentsResource.addResource('upload')
+    documentsUploadResource.addMethod('POST', new apigateway.LambdaIntegration(documentsFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // /documents/{id} resource
+    const documentIdResource = documentsResource.addResource('{id}')
+    documentIdResource.addMethod('GET', new apigateway.LambdaIntegration(documentsFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+    documentIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(documentsFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // /invoices resource
+    const invoicesResource = this.api.root.addResource('invoices')
+    invoicesResource.addMethod('GET', new apigateway.LambdaIntegration(invoicesFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+    invoicesResource.addMethod('POST', new apigateway.LambdaIntegration(invoicesFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // /invoices/{id} resource
+    const invoiceIdResource = invoicesResource.addResource('{id}')
+    invoiceIdResource.addMethod('GET', new apigateway.LambdaIntegration(invoicesFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+    invoiceIdResource.addMethod('PUT', new apigateway.LambdaIntegration(invoicesFunction), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: this.apiUrl,
@@ -193,6 +291,24 @@ export class ApiStack extends cdk.Stack {
       value: shipmentsFunction.functionName,
       description: 'Shipments Lambda Function Name',
       exportName: 'CtcmDevShipmentsFunctionName',
+    })
+
+    new cdk.CfnOutput(this, 'SearchFunctionName', {
+      value: searchFunction.functionName,
+      description: 'Search Lambda Function Name',
+      exportName: 'CtcmDevSearchFunctionName',
+    })
+
+    new cdk.CfnOutput(this, 'DocumentsFunctionName', {
+      value: documentsFunction.functionName,
+      description: 'Documents Lambda Function Name',
+      exportName: 'CtcmDevDocumentsFunctionName',
+    })
+
+    new cdk.CfnOutput(this, 'InvoicesFunctionName', {
+      value: invoicesFunction.functionName,
+      description: 'Invoices Lambda Function Name',
+      exportName: 'CtcmDevInvoicesFunctionName',
     })
   }
 }
