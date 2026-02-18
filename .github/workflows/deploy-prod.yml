@@ -1,8 +1,9 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [main]
+  # Disabled until production AWS account is created
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 permissions:
