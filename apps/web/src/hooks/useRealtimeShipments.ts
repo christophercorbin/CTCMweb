@@ -1,27 +1,43 @@
 import { useEffect, useState } from 'react';
 import { Shipment } from '../types';
-import { mockShipments } from '../utils/mockData';
+import { shipmentApi } from '../api/services';
 
-// Temporary hook that returns mock data until Phase 3 (database migration)
-export function useRealtimeShipments(customerId?: string) {
+/**
+ * Hook to fetch and manage shipments with real-time updates
+ * Connects to AWS API Gateway + Lambda + RDS
+ */
+export function useRealtimeShipments(customerId?: string | null) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-    console.log('useRealtimeShipments: Using mock data (Phase 2 - database not yet connected)');
-    
-    // Simulate API delay
-    setTimeout(() => {
-      // Filter shipments by customer ID if provided
-      const filteredShipments = customerId 
-        ? mockShipments.filter(s => s.customer_id === parseInt(customerId.replace('demo-customer-', '')))
-        : mockShipments;
-      
-      setShipments(filteredShipments);
-      setLoading(false);
-    }, 500);
+    const fetchShipments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch shipments from API Gateway
+        // If customerId is provided, filter by it; otherwise get all (admin view)
+        const filters = customerId ? { customerId } : undefined;
+        const data = await shipmentApi.getAll(filters);
+        
+        setShipments(data);
+      } catch (err) {
+        console.error('Error fetching shipments:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load shipments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShipments();
+
+    // TODO: Phase 4 - Add real-time updates via EventBridge + polling
+    // For now, poll every 30 seconds for updates
+    const interval = setInterval(fetchShipments, 30000);
+
+    return () => clearInterval(interval);
   }, [customerId]);
 
   return { shipments, loading, error };

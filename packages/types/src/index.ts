@@ -207,29 +207,46 @@ export interface CreateEventInput {
 export interface Invoice {
   id: string
   customerId: string
+  shipmentId?: string
   invoiceNumber: string
-  amount: number
-  currency: string
-  dueDate: Date
   status: InvoiceStatus
+  subtotal: number
+  tax: number
+  total: number
+  currency: string
+  issueDate: Date
+  dueDate: Date
+  paidDate?: Date
+  notes?: string
   createdAt: Date
   updatedAt: Date
 }
 
 export interface CreateInvoiceInput {
   customerId: string
+  shipmentId?: string
   invoiceNumber: string
-  amount: number
+  subtotal: number
+  tax?: number
+  total: number
   currency?: string
+  issueDate: Date
   dueDate: Date
   status?: InvoiceStatus
+  notes?: string
 }
 
 export interface UpdateInvoiceInput {
-  amount?: number
+  shipmentId?: string
+  subtotal?: number
+  tax?: number
+  total?: number
   currency?: string
+  issueDate?: Date
   dueDate?: Date
+  paidDate?: Date
   status?: InvoiceStatus
+  notes?: string
 }
 
 // Document Types
@@ -358,5 +375,12 @@ export interface SearchParams {
 
 export interface SearchResult {
   shipments: Shipment[]
-  total: number
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
 }

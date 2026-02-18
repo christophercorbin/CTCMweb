@@ -96,6 +96,13 @@ export interface Shipment {
   events?: ShipmentEvent[];
 }
 
+export interface ShipmentDetails extends Shipment {
+  customer?: Customer;
+  packages: Package[];
+  charges: ShipmentCharge[];
+  events: ShipmentEvent[];
+}
+
 export interface Package {
   id: string;
   shipment_id: string;
@@ -199,6 +206,34 @@ export interface Customer {
   email: string;
   air_skybox_address: string;
   sea_skybox_address: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DocumentType = 'invoice' | 'receipt' | 'customs_document' | 'packing_list';
+
+export interface Document {
+  id: string;
+  customer_id: string;
+  shipment_id?: string;
+  document_type: DocumentType;
+  s3_key: string;
+  s3_bucket: string;
+  filename: string;
+  file_size_bytes?: number;
+  mime_type?: string;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  customer_id: string;
+  invoice_number: string;
+  amount: number;
+  currency: string;
+  due_date: string;
+  status: InvoiceStatus;
   created_at: string;
   updated_at: string;
 }

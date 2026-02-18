@@ -13,13 +13,11 @@ export const CustomerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const fetchCustomerId = async () => {
-      // TODO: Phase 3 - Fetch customer ID from AWS Cognito + RDS
-      console.log('CustomerDashboard: Auth not yet migrated. Using demo mode.');
-      // For now, use a mock customer ID
-      setCustomerId('demo-customer-1');
-    };
-    fetchCustomerId();
+    // Customer ID is automatically filtered by the API based on JWT token
+    // For customer users, the API will only return their shipments
+    // For admin users, all shipments are returned
+    // We don't need to pass customerId explicitly - just set to null
+    setCustomerId(null);
   }, []);
 
   const filteredShipments = useMemo(() => {

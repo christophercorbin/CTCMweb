@@ -3,14 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Upload } from 'lucide-react';
 import { Button, Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components';
-import { apiClient } from '../api/axios';
-import { Shipment, TrackingItem, ShipmentStatus } from '../types';
-import { isDemoMode, getMockShipment, getMockTracking } from '../utils/useMockData';
+import { shipmentApi, documentApi } from '../api/services';
+import { ShipmentDetails as ShipmentDetailsType, TrackingItem, ShipmentStatus } from '../types';
 
 export const ShipmentDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [shipment, setShipment] = useState<Shipment | null>(null);
+  const [shipment, setShipment] = useState<ShipmentDetailsType | null>(null);
   const [tracking, setTracking] = useState<TrackingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -19,22 +18,20 @@ export const ShipmentDetails = () => {
     if (!id) return;
     try {
       setLoading(true);
-      if (isDemoMode()) {
-        const [shipmentData, trackingData] = await Promise.all([
-          getMockShipment(Number(id)),
-          getMockTracking(Number(id)),
-        ]);
-        setShipment(shipmentData as Shipment);
-        setTracking(trackingData as TrackingItem[]);
-      } else {
-        const [shipmentRes, trackingRes] = await Promise.all([
-          apiClient.get<Shipment>(`/shipments/${id}`),
-          apiClient.get<TrackingItem[]>(`/shipments/${id}/tracking`),
-        ]);
-        setShipment(shipmentRes.data);
-        setTracking(trackingRes.data);
-      }
-    } catch {
+      // Fetch shipment details from API Gateway
+      const shipmentData = await shipmentApi.getById(id);
+      setShipment(shipmentData);
+      
+      // Convert shipment events to tracking items
+      const trackingItems: TrackingItem[] = (shipmentData.events || []).map(event => ({
+        status: shipmentData.status as ShipmentStatus,
+        location: event.location || '',
+        timestamp: event.created_at,
+        notes: event.event_description || '',
+      }));
+      setTracking(trackingItems);
+    } catch (error) {
+      console.error('Error fetching shipment:', error);
       toast.error('Failed to load shipment details');
     } finally {
       setLoading(false);
@@ -54,23 +51,20 @@ export const ShipmentDetails = () => {
       return;
     }
 
-    if (!id) return;
+    if (!id || !shipment) return;
 
     setUploading(true);
     try {
-      if (isDemoMode()) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success('Invoice uploaded successfully (Demo Mode)');
-      } else {
-        const formData = new FormData();
-        formData.append('file', file);
-        await apiClient.post(`/shipments/${id}/invoices`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        toast.success('Invoice uploaded successfully');
-        fetchData();
-      }
-    } catch {
+      // Upload document to S3 via API Gateway
+      await documentApi.upload(file, {
+        customerId: shipment.customer_id,
+        shipmentId: id,
+        documentType: 'invoice',
+      });
+      toast.success('Invoice uploaded successfully');
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading invoice:', error);
       toast.error('Failed to upload invoice');
     } finally {
       setUploading(false);
@@ -116,33 +110,37 @@ export const ShipmentDetails = () => {
 
             <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
               <div>
-                <p className="text-sm text-gray-600">Origin</p>
-                <p className="text-lg font-semibold text-gray-900">{shipment.origin}</p>
+                <p className="text-sm text-gray-600">Shipper</p>
+                <p className="text-lg font-semibold text-gray-900">{shipment.shipper_name || 'N/A'}</p>
+                {shipment.shipper_address && (
+                  <p className="text-sm text-gray-600 mt-1">{shipment.shipper_address}</p>
+                )}
               </div>
               <div>
-                <p className="text-sm text-gray-600">Destination</p>
-                <p className="text-lg font-semibold text-gray-900">{shipment.destination}</p>
+                <p className="text-sm text-gray-600">Consignee</p>
+                <p className="text-lg font-semibold text-gray-900">{shipment.consignee_name || 'N/A'}</p>
+                {shipment.consignee_address && (
+                  <p className="text-sm text-gray-600 mt-1">{shipment.consignee_address}</p>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Shipping Method</p>
-                <p className="text-lg font-semibold text-gray-900 capitalize">{shipment.shipping_method} Freight</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Weight</p>
-                <p className="text-lg font-semibold text-gray-900">{shipment.weight} kg</p>
-              </div>
-              {shipment.delivery_method && (
+              {shipment.carrier_name && (
                 <div>
-                  <p className="text-sm text-gray-600">Delivery Method</p>
-                  <p className="text-lg font-semibold text-gray-900 capitalize">
-                    {shipment.delivery_method === 'home_delivery' ? 'Home Delivery' : 'Pickup'}
+                  <p className="text-sm text-gray-600">Carrier</p>
+                  <p className="text-lg font-semibold text-gray-900">{shipment.carrier_name}</p>
+                </div>
+              )}
+              {shipment.packages && shipment.packages.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600">Total Weight</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {shipment.packages.reduce((sum, pkg) => sum + (pkg.weight_kg || 0), 0).toFixed(2)} kg
                   </p>
                 </div>
               )}
-              {shipment.delivery_address && (
+              {shipment.warehouse_location && (
                 <div className="col-span-2">
-                  <p className="text-sm text-gray-600">Delivery Address</p>
-                  <p className="text-base font-medium text-gray-900">{shipment.delivery_address}</p>
+                  <p className="text-sm text-gray-600">Warehouse Location</p>
+                  <p className="text-base font-medium text-gray-900">{shipment.warehouse_location}</p>
                 </div>
               )}
             </div>
@@ -155,7 +153,7 @@ export const ShipmentDetails = () => {
 
           <Card>
             <h2 className="text-xl font-bold text-gray-900 mb-6">Shipment Progress</h2>
-            <ShipmentProgress status={shipment.status as ShipmentStatus} shippingMethod={shipment.shipping_method} />
+            <ShipmentProgress status={shipment.status as ShipmentStatus} shippingMethod="air" />
           </Card>
 
           <Card>

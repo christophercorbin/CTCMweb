@@ -233,7 +233,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - **Property 25: Volumetric weight calculation**
     - **Validates: Requirements 6.10**
 
-  - [ ] 4.19 Implement search Lambda handler
+  - [x] 4.19 Implement search Lambda handler
     - Create handlers/search.ts with full-text search
     - Implement search by tracking number, receipt number, customer name, description
     - Implement pagination
@@ -248,7 +248,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - **Property 40: Search pagination**
     - **Validates: Requirements 10.8**
 
-  - [ ] 4.22 Implement documents Lambda handler
+  - [x] 4.22 Implement documents Lambda handler
     - Create handlers/documents.ts with upload and download endpoints
     - Generate presigned URLs for S3 upload and download
     - Store document metadata in database
@@ -263,7 +263,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - **Property 50: Presigned URL expiry**
     - **Validates: Requirements 9.4**
 
-  - [ ] 4.25 Implement invoices Lambda handler
+  - [x] 4.25 Implement invoices Lambda handler
     - Create handlers/invoices.ts with GET, POST, PUT endpoints
     - Implement tenant isolation for customer users
     - _Requirements: Requirement 15 (implied from schema)_
@@ -294,7 +294,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - **Property 28: Request payload validation**
     - **Validates: Requirements 4.12**
 
-  - [ ] 4.31 Update frontend API client to use API Gateway
+  - [x] 4.31 Update frontend API client to use API Gateway
     - Update API client base URL to API Gateway endpoint
     - Update all API calls to use new endpoints
     - Test all frontend features with new API

@@ -5,7 +5,7 @@ import { Eye, Package, AlertCircle, Clock, CheckCircle2, FileText, Users } from 
 import { Button, Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components';
 import { CustomerManagement } from '../components/CustomerManagement';
 import { Shipment, ShipmentStatus } from '../types';
-import { isDemoMode, getMockShipments } from '../utils/useMockData';
+import { shipmentApi } from '../api/services';
 
 const statusOptions: { value: string; label: string }[] = [
   { value: '', label: 'All Statuses' },
@@ -30,12 +30,6 @@ const statusOptions: { value: string; label: string }[] = [
   { value: 'delayed', label: 'Delayed' },
 ];
 
-const shippingMethodOptions: { value: string; label: string }[] = [
-  { value: '', label: 'All Methods' },
-  { value: 'air', label: 'Air Freight' },
-  { value: 'sea', label: 'Sea Freight' },
-];
-
 type AdminTab = 'shipments' | 'customers';
 
 export const AdminDashboard = () => {
@@ -45,21 +39,14 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [shippingMethodFilter, setShippingMethodFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
 
   const fetchShipments = async () => {
     try {
       setLoading(true);
-      if (isDemoMode()) {
-        const data = await getMockShipments() as Shipment[];
-        setShipments(data);
-      } else {
-        // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-        console.log('AdminDashboard: Database not yet migrated. Using demo mode.');
-        const data = await getMockShipments() as Shipment[];
-        setShipments(data);
-      }
+      // Fetch all shipments from API Gateway
+      const data = await shipmentApi.getAll();
+      setShipments(data);
     } catch (error) {
       console.error('Error fetching shipments:', error);
       toast.error('Failed to load shipments');
@@ -89,7 +76,6 @@ export const AdminDashboard = () => {
 
   const filteredShipments = shipments
     .filter((s) => statusFilter === '' || s.status === statusFilter)
-    .filter((s) => shippingMethodFilter === '' || s.shipping_method === shippingMethodFilter)
     .filter((s) => customerFilter === '' || s.customer_name === customerFilter)
     .filter((s) => s.tracking_number.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
@@ -228,7 +214,7 @@ export const AdminDashboard = () => {
       <Card>
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">All Shipments</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Input
               placeholder="Search by tracking number..."
               value={search}
@@ -238,11 +224,6 @@ export const AdminDashboard = () => {
               options={customerOptions}
               value={customerFilter}
               onChange={(e) => setCustomerFilter(e.target.value)}
-            />
-            <Select
-              options={shippingMethodOptions}
-              value={shippingMethodFilter}
-              onChange={(e) => setShippingMethodFilter(e.target.value)}
             />
             <Select
               options={statusOptions}
@@ -257,7 +238,7 @@ export const AdminDashboard = () => {
         ) : filteredShipments.length === 0 ? (
           <EmptyState
             title="No shipments found"
-            message={search || statusFilter || shippingMethodFilter || customerFilter ? 'Try adjusting your filters' : 'No shipments in the system yet'}
+            message={search || statusFilter || customerFilter ? 'Try adjusting your filters' : 'No shipments in the system yet'}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -265,8 +246,8 @@ export const AdminDashboard = () => {
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Origin</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Destination</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Shipper</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Consignee</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">Weight (kg)</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">Updated</th>
@@ -283,14 +264,29 @@ export const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      <span className="text-xs bg-gray-100 px-2 py-1 rounded capitalize">{shipment.shipping_method}</span>
-                      <p className="mt-1">{shipment.origin}</p>
+                      {shipment.shipper_name && (
+                        <p className="text-sm">{shipment.shipper_name}</p>
+                      )}
+                      {shipment.shipper_city && shipment.shipper_country && (
+                        <p className="text-xs text-gray-500">{shipment.shipper_city}, {shipment.shipper_country}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{shipment.destination}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {shipment.consignee_name && (
+                        <p className="text-sm">{shipment.consignee_name}</p>
+                      )}
+                      {shipment.consignee_city && shipment.consignee_country && (
+                        <p className="text-xs text-gray-500">{shipment.consignee_city}, {shipment.consignee_country}</p>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge status={shipment.status as ShipmentStatus} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{shipment.weight}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {shipment.packages && shipment.packages.length > 0
+                        ? shipment.packages.reduce((sum, pkg) => sum + (pkg.weight_kg || 0), 0).toFixed(2)
+                        : '-'}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 text-xs">{new Date(shipment.updated_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <button
