@@ -268,7 +268,7 @@ The implementation uses TypeScript throughout: React 18 + Vite for frontend, Nod
     - Implement tenant isolation for customer users
     - _Requirements: Requirement 15 (implied from schema)_
 
-  - [ ] 4.26 Create API Stack with API Gateway and Lambda
+  - [x] 4.26 Create API Stack with API Gateway and Lambda
     - Implement ApiStack in infra/lib/stacks/api-stack.ts
     - Create API Gateway REST API with CORS configuration
     - Create JWT authorizer using Cognito User Pool
