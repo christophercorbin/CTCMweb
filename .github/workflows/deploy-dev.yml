@@ -7,7 +7,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   deploy:
@@ -38,7 +38,13 @@ jobs:
       - name: Deploy Amplify backend
         run: npx ampx pipeline-deploy --branch develop --app-id ${{ secrets.AMPLIFY_APP_ID }}
 
-      # Frontend is auto-deployed by Amplify Hosting via Git-connected branch trigger.
-      # Build here as an artifact check only.
-      - name: Build frontend
-        run: npm run build --workspace=apps/web
+      # Regenerate amplify_outputs.json and commit so Amplify Hosting always
+      # bundles the correct backend config into the frontend build.
+      - name: Update amplify_outputs.json
+        run: |
+          npx ampx generate outputs --branch develop --app-id ${{ secrets.AMPLIFY_APP_ID }} --format json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add amplify_outputs.json
+          git diff --staged --quiet || git commit -m "chore: update amplify_outputs.json [skip ci]"
+          git push
