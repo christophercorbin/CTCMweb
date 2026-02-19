@@ -1,7 +1,7 @@
-name: Deploy to Production
+name: Deploy Production
 
 on:
-  # Disabled until production AWS account is created
+  # Trigger manually or on push to main
   # push:
   #   branches: [main]
   workflow_dispatch:
@@ -11,42 +11,24 @@ permissions:
   contents: read
   issues: write
 
-env:
-  AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: '404875533723' # Will be updated to prod account when created
-
 jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Build shared packages
-        run: npm run build --workspace=@ctcm/types --workspace=@ctcm/utils
-
-      - name: Run linting
-        run: npm run lint
-
-      - name: Run type checking
-        run: npm run typecheck
-
-      - name: Run tests
-        run: npm run test
-
-      - name: Build all workspaces
-        run: npm run build
+      - name: Lint + Typecheck + Test
+        run: |
+          npm run lint --workspaces --if-present
+          npm run typecheck --workspaces --if-present
+          npm run test --workspaces --if-present
 
       - name: Manual approval required
         uses: trstringer/manual-approval@v1
@@ -57,32 +39,14 @@ jobs:
           issue-title: "Deploy to Production"
           issue-body: "Please approve or deny the production deployment"
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActionsDeployRole
-          role-session-name: GitHubActions-Deploy-Prod
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::404875533723:role/GitHubActionsDeployRole
+          aws-region: us-east-1
 
-      - name: Clean infra build artifacts
-        run: rm -rf infra/dist infra/cdk.out
+      - name: Deploy Amplify backend
+        run: npx ampx pipeline-deploy --branch main --app-id ${{ secrets.AMPLIFY_APP_ID }}
 
-      - name: Deploy infrastructure with CDK
-        run: |
-          cd infra
-          npm run deploy
-        env:
-          CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
-          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
-
-      - name: Deployment summary
-        run: |
-          echo "✅ Infrastructure deployment completed successfully!"
-          echo "Note: Frontend is automatically deployed by AWS Amplify from GitHub"
-          echo "View Amplify deployments: https://console.aws.amazon.com/amplify/home?region=us-east-1"
-
-      - name: Notify deployment
-        if: always()
-        run: |
-          echo "Production deployment ${{ job.status }}"
-          # Add SNS notification or Slack webhook here
+      - name: Build frontend
+        run: npm run build:web

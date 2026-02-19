@@ -1,55 +1,57 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import toast from 'react-hot-toast';
-import { Button, Input } from '../components';
-import { cognitoSignUp } from '../lib/cognito';
-import { Package } from 'lucide-react';
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import toast from 'react-hot-toast'
+import { Button, Input } from '../components'
+import { useAuth } from '../contexts/AuthContext'
+import { Package } from 'lucide-react'
 
-const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>
 
 export const Register = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+  const navigate = useNavigate()
+  const { signUp } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-  });
+  })
 
   const onSubmit = async (data: RegisterFormData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const result = await cognitoSignUp(data.email, data.password, {
-        'custom:role': 'customer',
-      });
-
-      if (!result.success) {
-        toast.error(result.error || 'Registration failed');
-        return;
+      await signUp(data.email, data.password, data.name)
+      toast.success('Account created! Please check your email to verify your account.')
+      setTimeout(() => navigate('/login'), 2000)
+    } catch (err: unknown) {
+      console.error('Registration error:', err)
+      const error = err as { name?: string; message?: string }
+      if (error.name === 'UsernameExistsException') {
+        toast.error('An account with this email already exists')
+      } else {
+        toast.error(error.message ?? 'Registration failed. Please try again.')
       }
-
-      toast.success('Account created successfully! Please check your email to verify your account.');
-
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Registration failed. Please try again.');
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
@@ -59,9 +61,18 @@ export const Register = () => {
           <h1 className="text-2xl font-bold text-gray-900">CTCM</h1>
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Create Account</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+          Create Account
+        </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mb-6">
+          <Input
+            label="Full Name"
+            type="text"
+            placeholder="Your full name"
+            error={errors.name?.message}
+            {...register('name')}
+          />
           <Input
             label="Email"
             type="email"
@@ -72,7 +83,7 @@ export const Register = () => {
           <Input
             label="Password"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
             error={errors.password?.message}
             {...register('password')}
           />
@@ -98,5 +109,5 @@ export const Register = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
