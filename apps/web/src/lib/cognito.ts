@@ -32,7 +32,7 @@ export async function cognitoSignIn(
   email: string,
   password: string
 ): Promise<SignInOutput> {
-  return signIn({ username: email, password })
+  return signIn({ username: email, password, options: { authFlowType: 'USER_PASSWORD_AUTH' } })
 }
 
 export async function cognitoSignUp(
