@@ -22,33 +22,10 @@ const backend = defineBackend({
   postConfirmation,
 });
 
-// ─── Inject AppSync endpoint into postConfirmation and ocrProcessor ──────────
-backend.postConfirmation.resources.lambda.addEnvironment(
-  "GRAPHQL_API_ENDPOINT",
-  backend.data.resources.graphqlApi.graphqlUrl
-);
-backend.ocrProcessor.resources.lambda.addEnvironment(
-  "GRAPHQL_API_ENDPOINT",
-  backend.data.resources.graphqlApi.graphqlUrl
-);
-
-// ─── Grant post-confirmation Lambda Cognito + AppSync permissions ─────────────
-backend.postConfirmation.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: [
-      "cognito-idp:AdminAddUserToGroup",
-      "cognito-idp:AdminUpdateUserAttributes",
-    ],
-    resources: [backend.auth.resources.userPool.userPoolArn],
-  })
-);
-backend.data.resources.graphqlApi.grantMutation(
-  backend.postConfirmation.resources.lambda
-);
-
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
 const ocrProcessorFn = backend.ocrProcessor.resources.lambda as lambda.Function;
-const stack = backend.ocrTrigger.resources.lambda.stack;
+// Use the data stack to avoid circular dependencies (ocrProcessor is in data stack)
+const stack = (backend.ocrProcessor.resources.lambda as lambda.Function).stack;
 
 const startTextract = new tasks.LambdaInvoke(stack, "StartTextractJob", {
   lambdaFunction: ocrProcessorFn,
@@ -120,13 +97,14 @@ const ocrStateMachine = new sfn.StateMachine(stack, "OCRStateMachine", {
 });
 
 // Give ocr-trigger Lambda permission to start state machine
-ocrStateMachine.grantStartExecution(backend.ocrTrigger.resources.lambda);
-backend.ocrTrigger.resources.lambda.addEnvironment(
+const ocrTriggerLambda = backend.ocrTrigger.resources.lambda as lambda.IFunction;
+ocrStateMachine.grantStartExecution(ocrTriggerLambda);
+(ocrTriggerLambda as lambda.Function).addEnvironment(
   "STATE_MACHINE_ARN",
   ocrStateMachine.stateMachineArn
 );
 
-// Give ocr-processor Lambda Textract + AppSync permissions
+// Give ocr-processor Lambda Textract permissions
 ocrProcessorFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: [
@@ -136,13 +114,13 @@ ocrProcessorFn.addToRolePolicy(
     resources: ["*"],
   })
 );
-backend.data.resources.graphqlApi.grantMutation(ocrProcessorFn);
 
 // ─── S3 → ocr-trigger notification ───────────────────────────────────────────
 const storageBucket = backend.storage.resources.bucket;
+const ocrTriggerLambdaForS3 = backend.ocrTrigger.resources.lambda as lambda.IFunction;
 storageBucket.addEventNotification(
   EventType.OBJECT_CREATED,
-  new s3n.LambdaDestination(backend.ocrTrigger.resources.lambda),
+  new s3n.LambdaDestination(ocrTriggerLambdaForS3),
   { prefix: "receipts/" }
 );
 

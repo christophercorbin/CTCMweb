@@ -38,11 +38,7 @@ export const auth = defineAuth({
   triggers: {
     postConfirmation,
   },
-  passwordPolicy: {
-    minLength: 8,
-    requireLowercase: true,
-    requireUppercase: true,
-    requireNumbers: true,
-    requireSymbols: false,
-  },
+  access: (allow) => [
+    allow.resource(postConfirmation).to(["addUserToGroup", "updateUserAttributes"]),
+  ],
 });

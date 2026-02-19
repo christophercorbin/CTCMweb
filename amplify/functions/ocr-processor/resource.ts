@@ -6,7 +6,5 @@ export const ocrProcessor = defineFunction({
   runtime: 20,
   timeoutSeconds: 120, // Textract can be slow
   memoryMB: 512,
-  environment: {
-    GRAPHQL_API_ENDPOINT: "", // injected by backend.ts
-  },
+  resourceGroupName: "data", // Assign to data stack (calls data API)
 });

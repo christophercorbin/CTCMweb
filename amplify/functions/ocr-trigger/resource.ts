@@ -6,7 +6,5 @@ export const ocrTrigger = defineFunction({
   runtime: 20,
   timeoutSeconds: 30,
   memoryMB: 256,
-  environment: {
-    STATE_MACHINE_ARN: "", // injected by backend.ts
-  },
+  resourceGroupName: "storage", // Assign to storage stack (S3 trigger)
 });

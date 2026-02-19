@@ -6,7 +6,5 @@ export const postConfirmation = defineFunction({
   runtime: 20, // Node.js 20
   timeoutSeconds: 30,
   memoryMB: 256,
-  environment: {
-    GRAPHQL_API_ENDPOINT: "", // injected by backend.ts after wiring
-  },
+  resourceGroupName: "auth", // Assign to auth stack (auth trigger)
 });

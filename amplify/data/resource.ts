@@ -1,4 +1,6 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { postConfirmation } from "../functions/post-confirmation/resource";
+import { ocrProcessor } from "../functions/ocr-processor/resource";
 
 const schema = a
   .schema({
@@ -140,7 +142,11 @@ const schema = a
       ])
       .authorization((allow) => [allow.owner(), allow.group("admin")]),
   })
-  .authorization((allow) => [allow.authenticated()]);
+  .authorization((allow) => [
+    allow.authenticated(),
+    allow.resource(postConfirmation),
+    allow.resource(ocrProcessor),
+  ]);
 
 export type Schema = ClientSchema<typeof schema>;
 
