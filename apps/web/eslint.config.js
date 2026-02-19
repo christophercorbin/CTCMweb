@@ -23,6 +23,16 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // Disable problematic rule due to ESLint 9.x compatibility issue
+      '@typescript-eslint/no-unused-expressions': 'off',
+      // Allow unused vars that start with underscore (intentionally unused for future implementation)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
     },
   }
 );

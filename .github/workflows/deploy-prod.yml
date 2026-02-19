@@ -49,4 +49,4 @@ jobs:
         run: npx ampx pipeline-deploy --branch main --app-id ${{ secrets.AMPLIFY_APP_ID }}
 
       - name: Build frontend
-        run: npm run build:web
+        run: npm run build --workspace=apps/web
