@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut, Home, Settings, User, FileText } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth';
+import type { CognitoUser } from '../auth';
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -9,9 +10,13 @@ interface AuthenticatedLayoutProps {
 
 export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<CognitoUser | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const user = getCurrentUser();
+
+  useEffect(() => {
+    getCurrentUser().then(setUser);
+  }, []);
 
   const isAdmin = user?.role === 'admin';
 

@@ -108,3 +108,23 @@ export async function cognitoGetAccessToken(): Promise<string | null> {
     return null
   }
 }
+
+export async function cognitoGetTokens(): Promise<AuthTokens | null> {
+  try {
+    const session = await fetchAuthSession()
+    const accessToken = session.tokens?.accessToken.toString()
+    const idToken = session.tokens?.idToken?.toString()
+    
+    if (!accessToken || !idToken) return null
+    
+    return { accessToken, idToken }
+  } catch {
+    return null
+  }
+}
+
+export type UserAttributes = {
+  email?: string
+  name?: string
+  [key: string]: string | undefined
+}

@@ -1,7 +1,11 @@
-export const LoadingSkeleton = () => {
+interface LoadingSkeletonProps {
+  count?: number;
+}
+
+export const LoadingSkeleton = ({ count = 5 }: LoadingSkeletonProps) => {
   return (
     <div className="space-y-4">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <div key={i} className="bg-gray-200 h-12 rounded animate-pulse" />
       ))}
     </div>

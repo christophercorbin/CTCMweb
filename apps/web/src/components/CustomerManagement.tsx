@@ -29,7 +29,7 @@ export const CustomerManagement = () => {
     fetchCustomers();
   }, []);
 
-  const handleDelete = async () => {
+  const handleDelete = async (_customerId?: string) => {
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {

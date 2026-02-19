@@ -6,6 +6,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactElement;
 }
 
 const variantClasses = {
@@ -25,6 +26,7 @@ export const Button = ({
   size = 'md',
   loading = false,
   disabled = false,
+  icon,
   children,
   ...props
 }: ButtonProps) => {
@@ -35,6 +37,11 @@ export const Button = ({
       {...props}
     >
       {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+      {!loading && icon && (
+        <span className="mr-2">
+          {React.isValidElement(icon) ? icon : React.createElement(icon as React.ComponentType<{ className?: string }>, { className: 'w-4 h-4' })}
+        </span>
+      )}
       {children}
     </button>
   );

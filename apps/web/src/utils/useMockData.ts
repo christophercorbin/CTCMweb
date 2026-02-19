@@ -13,7 +13,7 @@ export const getMockShipments = () => {
   });
 };
 
-export const getMockShipment = (id: number) => {
+export const getMockShipment = (id: string) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const shipment = mockShipments.find((s) => s.id === id);

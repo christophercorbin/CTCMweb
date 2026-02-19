@@ -16,7 +16,7 @@ const client = generateClient<Schema>()
 const createShipmentSchema = z
   .object({
     trackingNumber: z.string().min(3, 'Tracking number is required'),
-    type: z.enum(['AIR', 'SEA'], { required_error: 'Shipping type is required' }),
+    type: z.enum(['AIR', 'SEA'], { message: 'Shipping type is required' }),
     origin: z.string().min(2, 'Origin is required'),
     destination: z.string().min(2, 'Destination is required'),
     description: z.string().min(5, 'Description must be at least 5 characters'),

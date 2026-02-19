@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Upload } from 'lucide-react'
-import { Button, Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
+import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
+import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
 import { getCurrentUser } from 'aws-amplify/auth'
@@ -191,15 +191,15 @@ export const ShipmentDetails = () => {
                   disabled={uploading}
                   className="hidden"
                 />
-                <Button
-                  as="span"
-                  variant="secondary"
-                  loading={uploading}
-                  className="w-full cursor-pointer"
+                <span
+                  className={`inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer ${
+                    uploading ? 'opacity-50 cursor-not-allowed' : ''
+                  } bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 text-base`}
                 >
+                  {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Invoice PDF
-                </Button>
+                </span>
               </label>
             </div>
             <div className="text-sm text-gray-600">

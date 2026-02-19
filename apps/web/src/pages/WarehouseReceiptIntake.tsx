@@ -5,6 +5,21 @@ import { Card, Button, Input, Select, Textarea, DocumentScanner } from '../compo
 import toast from 'react-hot-toast';
 import { PackageType } from '../types';
 
+interface ExtractedData {
+  trackingNumber?: string;
+  warehouseReceiptNumber?: string;
+  receivedDate?: string;
+  shipperName?: string;
+  shipperAddress?: string;
+  consigneeName?: string;
+  consigneeAddress?: string;
+  packages?: Array<{
+    piecesCount?: number;
+    weightKg?: number;
+    dimensions?: string;
+  }>;
+}
+
 interface Customer {
   id: string;
   name: string;
@@ -106,39 +121,31 @@ export const WarehouseReceiptIntake = () => {
     setPackages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleExtractedData = (data: Record<string, unknown>) => {
-    const updatedFormData: Record<string, unknown> = {};
+  const handleExtractedData = (data: ExtractedData) => {
+    const updatedFormData: Partial<typeof formData> = {};
 
-    if (data.tracking_number) updatedFormData.tracking_number = data.tracking_number;
-    if (data.warehouse_receipt_number) updatedFormData.warehouse_receipt_number = data.warehouse_receipt_number;
-    if (data.shipper_name) updatedFormData.shipper_name = data.shipper_name;
-    if (data.shipper_address) updatedFormData.shipper_address = data.shipper_address;
-    if (data.shipper_city) updatedFormData.shipper_city = data.shipper_city;
-    if (data.shipper_state) updatedFormData.shipper_state = data.shipper_state;
-    if (data.shipper_country) updatedFormData.shipper_country = data.shipper_country;
-    if (data.carrier_name) updatedFormData.carrier_name = data.carrier_name;
-    if (data.pro_number) updatedFormData.pro_number = data.pro_number;
-    if (data.supplier) updatedFormData.supplier = data.supplier;
-    if (data.invoice_number) updatedFormData.invoice_number = data.invoice_number;
-    if (data.po_number) updatedFormData.po_number = data.po_number;
+    if (data.trackingNumber) updatedFormData.tracking_number = String(data.trackingNumber);
+    if (data.warehouseReceiptNumber) updatedFormData.warehouse_receipt_number = String(data.warehouseReceiptNumber);
+    if (data.shipperName) updatedFormData.shipper_name = String(data.shipperName);
+    if (data.shipperAddress) updatedFormData.shipper_address = String(data.shipperAddress);
 
     setFormData((prev) => ({ ...prev, ...updatedFormData }));
 
     if (data.packages && Array.isArray(data.packages) && data.packages.length > 0) {
-      const extractedPackages = data.packages.map((pkg: Record<string, unknown>) => ({
-        pieces_count: (pkg.pieces_count as number) || 1,
-        package_type: ((pkg.package_type as string)?.toLowerCase() || 'box') as PackageType,
-        length: pkg.length?.toString() || '',
-        width: pkg.width?.toString() || '',
-        height: pkg.height?.toString() || '',
-        weight: pkg.weight?.toString() || '',
-        description: (pkg.description as string) || '',
+      const extractedPackages = data.packages.map((pkg) => ({
+        pieces_count: pkg.piecesCount || 1,
+        package_type: 'box' as PackageType,
+        length: '',
+        width: '',
+        height: '',
+        weight: pkg.weightKg?.toString() || '',
+        description: pkg.dimensions || '',
         storage_location: 'SP',
       }));
       setPackages(extractedPackages);
     }
 
-    const fieldsExtracted = Object.keys(updatedFormData).length + (data.packages?.length || 0);
+    const fieldsExtracted = Object.keys(updatedFormData).length + ((data.packages as unknown[])?.length || 0);
     toast.success(`Extracted ${fieldsExtracted} field(s) from documents`);
   };
 
@@ -159,10 +166,23 @@ export const WarehouseReceiptIntake = () => {
       
       // Reset form
       setFormData({
-        customer_id: '',
+        tracking_number: '',
         warehouse_receipt_number: '',
-        warehouse_location: '',
+        customer_id: '',
+        received_by: '',
+        shipper_name: '',
+        shipper_address: '',
+        shipper_city: '',
+        shipper_state: '',
+        shipper_country: '',
+        carrier_name: '',
+        pro_number: '',
+        supplier: '',
+        invoice_number: '',
+        po_number: '',
+        warehouse_location: 'SP',
         description: '',
+        notes: '',
       });
       setPackages([{
         pieces_count: 1,

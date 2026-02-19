@@ -43,7 +43,7 @@ export const PendingPackages = () => {
     );
   };
 
-  const handleShipNow = async () => {
+  const handleShipNow = async (_shipmentId: string) => {
     try {
       // TODO: Phase 3 - Update shipment status via API Gateway
       console.log('PendingPackages: API not yet implemented. Using demo mode.');
@@ -113,9 +113,9 @@ export const PendingPackages = () => {
         <LoadingSkeleton />
       ) : packages.length === 0 ? (
         <EmptyState
-          icon={Package}
+          icon={<Package className="w-12 h-12" />}
           title="No pending packages"
-          description="All your packages have been processed. New arrivals will appear here."
+          message="All your packages have been processed. New arrivals will appear here."
         />
       ) : (
         <div className="space-y-4">

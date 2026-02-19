@@ -26,13 +26,16 @@ export const Invoices = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      setError('User not authenticated');
-      setLoading(false);
-      return;
-    }
-    fetchInvoices();
+    const checkAuth = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+      fetchInvoices();
+    };
+    checkAuth();
   }, []);
 
   const fetchInvoices = async () => {
@@ -96,7 +99,7 @@ export const Invoices = () => {
     }).format(amount);
   };
 
-  const handleDownload = (invoiceId: string, invoiceNumber: string) => {
+  const handleDownload = (_invoiceId: string, invoiceNumber: string) => {
     toast.success(`Downloading invoice ${invoiceNumber}...`);
   };
 
@@ -139,9 +142,9 @@ export const Invoices = () => {
           <p className="text-gray-600 mt-1">View and manage your shipping invoices</p>
         </div>
         <EmptyState
-          icon={FileText}
+          icon={<FileText className="w-12 h-12" />}
           title="No invoices yet"
-          description="Your invoices will appear here once shipments are created"
+          message="Your invoices will appear here once shipments are created"
         />
       </div>
     );

@@ -1,7 +1,9 @@
 import { ShipmentStatus } from '../types';
 
 interface BadgeProps {
-  status: ShipmentStatus;
+  status?: ShipmentStatus;
+  variant?: string;
+  children?: React.ReactNode;
 }
 
 const statusColors: Record<ShipmentStatus, string> = {
@@ -48,7 +50,19 @@ const statusLabels: Record<ShipmentStatus, string> = {
   delayed: 'Delayed',
 };
 
-export const Badge = ({ status }: BadgeProps) => {
+export const Badge = ({ status, variant, children }: BadgeProps) => {
+  if (children) {
+    // Custom badge with children
+    const variantClass = variant || 'bg-gray-100 text-gray-800';
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variantClass}`}>
+        {children}
+      </span>
+    );
+  }
+  
+  if (!status) return null;
+  
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status]}`}>
       {statusLabels[status]}

@@ -40,7 +40,7 @@ export const CustomerInfo = () => {
   const fetchCustomerInfo = async () => {
     try {
       setLoading(true);
-      const user = getCurrentUser();
+      const user = await getCurrentUser();
 
       if (!user) {
         toast.error('Not authenticated');
@@ -65,7 +65,7 @@ export const CustomerInfo = () => {
     try {
       setSaving(true);
 
-      const user = getCurrentUser();
+      const user = await getCurrentUser();
 
       if (!user) {
         toast.error('Not authenticated');
