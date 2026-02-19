@@ -46,14 +46,13 @@ export const Login = () => {
       await signIn(data.email, data.password)
       toast.success('Logged in successfully')
 
-      // Redirect based on user role
+      // Redirect based on Cognito group membership (set after loadUser in AuthContext)
       setTimeout(() => {
-        navigate(user?.role === 'admin' ? '/admin/dashboard' : '/dashboard')
+        const isAdmin = user?.groups?.includes('admin') ?? user?.role === 'admin'
+        navigate(isAdmin ? '/admin/dashboard' : '/dashboard')
       }, 500)
-    } catch (error) {
-      console.error('Login error:', error)
-      
-      // Handle specific Cognito errors
+    } catch (err: unknown) {
+      const error = err as { name?: string }
       if (error.name === 'UserNotConfirmedException') {
         toast.error('Please verify your email before logging in')
       } else if (error.name === 'NotAuthorizedException') {
@@ -126,13 +125,6 @@ export const Login = () => {
           </p>
         </div>
 
-        <div className="bg-blue-50 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Getting Started</h3>
-          <p className="text-sm text-gray-600">
-            Create a new account to access your shipment tracking dashboard, or use the preview buttons above to explore the UI.
-          </p>
-        </div>
-
         <div className="text-center">
           <p className="text-gray-600 text-sm">
             Don't have an account?{' '}
@@ -143,5 +135,5 @@ export const Login = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

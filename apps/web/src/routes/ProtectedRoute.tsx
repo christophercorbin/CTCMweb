@@ -24,7 +24,9 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />
   }
 
-  if (requireAdmin && user.role !== 'admin') {
+  // Admin check uses Cognito groups from JWT (set by Amplify auth rules)
+  const isAdmin = user.groups?.includes('admin') ?? user.role === 'admin'
+  if (requireAdmin && !isAdmin) {
     return <Navigate to="/dashboard" replace />
   }
 

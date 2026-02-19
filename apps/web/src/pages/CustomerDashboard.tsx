@@ -1,82 +1,75 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, Gift, Heart, Snowflake, Sparkles, Package as PackageIcon } from 'lucide-react';
-import { Button, LoadingSkeleton, EmptyState, Badge, Card } from '../components';
-import { ShipmentStatus } from '../types';
-import { useRealtimeShipments } from '../hooks/useRealtimeShipments';
-import { SearchBar } from '../components/SearchBar';
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Eye, Gift, Heart, Snowflake, Sparkles, Package as PackageIcon } from 'lucide-react'
+import { Button, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
+import { ShipmentStatus } from '../types'
+import { useShipments } from '../hooks/useShipments'
+import { SearchBar } from '../components/SearchBar'
 
 export const CustomerDashboard = () => {
-  const navigate = useNavigate();
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const { shipments, loading, error } = useRealtimeShipments(customerId || undefined);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    // Customer ID is automatically filtered by the API based on JWT token
-    // For customer users, the API will only return their shipments
-    // For admin users, all shipments are returned
-    // We don't need to pass customerId explicitly - just set to null
-    setCustomerId(null);
-  }, []);
+  const navigate = useNavigate()
+  const { shipments, loading, error } = useShipments()
+  const [searchQuery, setSearchQuery] = useState('')
 
   const filteredShipments = useMemo(() => {
     return shipments
       .filter((s) => {
         if (searchQuery) {
-          const query = searchQuery.toLowerCase();
+          const q = searchQuery.toLowerCase()
           return (
-            s.tracking_number.toLowerCase().includes(query) ||
-            s.warehouse_receipt_number?.toLowerCase().includes(query) ||
-            s.description?.toLowerCase().includes(query)
-          );
+            s.trackingNumber.toLowerCase().includes(q) ||
+            s.description?.toLowerCase().includes(q)
+          )
         }
-        return true;
+        return true
       })
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [shipments, searchQuery]);
+      .sort((a, b) => {
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+        return bTime - aTime
+      })
+  }, [shipments, searchQuery])
 
   const getPromotion = () => {
-    const now = new Date();
-    const month = now.getMonth();
-
+    const month = new Date().getMonth()
     if (month === 1) {
       return {
         title: "Valentine's Day Special",
         description: "Send love across the miles! Enjoy 15% off all air freight shipments this February.",
-        discount: "15% OFF",
+        discount: '15% OFF',
         icon: Heart,
-        gradient: "from-pink-50 to-red-50",
-        iconBg: "bg-pink-100",
-        iconColor: "text-pink-600",
-        code: "LOVE2024"
-      };
+        gradient: 'from-pink-50 to-red-50',
+        iconBg: 'bg-pink-100',
+        iconColor: 'text-pink-600',
+        code: 'LOVE2024',
+      }
     } else if (month === 11) {
       return {
-        title: "Christmas Holiday Special",
-        description: "Ship your gifts home for the holidays! Get 20% off all shipments in December.",
-        discount: "20% OFF",
+        title: 'Christmas Holiday Special',
+        description: 'Ship your gifts home for the holidays! Get 20% off all shipments in December.',
+        discount: '20% OFF',
         icon: Snowflake,
-        gradient: "from-blue-50 to-cyan-50",
-        iconBg: "bg-blue-100",
-        iconColor: "text-blue-600",
-        code: "XMAS2024"
-      };
+        gradient: 'from-blue-50 to-cyan-50',
+        iconBg: 'bg-blue-100',
+        iconColor: 'text-blue-600',
+        code: 'XMAS2024',
+      }
     } else {
       return {
-        title: "Special Offer",
-        description: "Great shipping rates all year round! Contact us for bulk shipping discounts.",
-        discount: "SAVE NOW",
+        title: 'Special Offer',
+        description: 'Great shipping rates all year round! Contact us for bulk shipping discounts.',
+        discount: 'SAVE NOW',
         icon: Gift,
-        gradient: "from-emerald-50 to-teal-50",
-        iconBg: "bg-emerald-100",
-        iconColor: "text-emerald-600",
-        code: "CONTACT"
-      };
+        gradient: 'from-emerald-50 to-teal-50',
+        iconBg: 'bg-emerald-100',
+        iconColor: 'text-emerald-600',
+        code: 'CONTACT',
+      }
     }
-  };
+  }
 
-  const promotion = getPromotion();
+  const promotion = getPromotion()
+  const pendingShipments = shipments.filter((s) => s.status === 'PENDING')
 
   return (
     <div className="space-y-6">
@@ -113,7 +106,7 @@ export const CustomerDashboard = () => {
         </div>
       </Card>
 
-      {shipments.filter(s => s.status === 'received').length > 0 && (
+      {pendingShipments.length > 0 && (
         <Card className="bg-orange-50 border-orange-200">
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-3">
@@ -122,10 +115,10 @@ export const CustomerDashboard = () => {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900 text-lg">
-                  {shipments.filter(s => s.status === 'received').length} Package{shipments.filter(s => s.status === 'received').length > 1 ? 's' : ''} Awaiting Your Decision
+                  {pendingShipments.length} Shipment{pendingShipments.length > 1 ? 's' : ''} Pending
                 </h3>
                 <p className="text-gray-700 mt-1">
-                  Your packages have arrived at our warehouse. Ship them now or consolidate for bulk savings.
+                  Your shipments are awaiting processing.
                 </p>
               </div>
             </div>
@@ -141,77 +134,71 @@ export const CustomerDashboard = () => {
       )}
 
       <Card>
-          <div className="mb-6">
-            <SearchBar
-              placeholder="Search by tracking #, warehouse receipt, or description..."
-              onSearch={setSearchQuery}
-            />
-          </div>
+        <div className="mb-6">
+          <SearchBar
+            placeholder="Search by tracking # or description..."
+            onSearch={setSearchQuery}
+          />
+        </div>
 
-          {loading ? (
-            <LoadingSkeleton />
-          ) : error ? (
-            <EmptyState
-              title="Error loading shipments"
-              message={error}
-            />
-          ) : filteredShipments.length === 0 ? (
-            <EmptyState
-              title="No shipments found"
-              message={searchQuery ? 'Try adjusting your search' : 'No shipments yet'}
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-gray-200 bg-gray-50">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Warehouse Location</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Updated</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>
+        {loading ? (
+          <LoadingSkeleton />
+        ) : error ? (
+          <EmptyState title="Error loading shipments" message={error} />
+        ) : filteredShipments.length === 0 ? (
+          <EmptyState
+            title="No shipments found"
+            message={searchQuery ? 'Try adjusting your search' : 'No shipments yet'}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Type</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Updated</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredShipments.map((shipment) => (
+                  <tr key={shipment.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="text-gray-900 font-medium">{shipment.trackingNumber}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-gray-600 truncate max-w-xs">
+                        {shipment.description ?? '-'}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge status={shipment.status as ShipmentStatus} />
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{shipment.type}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs">
+                      {shipment.updatedAt
+                        ? new Date(shipment.updatedAt).toLocaleDateString()
+                        : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => navigate(`/dashboard/shipments/${shipment.id}`)}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredShipments.map((shipment) => (
-                    <tr key={shipment.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="text-gray-900 font-medium">{shipment.tracking_number}</p>
-                        {shipment.warehouse_receipt_number && (
-                          <p className="text-xs text-gray-500">WR: {shipment.warehouse_receipt_number}</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-gray-600 truncate max-w-xs">
-                          {shipment.description || '-'}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge status={shipment.status as ShipmentStatus} />
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {shipment.warehouse_location || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">
-                        {new Date(shipment.updated_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => navigate(`/dashboard/shipments/${shipment.id}`)}
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
-  );
-};
+  )
+}

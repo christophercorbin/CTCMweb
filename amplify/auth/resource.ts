@@ -1,25 +1,17 @@
-import { defineAuth } from '@aws-amplify/backend';
+import { defineAuth } from "@aws-amplify/backend";
+import { postConfirmation } from "../functions/post-confirmation/resource";
 
 /**
  * Amplify Auth Configuration for CTCM
- * 
- * This configuration references the existing Cognito User Pool
- * to maintain compatibility with existing users and avoid migration.
- * 
- * Existing Resources:
- * - User Pool ID: us-east-1_n8pWlYcSS
- * - Client ID: 7fotk98fhtt003lf9d1728d49g
- * - Region: us-east-1
- * 
+ *
  * User Groups:
- * - admin: Full access to all resources
- * - customer: Limited access to tenant-specific resources
- * 
+ * - admin: Full access to all resources (provisioned manually via Cognito console)
+ * - customer: Self-registered, limited to tenant-specific resources
+ *
  * Custom Attributes:
  * - custom:role: User role (admin | customer)
- * - custom:tenant_id: Tenant identifier for data isolation
+ * - custom:customerId: DynamoDB Customer record ID (set by post-confirmation trigger)
  */
-
 export const auth = defineAuth({
   loginWith: {
     email: true,
@@ -29,24 +21,28 @@ export const auth = defineAuth({
       required: true,
       mutable: true,
     },
-    name: {
-      required: false,
+    "custom:customerId": {
+      dataType: "String",
       mutable: true,
     },
-    // Custom attributes for role-based access control
-    'custom:role': {
-      dataType: 'String',
-      mutable: true,
-    },
-    'custom:tenant_id': {
-      dataType: 'String',
+    "custom:role": {
+      dataType: "String",
       mutable: true,
     },
   },
-  groups: ['admin', 'customer'],
+  groups: ["admin", "customer"],
   multifactor: {
-    mode: 'OPTIONAL',
+    mode: "OPTIONAL", // REQUIRED for admin in prod — enforce via Cognito console
     totp: true,
-    sms: false,
+  },
+  triggers: {
+    postConfirmation,
+  },
+  passwordPolicy: {
+    minLength: 8,
+    requireLowercase: true,
+    requireUppercase: true,
+    requireNumbers: true,
+    requireSymbols: false,
   },
 });

@@ -4,43 +4,27 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*",
-    "infra"
+    "amplify"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
-    "build": "npm run build --workspace=@ctcm/types && npm run build --workspace=@ctcm/utils && npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web",
-    "build:api": "npm run build --workspace=apps/api",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspace=@ctcm/types && npm run typecheck --workspace=@ctcm/utils && npm run typecheck --workspace=@ctcm/api",
+    "typecheck": "npm run typecheck --workspace=apps/web",
     "test": "npm run test --workspaces --if-present",
-    "test:unit": "npm run test:unit --workspaces --if-present",
-    "test:integration": "npm run test:integration --workspaces --if-present",
-    "preview": "npm run preview --workspace=apps/web"
+    "preview": "npm run preview --workspace=apps/web",
+    "sandbox": "npm run sandbox --workspace=amplify"
   },
   "dependencies": {
     "@aws-amplify/backend": "^1.21.0",
     "@aws-amplify/backend-cli": "^1.8.2",
-    "@hookform/resolvers": "^5.2.2",
-    "@supabase/supabase-js": "^2.57.4",
-    "aws-amplify": "^6.16.2",
-    "axios": "^1.13.4",
-    "jwt-decode": "^4.0.0",
-    "lucide-react": "^0.344.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hook-form": "^7.71.1",
-    "react-hot-toast": "^2.6.0",
-    "react-router-dom": "^7.13.0",
-    "zod": "^4.3.6"
+    "aws-amplify": "^6.16.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "^3.990.0",
-    "@aws-sdk/client-secrets-manager": "^3.990.0",
     "@eslint/js": "^9.9.1",
-    "@types/pg": "^8.16.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -49,16 +33,14 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
-    "pg": "^8.18.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
-    "tsx": "^4.21.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "npm": ">=9.0.0"
   }
 }

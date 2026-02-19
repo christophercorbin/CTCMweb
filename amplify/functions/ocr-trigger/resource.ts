@@ -1,0 +1,12 @@
+import { defineFunction } from "@aws-amplify/backend";
+
+export const ocrTrigger = defineFunction({
+  name: "ctcm-ocr-trigger",
+  entry: "./handler.ts",
+  runtime: 20,
+  timeoutSeconds: 30,
+  memoryMB: 256,
+  environment: {
+    STATE_MACHINE_ARN: "", // injected by backend.ts
+  },
+});
