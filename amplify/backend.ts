@@ -91,7 +91,6 @@ const definition = startTextract
 
 const ocrStateMachine = new sfn.StateMachine(stack, "OCRStateMachine", {
   definitionBody: sfn.DefinitionBody.fromChainable(definition),
-  stateMachineName: `ctcm-ocr-${stack.stackName}`,
   tracingEnabled: true,
   timeout: Duration.minutes(10), // prevent runaway executions
 });
