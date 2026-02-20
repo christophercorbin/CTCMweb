@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { generateClient } from 'aws-amplify/data';
+import type { Schema } from '../../../../amplify/data/resource';
 import { Package, Plus, Trash2, Save } from 'lucide-react';
 import { Card, Button, Input, Select, Textarea, DocumentScanner } from '../components';
 import toast from 'react-hot-toast';
 import { PackageType } from '../types';
+
+const client = generateClient<Schema>();
 
 interface ExtractedData {
   trackingNumber?: string;
@@ -20,7 +24,7 @@ interface ExtractedData {
   }>;
 }
 
-interface Customer {
+interface CustomerOption {
   id: string;
   name: string;
   email: string;
@@ -37,15 +41,36 @@ interface PackageInput {
   storage_location: string;
 }
 
+function toSchemaPackageType(pt: PackageType): 'BOX' | 'ENVELOPE' | 'PALLET' | 'CONTAINER' {
+  switch (pt) {
+    case 'envelope': return 'ENVELOPE';
+    case 'pallet': return 'PALLET';
+    case 'crate': return 'CONTAINER';
+    default: return 'BOX';
+  }
+}
+
+const emptyPackage = (): PackageInput => ({
+  pieces_count: 1,
+  package_type: 'box',
+  length: '',
+  width: '',
+  height: '',
+  weight: '',
+  description: '',
+  storage_location: 'SP',
+});
+
 export const WarehouseReceiptIntake = () => {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     tracking_number: '',
     warehouse_receipt_number: '',
     customer_id: '',
+    shipment_type: 'AIR',
     received_by: '',
     shipper_name: '',
     shipper_address: '',
@@ -62,27 +87,21 @@ export const WarehouseReceiptIntake = () => {
     notes: '',
   });
 
-  const [packages, setPackages] = useState<PackageInput[]>([
-    {
-      pieces_count: 1,
-      package_type: 'box',
-      length: '',
-      width: '',
-      height: '',
-      weight: '',
-      description: '',
-      storage_location: 'SP',
-    },
-  ]);
+  const [packages, setPackages] = useState<PackageInput[]>([emptyPackage()]);
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   const fetchCustomers = async () => {
-    // TODO: Phase 3 - Fetch customers from AWS RDS via API Gateway
-    console.log('WarehouseReceiptIntake: Database not yet migrated. Using demo mode.');
-    setCustomers([]);
+    try {
+      const { data, errors } = await client.models.Customer.list();
+      if (errors?.length) throw new Error(errors[0].message);
+      setCustomers(data.map((c) => ({ id: c.id, name: c.name, email: c.email })));
+    } catch (error) {
+      toast.error('Failed to load customers');
+      console.error(error);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -97,21 +116,7 @@ export const WarehouseReceiptIntake = () => {
     });
   };
 
-  const addPackage = () => {
-    setPackages((prev) => [
-      ...prev,
-      {
-        pieces_count: 1,
-        package_type: 'box',
-        length: '',
-        width: '',
-        height: '',
-        weight: '',
-        description: '',
-        storage_location: 'SP',
-      },
-    ]);
-  };
+  const addPackage = () => setPackages((prev) => [...prev, emptyPackage()]);
 
   const removePackage = (index: number) => {
     if (packages.length === 1) {
@@ -131,21 +136,22 @@ export const WarehouseReceiptIntake = () => {
 
     setFormData((prev) => ({ ...prev, ...updatedFormData }));
 
-    if (data.packages && Array.isArray(data.packages) && data.packages.length > 0) {
-      const extractedPackages = data.packages.map((pkg) => ({
-        pieces_count: pkg.piecesCount || 1,
-        package_type: 'box' as PackageType,
-        length: '',
-        width: '',
-        height: '',
-        weight: pkg.weightKg?.toString() || '',
-        description: pkg.dimensions || '',
-        storage_location: 'SP',
-      }));
-      setPackages(extractedPackages);
+    if (data.packages?.length) {
+      setPackages(
+        data.packages.map((pkg) => ({
+          pieces_count: pkg.piecesCount || 1,
+          package_type: 'box' as PackageType,
+          length: '',
+          width: '',
+          height: '',
+          weight: pkg.weightKg?.toString() || '',
+          description: pkg.dimensions || '',
+          storage_location: 'SP',
+        }))
+      );
     }
 
-    const fieldsExtracted = Object.keys(updatedFormData).length + ((data.packages as unknown[])?.length || 0);
+    const fieldsExtracted = Object.keys(updatedFormData).length + (data.packages?.length || 0);
     toast.success(`Extracted ${fieldsExtracted} field(s) from documents`);
   };
 
@@ -160,44 +166,71 @@ export const WarehouseReceiptIntake = () => {
     setLoading(true);
 
     try {
-      // TODO: Phase 3 - Create shipment via API Gateway
-      console.log('WarehouseReceiptIntake: API not yet implemented. Using demo mode.');
-      toast.success('Coming in Phase 3: Create warehouse receipt via AWS API');
-      
-      // Reset form
-      setFormData({
-        tracking_number: '',
-        warehouse_receipt_number: '',
-        customer_id: '',
-        received_by: '',
-        shipper_name: '',
-        shipper_address: '',
-        shipper_city: '',
-        shipper_state: '',
-        shipper_country: '',
-        carrier_name: '',
-        pro_number: '',
-        supplier: '',
-        invoice_number: '',
-        po_number: '',
-        warehouse_location: 'SP',
-        description: '',
-        notes: '',
+      // Pack extra fields into description since schema is lean
+      const extraLines = [
+        formData.warehouse_receipt_number && `WR#: ${formData.warehouse_receipt_number}`,
+        formData.received_by && `Received by: ${formData.received_by}`,
+        formData.shipper_name && `Shipper: ${formData.shipper_name}`,
+        formData.shipper_address && `${formData.shipper_address}`,
+        formData.carrier_name && `Carrier: ${formData.carrier_name}`,
+        formData.pro_number && `PRO#: ${formData.pro_number}`,
+        formData.supplier && `Supplier: ${formData.supplier}`,
+        formData.invoice_number && `Invoice#: ${formData.invoice_number}`,
+        formData.po_number && `PO#: ${formData.po_number}`,
+        formData.warehouse_location && `Warehouse: ${formData.warehouse_location}`,
+        formData.notes && `Notes: ${formData.notes}`,
+      ].filter(Boolean).join('\n');
+
+      const description = [formData.description, extraLines].filter(Boolean).join('\n\n') || undefined;
+
+      const origin = [formData.shipper_city, formData.shipper_state, formData.shipper_country]
+        .filter(Boolean).join(', ') || undefined;
+
+      // 1. Create the shipment
+      const { data: shipment, errors: shipmentErrors } = await client.models.Shipment.create({
+        trackingNumber: formData.tracking_number,
+        customerId: formData.customer_id,
+        status: 'PENDING',
+        type: formData.shipment_type as 'AIR' | 'SEA',
+        origin,
+        description,
       });
-      setPackages([{
-        pieces_count: 1,
-        package_type: 'box',
-        length: '',
-        width: '',
-        height: '',
-        weight: '',
-        description: '',
-        storage_location: '',
-      }]);
+
+      if (shipmentErrors?.length) throw new Error(shipmentErrors[0].message);
+      if (!shipment) throw new Error('Failed to create shipment');
+
+      // 2. Create package records
+      await Promise.all(
+        packages.map((pkg) =>
+          client.models.Package.create({
+            shipmentId: shipment.id,
+            packageType: toSchemaPackageType(pkg.package_type),
+            weight: pkg.weight ? parseFloat(pkg.weight) : undefined,
+            weightUnit: 'lb',
+            length: pkg.length ? parseFloat(pkg.length) : undefined,
+            width: pkg.width ? parseFloat(pkg.width) : undefined,
+            height: pkg.height ? parseFloat(pkg.height) : undefined,
+            dimensionUnit: 'in',
+            description: pkg.description || undefined,
+            quantity: pkg.pieces_count,
+          })
+        )
+      );
+
+      // 3. Create initial timeline event
+      await client.models.ShipmentEvent.create({
+        shipmentId: shipment.id,
+        status: 'PENDING',
+        location: formData.warehouse_location || 'Miami, FL',
+        description: `Warehouse receipt processed${formData.received_by ? ` by ${formData.received_by}` : ''}`,
+        eventTimestamp: new Date().toISOString(),
+      });
+
+      toast.success('Warehouse receipt processed successfully');
+      navigate('/admin/dashboard');
     } catch (error) {
       console.error('Error creating shipment:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process warehouse receipt';
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to process warehouse receipt');
     } finally {
       setLoading(false);
     }
@@ -261,10 +294,23 @@ export const WarehouseReceiptIntake = () => {
                 value={formData.customer_id}
                 onChange={(e) => handleInputChange('customer_id', e.target.value)}
                 options={[
-                  { value: '', label: 'Select customer...' },
+                  { value: '', label: customers.length ? 'Select customer...' : 'No customers yet — add one first' },
                   ...customers.map((c) => ({ value: c.id, label: `${c.name} (${c.email})` })),
                 ]}
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Shipping Type *
+              </label>
+              <Select
+                value={formData.shipment_type}
+                onChange={(e) => handleInputChange('shipment_type', e.target.value)}
+                options={[
+                  { value: 'AIR', label: 'Air Freight' },
+                  { value: 'SEA', label: 'Sea Freight' },
+                ]}
               />
             </div>
             <div>
@@ -416,12 +462,7 @@ export const WarehouseReceiptIntake = () => {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-900">Package {index + 1}</h3>
                 {packages.length > 1 && (
-                  <Button
-                    type="button"
-                    onClick={() => removePackage(index)}
-                    variant="secondary"
-                    size="sm"
-                  >
+                  <Button type="button" onClick={() => removePackage(index)} variant="secondary" size="sm">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
@@ -429,9 +470,7 @@ export const WarehouseReceiptIntake = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pieces
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pieces</label>
                   <Input
                     type="number"
                     min="1"
@@ -440,9 +479,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <Select
                     value={pkg.package_type}
                     onChange={(e) => handlePackageChange(index, 'package_type', e.target.value)}
@@ -450,9 +487,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Length (in)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Length (in)</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -462,9 +497,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Width (in)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Width (in)</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -474,9 +507,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Height (in)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (in)</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -486,9 +517,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Weight (lb)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weight (lb)</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -498,9 +527,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Storage Location
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
                   <Input
                     value={pkg.storage_location}
                     onChange={(e) => handlePackageChange(index, 'storage_location', e.target.value)}
@@ -508,9 +535,7 @@ export const WarehouseReceiptIntake = () => {
                   />
                 </div>
                 <div className="md:col-span-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <Input
                     value={pkg.description}
                     onChange={(e) => handlePackageChange(index, 'description', e.target.value)}
@@ -525,9 +550,7 @@ export const WarehouseReceiptIntake = () => {
         <Card>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Notes</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              General Description
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">General Description</label>
             <Textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
@@ -536,9 +559,7 @@ export const WarehouseReceiptIntake = () => {
             />
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Internal Notes
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
             <Textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
@@ -553,11 +574,7 @@ export const WarehouseReceiptIntake = () => {
             <Save className="w-5 h-5 mr-2" />
             {loading ? 'Processing...' : 'Process Receipt & Notify Customer'}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/admin/dashboard')}
-          >
+          <Button type="button" variant="secondary" onClick={() => navigate('/admin/dashboard')}>
             Cancel
           </Button>
         </div>
