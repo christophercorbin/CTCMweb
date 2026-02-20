@@ -1,8 +1,25 @@
 import { useState, useEffect } from 'react';
+import { generateClient } from 'aws-amplify/data';
+import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
 import { Plus, Search, Mail, Phone, Package, Edit2, Trash2 } from 'lucide-react';
 import { Button, Input, Card, LoadingSkeleton, EmptyState, Modal } from './index';
 import { Customer } from '../types';
+
+const client = generateClient<Schema>();
+
+function mapCustomer(c: Schema['Customer']['type']): Customer {
+  return {
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    phone: c.phone ?? '',
+    air_skybox_address: c.airSkyboxAddress ?? '',
+    sea_skybox_address: c.seaSkyboxAddress ?? '',
+    created_at: c.createdAt,
+    updated_at: c.updatedAt,
+  };
+}
 
 export const CustomerManagement = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -14,9 +31,9 @@ export const CustomerManagement = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      console.log('CustomerManagement: Database not yet migrated. Showing empty state.');
-      setCustomers([]);
+      const { data, errors } = await client.models.Customer.list();
+      if (errors?.length) throw new Error(errors[0].message);
+      setCustomers(data.map(mapCustomer));
     } catch (error) {
       toast.error('Failed to load customers');
       console.error(error);
@@ -29,12 +46,15 @@ export const CustomerManagement = () => {
     fetchCustomers();
   }, []);
 
-  const handleDelete = async (_customerId?: string) => {
+  const handleDelete = async (customerId?: string) => {
+    if (!customerId) return;
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {
-      // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
+      const { errors } = await client.models.Customer.delete({ id: customerId });
+      if (errors?.length) throw new Error(errors[0].message);
+      toast.success('Customer deleted');
+      fetchCustomers();
     } catch (error) {
       toast.error('Failed to delete customer');
       console.error(error);
@@ -195,8 +215,28 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     setLoading(true);
 
     try {
-      // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
+      if (customer) {
+        const { errors } = await client.models.Customer.update({
+          id: customer.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          airSkyboxAddress: formData.air_skybox_address,
+          seaSkyboxAddress: formData.sea_skybox_address,
+        });
+        if (errors?.length) throw new Error(errors[0].message);
+        toast.success('Customer updated');
+      } else {
+        const { errors } = await client.models.Customer.create({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          airSkyboxAddress: formData.air_skybox_address,
+          seaSkyboxAddress: formData.sea_skybox_address,
+        });
+        if (errors?.length) throw new Error(errors[0].message);
+        toast.success('Customer added');
+      }
       onSuccess();
     } catch (error) {
       toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');
