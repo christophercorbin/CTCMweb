@@ -1116,9 +1116,18 @@
           "name": "ShipmentStatus",
           "values": [
             "PENDING",
-            "IN_TRANSIT",
-            "CUSTOMS",
+            "MIAMI_WAREHOUSE",
+            "IN_THE_AIR",
+            "IN_BARBADOS",
+            "CUSTOMS_HOLD",
+            "AT_WAREHOUSE",
+            "ON_THE_WATER",
+            "IN_BARBADOS_SEA",
+            "BARBADOS_CUSTOMS",
+            "READY_FOR_PICKUP",
+            "OUT_FOR_DELIVERY",
             "DELIVERED",
+            "DELAYED",
             "CANCELLED",
             "RETURNED"
           ]
@@ -1161,7 +1170,68 @@
           ]
         }
       },
-      "nonModels": {}
+      "nonModels": {
+        "SendStatusNotificationReturnType": {
+          "name": "SendStatusNotificationReturnType",
+          "fields": {
+            "success": {
+              "name": "success",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "mutations": {
+        "sendStatusNotification": {
+          "name": "sendStatusNotification",
+          "isArray": false,
+          "type": {
+            "nonModel": "SendStatusNotificationReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "shipmentId": {
+              "name": "shipmentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "customerEmail": {
+              "name": "customerEmail",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "customerName": {
+              "name": "customerName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "trackingNumber": {
+              "name": "trackingNumber",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "customMessage": {
+              "name": "customMessage",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            }
+          }
+        }
+      }
     }
   },
   "storage": {
