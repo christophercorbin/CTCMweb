@@ -22,25 +22,21 @@ export interface AuthResponse {
 }
 
 export type ShipmentStatus =
-  | 'pending'
-  | 'received'
-  | 'miami_warehouse'
-  | 'in_the_air'
-  | 'in_transit'
-  | 'in_barbados'
-  | 'customs_hold'
-  | 'customs_clearance'
-  | 'customs_cleared'
-  | 'at_warehouse'
-  | 'on_the_water'
-  | 'in_barbados_sea'
-  | 'barbados_customs'
-  | 'ready_for_pickup'
-  | 'out_for_delivery'
-  | 'delivered'
-  | 'delayed'
-  | 'departed'
-  | 'arrived';
+  | 'PENDING'
+  | 'MIAMI_WAREHOUSE'
+  | 'IN_THE_AIR'
+  | 'IN_BARBADOS'
+  | 'CUSTOMS_HOLD'
+  | 'AT_WAREHOUSE'
+  | 'ON_THE_WATER'
+  | 'IN_BARBADOS_SEA'
+  | 'BARBADOS_CUSTOMS'
+  | 'READY_FOR_PICKUP'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'DELAYED'
+  | 'CANCELLED'
+  | 'RETURNED';
 
 export type ShippingMethod = 'air' | 'sea';
 export type DeliveryMethod = 'pickup' | 'home_delivery';

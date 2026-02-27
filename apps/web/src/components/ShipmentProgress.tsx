@@ -12,30 +12,30 @@ interface ProgressStep {
 }
 
 const airSteps: ProgressStep[] = [
-  { key: 'miami_warehouse', label: 'Miami Warehouse' },
-  { key: 'in_the_air', label: 'In the Air' },
-  { key: 'in_barbados', label: 'In Barbados' },
-  { key: 'customs_hold', label: 'Customs Hold' },
-  { key: 'ready_for_pickup', label: 'Ready for Pickup' },
-  { key: 'out_for_delivery', label: 'Out for Delivery' },
-  { key: 'delivered', label: 'Delivered' },
+  { key: 'MIAMI_WAREHOUSE', label: 'Miami Warehouse' },
+  { key: 'IN_THE_AIR', label: 'In the Air' },
+  { key: 'IN_BARBADOS', label: 'In Barbados' },
+  { key: 'CUSTOMS_HOLD', label: 'Customs Hold' },
+  { key: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
+  { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+  { key: 'DELIVERED', label: 'Delivered' },
 ];
 
 const seaSteps: ProgressStep[] = [
-  { key: 'at_warehouse', label: 'At Warehouse' },
-  { key: 'on_the_water', label: 'On the Water' },
-  { key: 'in_barbados_sea', label: 'In Barbados' },
-  { key: 'barbados_customs', label: 'Barbados Customs' },
-  { key: 'ready_for_pickup', label: 'Ready for Pickup' },
-  { key: 'out_for_delivery', label: 'Out for Delivery' },
-  { key: 'delivered', label: 'Delivered' },
+  { key: 'AT_WAREHOUSE', label: 'At Warehouse' },
+  { key: 'ON_THE_WATER', label: 'On the Water' },
+  { key: 'IN_BARBADOS_SEA', label: 'In Barbados' },
+  { key: 'BARBADOS_CUSTOMS', label: 'Barbados Customs' },
+  { key: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
+  { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+  { key: 'DELIVERED', label: 'Delivered' },
 ];
 
 export const ShipmentProgress = ({ status, shippingMethod }: ShipmentProgressProps) => {
   const steps = shippingMethod === 'air' ? airSteps : seaSteps;
 
   const currentStepIndex = steps.findIndex(step => step.key === status);
-  const isDelayed = status === 'delayed';
+  const isDelayed = status === 'DELAYED';
 
   return (
     <div className="w-full">

@@ -7,52 +7,43 @@ interface BadgeProps {
 }
 
 const statusColors: Record<ShipmentStatus, string> = {
-  pending: 'bg-gray-100 text-gray-800',
-  received: 'bg-blue-100 text-blue-800',
-  miami_warehouse: 'bg-gray-100 text-gray-800',
-  in_the_air: 'bg-sky-100 text-sky-800',
-  in_transit: 'bg-sky-100 text-sky-800',
-  departed: 'bg-blue-100 text-blue-800',
-  arrived: 'bg-blue-100 text-blue-800',
-  in_barbados: 'bg-blue-100 text-blue-800',
-  customs_hold: 'bg-orange-100 text-orange-800',
-  customs_clearance: 'bg-orange-100 text-orange-800',
-  customs_cleared: 'bg-teal-100 text-teal-800',
-  at_warehouse: 'bg-gray-100 text-gray-800',
-  on_the_water: 'bg-cyan-100 text-cyan-800',
-  in_barbados_sea: 'bg-blue-100 text-blue-800',
-  barbados_customs: 'bg-orange-100 text-orange-800',
-  ready_for_pickup: 'bg-teal-100 text-teal-800',
-  out_for_delivery: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
-  delayed: 'bg-red-100 text-red-800',
+  PENDING:          'bg-gray-100 text-gray-700',
+  MIAMI_WAREHOUSE:  'bg-slate-100 text-slate-700',
+  IN_THE_AIR:       'bg-sky-100 text-sky-700',
+  IN_BARBADOS:      'bg-blue-100 text-blue-700',
+  CUSTOMS_HOLD:     'bg-orange-100 text-orange-700',
+  AT_WAREHOUSE:     'bg-gray-100 text-gray-700',
+  ON_THE_WATER:     'bg-cyan-100 text-cyan-700',
+  IN_BARBADOS_SEA:  'bg-blue-100 text-blue-700',
+  BARBADOS_CUSTOMS: 'bg-orange-100 text-orange-700',
+  READY_FOR_PICKUP: 'bg-teal-100 text-teal-700',
+  OUT_FOR_DELIVERY: 'bg-indigo-100 text-indigo-700',
+  DELIVERED:        'bg-green-100 text-green-700',
+  DELAYED:          'bg-red-100 text-red-700',
+  CANCELLED:        'bg-gray-100 text-gray-500',
+  RETURNED:         'bg-red-100 text-red-700',
 };
 
 const statusLabels: Record<ShipmentStatus, string> = {
-  pending: 'Pending',
-  received: 'Received',
-  miami_warehouse: 'Miami Warehouse',
-  in_the_air: 'In the Air',
-  in_transit: 'In Transit',
-  departed: 'Departed',
-  arrived: 'Arrived',
-  in_barbados: 'In Barbados',
-  customs_hold: 'Customs Hold',
-  customs_clearance: 'Customs Clearance',
-  customs_cleared: 'Customs Cleared',
-  at_warehouse: 'At Warehouse',
-  on_the_water: 'On the Water',
-  in_barbados_sea: 'In Barbados',
-  barbados_customs: 'Barbados Customs',
-  ready_for_pickup: 'Ready for Pickup',
-  out_for_delivery: 'Out for Delivery',
-  delivered: 'Delivered',
-  delayed: 'Delayed',
+  PENDING:          'Pending',
+  MIAMI_WAREHOUSE:  'Miami Warehouse',
+  IN_THE_AIR:       'In the Air',
+  IN_BARBADOS:      'In Barbados',
+  CUSTOMS_HOLD:     'Customs Hold',
+  AT_WAREHOUSE:     'At Warehouse',
+  ON_THE_WATER:     'On the Water',
+  IN_BARBADOS_SEA:  'In Barbados (Sea)',
+  BARBADOS_CUSTOMS: 'Barbados Customs',
+  READY_FOR_PICKUP: 'Ready for Pickup',
+  OUT_FOR_DELIVERY: 'Out for Delivery',
+  DELIVERED:        'Delivered',
+  DELAYED:          'Delayed',
+  CANCELLED:        'Cancelled',
+  RETURNED:         'Returned',
 };
 
 export const Badge = ({ status, variant, children }: BadgeProps) => {
   if (children) {
-    // Custom badge with children
     const variantClass = variant || 'bg-gray-100 text-gray-800';
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variantClass}`}>
@@ -60,12 +51,15 @@ export const Badge = ({ status, variant, children }: BadgeProps) => {
       </span>
     );
   }
-  
+
   if (!status) return null;
-  
+
+  const colorClass = statusColors[status] ?? 'bg-gray-100 text-gray-700';
+  const label = statusLabels[status] ?? status;
+
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status]}`}>
-      {statusLabels[status]}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+      {label}
     </span>
   );
 };

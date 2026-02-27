@@ -1,0 +1,148 @@
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+
+const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
+const SENDER = process.env.SENDER_EMAIL ?? "notifications@ctcm.bb";
+
+// Statuses that trigger a customer notification by default
+export const NOTIFY_STATUSES = new Set([
+  "MIAMI_WAREHOUSE",
+  "IN_BARBADOS",
+  "IN_BARBADOS_SEA",
+  "CUSTOMS_HOLD",
+  "BARBADOS_CUSTOMS",
+  "READY_FOR_PICKUP",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "DELAYED",
+]);
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  MIAMI_WAREHOUSE: "Miami Warehouse",
+  IN_THE_AIR: "In the Air",
+  IN_BARBADOS: "In Barbados",
+  CUSTOMS_HOLD: "Customs Hold",
+  AT_WAREHOUSE: "At Warehouse",
+  ON_THE_WATER: "On the Water",
+  IN_BARBADOS_SEA: "In Barbados (Sea)",
+  BARBADOS_CUSTOMS: "Barbados Customs",
+  READY_FOR_PICKUP: "Ready for Pickup",
+  OUT_FOR_DELIVERY: "Out for Delivery",
+  DELIVERED: "Delivered",
+  DELAYED: "Delayed",
+  CANCELLED: "Cancelled",
+  RETURNED: "Returned",
+};
+
+const DEFAULT_SUBJECTS: Record<string, string> = {
+  MIAMI_WAREHOUSE: "Your package has arrived at our Miami warehouse",
+  IN_THE_AIR: "Your package is on its way to Barbados ✈",
+  IN_BARBADOS: "Your package has arrived in Barbados!",
+  CUSTOMS_HOLD: "Action required: Your package is on hold at customs",
+  AT_WAREHOUSE: "Your package is at our Barbados warehouse",
+  ON_THE_WATER: "Your sea freight shipment is on its way 🚢",
+  IN_BARBADOS_SEA: "Your sea freight has arrived in Barbados!",
+  BARBADOS_CUSTOMS: "Your package is going through Barbados customs",
+  READY_FOR_PICKUP: "📦 Your package is ready for pickup!",
+  OUT_FOR_DELIVERY: "🚚 Your package is out for delivery today!",
+  DELIVERED: "✅ Your package has been delivered!",
+  DELAYED: "Update on your shipment",
+};
+
+const DEFAULT_BODIES: Record<string, string> = {
+  MIAMI_WAREHOUSE:
+    "Your package has been received at our Miami warehouse and is being prepared for shipment to Barbados.",
+  IN_THE_AIR:
+    "Your package has departed from Miami and is currently in transit by air to Barbados.",
+  IN_BARBADOS:
+    "Great news! Your air freight package has arrived in Barbados and is being processed.",
+  CUSTOMS_HOLD:
+    "Your package is currently on hold at customs. Please contact our office for more information or to provide any required documentation.",
+  AT_WAREHOUSE:
+    "Your package has cleared customs and is now at our Barbados warehouse, ready for delivery or pickup.",
+  ON_THE_WATER:
+    "Your sea freight shipment has departed and is currently in transit to Barbados.",
+  IN_BARBADOS_SEA:
+    "Your sea freight shipment has arrived in Barbados and is being processed.",
+  BARBADOS_CUSTOMS:
+    "Your package is currently being processed by Barbados customs. We will notify you once it has been cleared.",
+  READY_FOR_PICKUP:
+    "Your package is ready for pickup at our warehouse. Please bring a valid photo ID.\n\nOur hours are Monday–Friday, 8:00 AM – 5:00 PM.",
+  OUT_FOR_DELIVERY:
+    "Your package is out for delivery today. Please ensure someone is available to receive it at your delivery address.",
+  DELIVERED:
+    "Your package has been successfully delivered. Thank you for choosing CTCM!",
+  DELAYED:
+    "Your package has been delayed. We sincerely apologize for the inconvenience and will keep you updated as soon as possible.",
+};
+
+interface AppSyncEvent {
+  arguments: {
+    shipmentId: string;
+    customerEmail: string;
+    customerName?: string;
+    trackingNumber: string;
+    status: string;
+    customMessage?: string;
+  };
+}
+
+export const handler = async (event: AppSyncEvent) => {
+  const { customerEmail, customerName, trackingNumber, status, customMessage } =
+    event.arguments;
+
+  const name = customerName ?? "Valued Customer";
+  const statusLabel = STATUS_LABELS[status] ?? status;
+  const subject =
+    DEFAULT_SUBJECTS[status] ?? `Shipment update: ${statusLabel}`;
+  const defaultBody = DEFAULT_BODIES[status] ?? `Your shipment status has been updated to: ${statusLabel}.`;
+  const body = customMessage?.trim() || defaultBody;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
+  <div style="background: #1d4ed8; padding: 24px; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">CTCM Freight Forwarding</h1>
+  </div>
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 28px; border-radius: 0 0 8px 8px;">
+    <p style="font-size: 16px; margin-top: 0;">Hi <strong>${name}</strong>,</p>
+    <p style="font-size: 15px; line-height: 1.6;">${body.replace(/\n/g, "<br>")}</p>
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Tracking Number</p>
+      <p style="margin: 4px 0 0; font-family: monospace; font-size: 16px; font-weight: 700; color: #1d4ed8;">${trackingNumber}</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</p>
+      <p style="margin: 4px 0 0; font-size: 15px; font-weight: 600; color: #111827;">${statusLabel}</p>
+    </div>
+    <p style="font-size: 14px; color: #6b7280;">If you have any questions, please don't hesitate to contact us.</p>
+    <p style="font-size: 14px; margin-bottom: 0;">Best regards,<br><strong>The CTCM Team</strong></p>
+  </div>
+  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px;">CTCM Freight Forwarding, Barbados</p>
+</body>
+</html>`;
+
+  try {
+    await ses.send(
+      new SendEmailCommand({
+        Source: SENDER,
+        Destination: { ToAddresses: [customerEmail] },
+        Message: {
+          Subject: { Data: subject, Charset: "UTF-8" },
+          Body: {
+            Html: { Data: html, Charset: "UTF-8" },
+            Text: {
+              Data: `${subject}\n\nHi ${name},\n\n${body}\n\nTracking Number: ${trackingNumber}\nStatus: ${statusLabel}\n\nThe CTCM Team`,
+              Charset: "UTF-8",
+            },
+          },
+        },
+      })
+    );
+
+    console.log(`Notification sent to ${customerEmail} for status ${status}`);
+    return { success: true };
+  } catch (err) {
+    console.error("SES send error:", err);
+    return { success: false };
+  }
+};

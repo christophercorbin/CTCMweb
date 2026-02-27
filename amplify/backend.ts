@@ -5,6 +5,7 @@ import { storage } from "./storage/resource";
 import { ocrTrigger } from "./functions/ocr-trigger/resource";
 import { ocrProcessor } from "./functions/ocr-processor/resource";
 import { postConfirmation } from "./functions/post-confirmation/resource";
+import { statusNotifier } from "./functions/status-notifier/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
@@ -20,6 +21,7 @@ const backend = defineBackend({
   ocrTrigger,
   ocrProcessor,
   postConfirmation,
+  statusNotifier,
 });
 
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
@@ -121,6 +123,15 @@ storageBucket.addEventNotification(
   EventType.OBJECT_CREATED,
   new s3n.LambdaDestination(ocrTriggerLambdaForS3),
   { prefix: "receipts/" }
+);
+
+// ─── SES: status-notifier email permissions ──────────────────────────────────
+const statusNotifierFn = backend.statusNotifier.resources.lambda as lambda.Function;
+statusNotifierFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: ["*"],
+  })
 );
 
 export default backend;

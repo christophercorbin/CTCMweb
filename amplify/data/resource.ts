@@ -1,15 +1,25 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { postConfirmation } from "../functions/post-confirmation/resource";
 import { ocrProcessor } from "../functions/ocr-processor/resource";
+import { statusNotifier } from "../functions/status-notifier/resource";
 
 const schema = a
   .schema({
     // ─── Enums ───────────────────────────────────────────────────────
     ShipmentStatus: a.enum([
       "PENDING",
-      "IN_TRANSIT",
-      "CUSTOMS",
+      "MIAMI_WAREHOUSE",
+      "IN_THE_AIR",
+      "IN_BARBADOS",
+      "CUSTOMS_HOLD",
+      "AT_WAREHOUSE",
+      "ON_THE_WATER",
+      "IN_BARBADOS_SEA",
+      "BARBADOS_CUSTOMS",
+      "READY_FOR_PICKUP",
+      "OUT_FOR_DELIVERY",
       "DELIVERED",
+      "DELAYED",
       "CANCELLED",
       "RETURNED",
     ]),
@@ -148,6 +158,20 @@ const schema = a
         index("invoiceNumber"), // lookup by invoice number
       ])
       .authorization((allow) => [allow.owner(), allow.group("admin")]),
+    // ─── Custom mutation: send status notification email ─────────────
+    sendStatusNotification: a
+      .mutation()
+      .arguments({
+        shipmentId: a.id().required(),
+        customerEmail: a.string().required(),
+        customerName: a.string(),
+        trackingNumber: a.string().required(),
+        status: a.string().required(),
+        customMessage: a.string(),
+      })
+      .returns(a.customType({ success: a.boolean() }))
+      .authorization((allow) => [allow.group("admin")])
+      .handler(a.handler.function(statusNotifier)),
   })
   .authorization((allow) => [
     allow.authenticated(),

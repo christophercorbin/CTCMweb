@@ -24,6 +24,7 @@
     "aws-amplify": "^6.16.2"
   },
   "devDependencies": {
+    "@aws-sdk/client-ses": "^3.1000.0",
     "@eslint/js": "^9.9.1",
     "@types/node": "^25.2.3",
     "@types/react": "^18.3.5",

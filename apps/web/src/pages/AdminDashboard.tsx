@@ -33,7 +33,7 @@ export const AdminDashboard = () => {
   }
 
   const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED')
-  const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS')
+  const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD')
   const delayedShipments = shipments.filter((s) => s.status === 'RETURNED')
 
   const filteredShipments = shipments
