@@ -18,7 +18,7 @@ const createShipmentSchema = z
     trackingNumber: z.string().min(3, 'Tracking number is required'),
     type: z.enum(['AIR', 'SEA'], { message: 'Shipping type is required' }),
     origin: z.string().min(2, 'Origin is required'),
-    destination: z.string().min(2, 'Destination is required'),
+    destination: z.string().min(2, 'Barbados address is required'),
     description: z.string().min(5, 'Description must be at least 5 characters'),
     customerId: z.string().min(1, 'Customer ID is required'),
   })
@@ -139,7 +139,7 @@ export const CreateShipment = () => {
           />
 
           <Input
-            label="Destination"
+            label="Barbados Address"
             placeholder="e.g., Bridgetown, Barbados"
             error={errors.destination?.message}
             {...register('destination')}

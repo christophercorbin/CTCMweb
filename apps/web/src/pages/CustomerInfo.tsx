@@ -267,7 +267,7 @@ export const CustomerInfo = () => {
 
               <div className="mt-4 bg-blue-100 rounded-lg p-3">
                 <p className="text-sm text-blue-900">
-                  <span className="font-semibold">Tip:</span> Always include your skybox address as the shipping destination when ordering online
+                  <span className="font-semibold">Tip:</span> Always include your skybox address as the Barbados address when ordering online
                 </p>
               </div>
             </div>

@@ -142,7 +142,7 @@ export const ShipmentDetails = () => {
               )}
               {shipment.destination && (
                 <div>
-                  <p className="text-sm text-gray-600">Destination</p>
+                  <p className="text-sm text-gray-600">Barbados Address</p>
                   <p className="text-lg font-semibold text-gray-900">{shipment.destination}</p>
                 </div>
               )}

@@ -12,15 +12,24 @@ import { useAuth } from '../contexts/AuthContext'
 
 const client = generateClient<Schema>()
 
-type StatusFilter = 'all' | 'IN_TRANSIT' | 'DELIVERED' | 'PENDING' | 'CUSTOMS'
+type StatusFilter = 'all' | 'PENDING' | 'MIAMI_WAREHOUSE' | 'IN_THE_AIR' | 'IN_BARBADOS' | 'CUSTOMS_HOLD' | 'AT_WAREHOUSE' | 'ON_THE_WATER' | 'IN_BARBADOS_SEA' | 'BARBADOS_CUSTOMS' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'DELAYED' | 'CANCELLED' | 'RETURNED'
 
 const STATUS_META: Record<string, { label: string; dot: string; badge: string }> = {
-  PENDING:    { label: 'Pending',    dot: 'bg-yellow-400', badge: 'bg-yellow-50 text-yellow-700 ring-yellow-200' },
-  IN_TRANSIT: { label: 'In Transit', dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 ring-blue-200' },
-  CUSTOMS:    { label: 'In Customs', dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 ring-orange-200' },
-  DELIVERED:  { label: 'Delivered',  dot: 'bg-green-500',  badge: 'bg-green-50 text-green-700 ring-green-200' },
-  CANCELLED:  { label: 'Cancelled',  dot: 'bg-gray-400',   badge: 'bg-gray-50 text-gray-600 ring-gray-200' },
-  RETURNED:   { label: 'Returned',   dot: 'bg-red-400',    badge: 'bg-red-50 text-red-700 ring-red-200' },
+  PENDING:          { label: 'Pending',            dot: 'bg-gray-400',   badge: 'bg-gray-50 text-gray-600 ring-gray-200' },
+  MIAMI_WAREHOUSE:  { label: 'Miami Warehouse',    dot: 'bg-slate-400',  badge: 'bg-slate-50 text-slate-700 ring-slate-200' },
+  IN_THE_AIR:       { label: 'In the Air',         dot: 'bg-sky-400',    badge: 'bg-sky-50 text-sky-700 ring-sky-200' },
+  IN_BARBADOS:      { label: 'In Barbados',        dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 ring-blue-200' },
+  CUSTOMS_HOLD:     { label: 'Customs Hold',       dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 ring-orange-200' },
+  AT_WAREHOUSE:     { label: 'At Warehouse',       dot: 'bg-gray-400',   badge: 'bg-gray-50 text-gray-700 ring-gray-200' },
+  ON_THE_WATER:     { label: 'On the Water',       dot: 'bg-cyan-400',   badge: 'bg-cyan-50 text-cyan-700 ring-cyan-200' },
+  IN_BARBADOS_SEA:  { label: 'In Barbados (Sea)',  dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 ring-blue-200' },
+  BARBADOS_CUSTOMS: { label: 'Barbados Customs',   dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 ring-orange-200' },
+  READY_FOR_PICKUP: { label: 'Ready for Pickup',   dot: 'bg-teal-500',   badge: 'bg-teal-50 text-teal-700 ring-teal-200' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery',   dot: 'bg-indigo-500', badge: 'bg-indigo-50 text-indigo-700 ring-indigo-200' },
+  DELIVERED:        { label: 'Delivered',          dot: 'bg-green-500',  badge: 'bg-green-50 text-green-700 ring-green-200' },
+  DELAYED:          { label: 'Delayed',            dot: 'bg-red-400',    badge: 'bg-red-50 text-red-700 ring-red-200' },
+  CANCELLED:        { label: 'Cancelled',          dot: 'bg-gray-300',   badge: 'bg-gray-50 text-gray-500 ring-gray-200' },
+  RETURNED:         { label: 'Returned',           dot: 'bg-red-400',    badge: 'bg-red-50 text-red-700 ring-red-200' },
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -73,11 +82,15 @@ export const CustomerDashboard = () => {
     }).catch(() => {})
   }, [])
 
+  const IN_TRANSIT_STATUSES = new Set(['MIAMI_WAREHOUSE', 'IN_THE_AIR', 'ON_THE_WATER', 'IN_BARBADOS', 'IN_BARBADOS_SEA', 'AT_WAREHOUSE', 'OUT_FOR_DELIVERY'])
+  const CUSTOMS_STATUSES = new Set(['CUSTOMS_HOLD', 'BARBADOS_CUSTOMS'])
+
   const stats = useMemo(() => ({
     total:     shipments.length,
-    inTransit: shipments.filter((s) => s.status === 'IN_TRANSIT').length,
+    inTransit: shipments.filter((s) => IN_TRANSIT_STATUSES.has(s.status)).length,
     delivered: shipments.filter((s) => s.status === 'DELIVERED').length,
-    customs:   shipments.filter((s) => s.status === 'CUSTOMS').length,
+    customs:   shipments.filter((s) => CUSTOMS_STATUSES.has(s.status)).length,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [shipments])
 
   const filtered = useMemo(() => {
@@ -180,9 +193,18 @@ export const CustomerDashboard = () => {
               >
                 <option value="all">All Statuses</option>
                 <option value="PENDING">Pending</option>
-                <option value="IN_TRANSIT">In Transit</option>
-                <option value="CUSTOMS">In Customs</option>
+                <option value="MIAMI_WAREHOUSE">Miami Warehouse</option>
+                <option value="IN_THE_AIR">In the Air</option>
+                <option value="IN_BARBADOS">In Barbados</option>
+                <option value="CUSTOMS_HOLD">Customs Hold</option>
+                <option value="AT_WAREHOUSE">At Warehouse</option>
+                <option value="ON_THE_WATER">On the Water</option>
+                <option value="IN_BARBADOS_SEA">In Barbados (Sea)</option>
+                <option value="BARBADOS_CUSTOMS">Barbados Customs</option>
+                <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
                 <option value="DELIVERED">Delivered</option>
+                <option value="DELAYED">Delayed</option>
               </select>
 
               {/* Date from */}
@@ -228,7 +250,7 @@ export const CustomerDashboard = () => {
                   <thead>
                     <tr className="bg-gray-50 text-left">
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Tracking #</th>
-                      <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Route</th>
+                      <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Origin → Barbados</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Status</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Type</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Est. Delivery</th>
@@ -245,7 +267,7 @@ export const CustomerDashboard = () => {
                           <span className="inline-flex items-center gap-1.5 text-gray-700">
                             <span className="truncate max-w-[90px]">{s.origin ?? '—'}</span>
                             <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="truncate max-w-[90px]">{s.destination ?? 'Barbados'}</span>
+                            <span className="truncate max-w-[90px]">{s.destination ?? 'Barbados, BB'}</span>
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
