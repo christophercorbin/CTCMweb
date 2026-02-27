@@ -57,6 +57,9 @@ const schema = a
         actualDelivery: a.datetime(),
         description: a.string(),
         customerId: a.id().required(),
+        // Set to the customer's Cognito sub so admin-created shipments
+        // are visible to the customer via allow.ownerDefinedIn below
+        customerCognitoSub: a.string(),
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         packages: a.hasMany("Package", "shipmentId"),
@@ -68,7 +71,11 @@ const schema = a
         index("trackingNumber"), // access pattern: lookup by tracking #
         index("customerId"), // access pattern: all shipments for a customer
       ])
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.owner(),                              // customer-created shipments
+        allow.ownerDefinedIn("customerCognitoSub"), // admin-created shipments
+        allow.group("admin"),
+      ]),
 
     // ─── Package ─────────────────────────────────────────────────────
     Package: a

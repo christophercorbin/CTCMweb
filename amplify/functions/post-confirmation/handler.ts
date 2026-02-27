@@ -10,7 +10,7 @@ const cognitoClient = new CognitoIdentityProviderClient({});
 
 export const handler: PostConfirmationTriggerHandler = async (event) => {
   const { userPoolId, userName } = event;
-  const { email, name } = event.request.userAttributes;
+  const { email, name, sub } = event.request.userAttributes;
 
   // 1. Generate a stable customerId (DynamoDB PK)
   const customerId = randomUUID();
@@ -63,7 +63,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
         id: customerId,
         name: name ?? email,
         email,
-        cognitoSub: userName, // Cognito username = sub for Amplify-created users
+        cognitoSub: sub, // Cognito sub UUID — matches allow.owner() identity claim
       },
     },
   });

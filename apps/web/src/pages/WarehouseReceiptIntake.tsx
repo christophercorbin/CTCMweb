@@ -28,6 +28,7 @@ interface CustomerOption {
   id: string;
   name: string;
   email: string;
+  cognitoSub?: string | null;
 }
 
 interface PackageInput {
@@ -97,7 +98,7 @@ export const WarehouseReceiptIntake = () => {
     try {
       const { data, errors } = await client.models.Customer.list();
       if (errors?.length) throw new Error(errors[0].message);
-      setCustomers(data.map((c) => ({ id: c.id, name: c.name, email: c.email })));
+      setCustomers(data.map((c) => ({ id: c.id, name: c.name, email: c.email, cognitoSub: c.cognitoSub })));
     } catch (error) {
       toast.error('Failed to load customers');
       console.error(error);
@@ -186,10 +187,13 @@ export const WarehouseReceiptIntake = () => {
       const origin = [formData.shipper_city, formData.shipper_state, formData.shipper_country]
         .filter(Boolean).join(', ') || undefined;
 
+      const selectedCustomer = customers.find((c) => c.id === formData.customer_id);
+
       // 1. Create the shipment
       const { data: shipment, errors: shipmentErrors } = await client.models.Shipment.create({
         trackingNumber: formData.tracking_number,
         customerId: formData.customer_id,
+        customerCognitoSub: selectedCustomer?.cognitoSub ?? undefined,
         status: 'PENDING',
         type: formData.shipment_type as 'AIR' | 'SEA',
         origin,
