@@ -36,15 +36,20 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   return (
     <div className="flex h-screen bg-gray-50">
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white transform transition-transform duration-200 lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 text-white transform transition-transform duration-200 lg:relative lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ backgroundColor: '#1B2D78' }}
       >
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-          <h1 className="text-xl font-bold">CTCM</h1>
+        <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
+          <img
+            src="/logos/logo-color-horizontal.png"
+            alt="CargoLink Barbados"
+            className="h-12 w-auto brightness-0 invert"
+          />
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white"
+            className="lg:hidden text-white/60 hover:text-white"
           >
             <X className="w-6 h-6" />
           </button>
@@ -62,9 +67,10 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                   isActive(item.path)
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
+                    ? 'text-white font-semibold'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
+                style={isActive(item.path) ? { backgroundColor: '#F5C518', color: '#1B2D78' } : {}}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.label}</span>
@@ -73,15 +79,15 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
           })}
         </nav>
 
-        <div className="px-4 py-6 border-t border-gray-800">
-          <p className="text-xs text-gray-400 mb-3">{user?.email}</p>
-          <p className="text-xs text-gray-500 mb-4 capitalize">{user?.role}</p>
+        <div className="px-4 py-6 border-t border-white/10">
+          <p className="text-xs text-white/60 mb-1">{user?.email}</p>
+          <p className="text-xs text-white/40 mb-4 capitalize">{user?.role}</p>
           <button
             onClick={() => {
               logout();
               setSidebarOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>

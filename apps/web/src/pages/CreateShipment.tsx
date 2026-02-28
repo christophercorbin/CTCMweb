@@ -119,7 +119,7 @@ export const CreateShipment = () => {
 
           <Input
             label="Tracking Number"
-            placeholder="e.g., CTCM-2026-001"
+            placeholder="e.g., CL-2026-001"
             error={errors.trackingNumber?.message}
             {...register('trackingNumber')}
           />

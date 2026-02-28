@@ -6,7 +6,7 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Button, Input } from '../components'
 import { useAuth } from '../contexts/AuthContext'
-import { Package, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { enableDemoMode, enableAdminDemoMode } from '../utils/mockData'
 
 const loginSchema = z.object({
@@ -68,14 +68,17 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1B2D78 0%, #243899 60%, #1B2D78 100%)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
-          <Package className="w-8 h-8 text-blue-600 mr-2" />
-          <h1 className="text-2xl font-bold text-gray-900">CTCM</h1>
+          <img
+            src="/logos/logo-color-stacked.png"
+            alt="CargoLink Barbados"
+            className="h-36 w-auto"
+          />
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Login</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-6 text-center">Sign in to your account</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mb-6">
           <Input

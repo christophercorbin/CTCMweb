@@ -71,7 +71,7 @@ const DEFAULT_BODIES: Record<string, string> = {
   OUT_FOR_DELIVERY:
     "Your package is out for delivery today. Please ensure someone is available to receive it at your delivery address.",
   DELIVERED:
-    "Your package has been successfully delivered. Thank you for choosing CTCM!",
+    "Your package has been successfully delivered. Thank you for choosing CargoLink Barbados!",
   DELAYED:
     "Your package has been delayed. We sincerely apologize for the inconvenience and will keep you updated as soon as possible.",
 };
@@ -102,22 +102,23 @@ export const handler = async (event: AppSyncEvent) => {
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
-  <div style="background: #1d4ed8; padding: 24px; border-radius: 8px 8px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 22px;">CTCM Freight Forwarding</h1>
+  <div style="background: #1B2D78; padding: 24px; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">CargoLink Barbados</h1>
+    <p style="color: #F5C518; margin: 4px 0 0; font-size: 13px;">The Smarter way to ship</p>
   </div>
   <div style="border: 1px solid #e5e7eb; border-top: none; padding: 28px; border-radius: 0 0 8px 8px;">
     <p style="font-size: 16px; margin-top: 0;">Hi <strong>${name}</strong>,</p>
     <p style="font-size: 15px; line-height: 1.6;">${body.replace(/\n/g, "<br>")}</p>
     <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin: 20px 0;">
       <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Tracking Number</p>
-      <p style="margin: 4px 0 0; font-family: monospace; font-size: 16px; font-weight: 700; color: #1d4ed8;">${trackingNumber}</p>
+      <p style="margin: 4px 0 0; font-family: monospace; font-size: 16px; font-weight: 700; color: #1B2D78;">${trackingNumber}</p>
       <p style="margin: 8px 0 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</p>
       <p style="margin: 4px 0 0; font-size: 15px; font-weight: 600; color: #111827;">${statusLabel}</p>
     </div>
     <p style="font-size: 14px; color: #6b7280;">If you have any questions, please don't hesitate to contact us.</p>
-    <p style="font-size: 14px; margin-bottom: 0;">Best regards,<br><strong>The CTCM Team</strong></p>
+    <p style="font-size: 14px; margin-bottom: 0;">Best regards,<br><strong>The CargoLink Barbados Team</strong></p>
   </div>
-  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px;">CTCM Freight Forwarding, Barbados</p>
+  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px;">CargoLink Barbados &mdash; The Smarter way to ship</p>
 </body>
 </html>`;
 
@@ -131,7 +132,7 @@ export const handler = async (event: AppSyncEvent) => {
           Body: {
             Html: { Data: html, Charset: "UTF-8" },
             Text: {
-              Data: `${subject}\n\nHi ${name},\n\n${body}\n\nTracking Number: ${trackingNumber}\nStatus: ${statusLabel}\n\nThe CTCM Team`,
+              Data: `${subject}\n\nHi ${name},\n\n${body}\n\nTracking Number: ${trackingNumber}\nStatus: ${statusLabel}\n\nThe CargoLink Barbados Team`,
               Charset: "UTF-8",
             },
           },

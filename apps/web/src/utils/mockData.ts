@@ -3,7 +3,7 @@ import { Shipment, TrackingItem, BillingInvoice, Customer } from '../types';
 export const mockShipments: Shipment[] = [
   {
     id: '1',
-    tracking_number: 'CTCM-2024-001',
+    tracking_number: 'CL-2024-001',
     customer_id: '1',
     customer_name: 'John Smith',
     status: 'IN_THE_AIR',
@@ -13,7 +13,7 @@ export const mockShipments: Shipment[] = [
   },
   {
     id: '2',
-    tracking_number: 'CTCM-2024-002',
+    tracking_number: 'CL-2024-002',
     customer_id: '1',
     customer_name: 'John Smith',
     status: 'BARBADOS_CUSTOMS',
@@ -23,7 +23,7 @@ export const mockShipments: Shipment[] = [
   },
   {
     id: '3',
-    tracking_number: 'CTCM-2024-003',
+    tracking_number: 'CL-2024-003',
     customer_id: '2',
     customer_name: 'Maria Garcia',
     status: 'DELIVERED',
@@ -33,7 +33,7 @@ export const mockShipments: Shipment[] = [
   },
   {
     id: '4',
-    tracking_number: 'CTCM-2024-004',
+    tracking_number: 'CL-2024-004',
     customer_id: '1',
     customer_name: 'John Smith',
     status: 'AT_WAREHOUSE',
@@ -43,7 +43,7 @@ export const mockShipments: Shipment[] = [
   },
   {
     id: '5',
-    tracking_number: 'CTCM-2024-005',
+    tracking_number: 'CL-2024-005',
     customer_id: '3',
     customer_name: 'Robert Johnson',
     status: 'DELAYED',
@@ -53,7 +53,7 @@ export const mockShipments: Shipment[] = [
   },
   {
     id: '6',
-    tracking_number: 'CTCM-2024-006',
+    tracking_number: 'CL-2024-006',
     customer_id: '2',
     customer_name: 'Maria Garcia',
     status: 'OUT_FOR_DELIVERY',
@@ -257,7 +257,7 @@ export const mockBillingInvoices: BillingInvoice[] = [
   {
     id: 1,
     shipment_id: 1,
-    tracking_number: 'CTCM-2024-001',
+    tracking_number: 'CL-2024-001',
     invoice_number: 'INV-2024-001',
     type: 'shipping',
     amount: 450.00,
@@ -270,7 +270,7 @@ export const mockBillingInvoices: BillingInvoice[] = [
   {
     id: 2,
     shipment_id: 2,
-    tracking_number: 'CTCM-2024-002',
+    tracking_number: 'CL-2024-002',
     invoice_number: 'INV-2024-002',
     type: 'customs',
     amount: 320.50,
@@ -282,7 +282,7 @@ export const mockBillingInvoices: BillingInvoice[] = [
   {
     id: 3,
     shipment_id: 2,
-    tracking_number: 'CTCM-2024-002',
+    tracking_number: 'CL-2024-002',
     invoice_number: 'INV-2024-003',
     type: 'shipping',
     amount: 890.00,
@@ -294,7 +294,7 @@ export const mockBillingInvoices: BillingInvoice[] = [
   {
     id: 4,
     shipment_id: 4,
-    tracking_number: 'CTCM-2024-004',
+    tracking_number: 'CL-2024-004',
     invoice_number: 'INV-2024-004',
     type: 'shipping',
     amount: 625.75,
@@ -306,7 +306,7 @@ export const mockBillingInvoices: BillingInvoice[] = [
   {
     id: 5,
     shipment_id: 1,
-    tracking_number: 'CTCM-2024-001',
+    tracking_number: 'CL-2024-001',
     invoice_number: 'INV-2024-005',
     type: 'delivery',
     amount: 75.00,

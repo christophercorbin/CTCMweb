@@ -51,7 +51,7 @@ const DEFAULT_MESSAGES: Record<string, string> = {
   BARBADOS_CUSTOMS: 'Your package is currently being processed by Barbados customs. We will notify you once it has been cleared.',
   READY_FOR_PICKUP: 'Your package is ready for pickup at our warehouse. Please bring a valid photo ID. Our hours are Monday–Friday, 8:00 AM – 5:00 PM.',
   OUT_FOR_DELIVERY: 'Your package is out for delivery today. Please ensure someone is available to receive it at your delivery address.',
-  DELIVERED:        'Your package has been successfully delivered. Thank you for choosing CTCM!',
+  DELIVERED:        'Your package has been successfully delivered. Thank you for choosing CargoLink Barbados!',
   DELAYED:          'Your package has been delayed. We sincerely apologize for the inconvenience and will keep you updated as soon as possible.',
 }
 
