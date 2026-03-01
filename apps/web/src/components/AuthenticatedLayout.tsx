@@ -42,11 +42,13 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
         style={{ backgroundColor: '#1B2D78' }}
       >
         <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
-          <img
-            src="/logos/logo-color-horizontal.png"
-            alt="CargoLink Barbados"
-            className="h-12 w-auto brightness-0 invert"
-          />
+          <div className="bg-white rounded-lg px-3 py-1.5">
+            <img
+              src="/logos/logo-color-horizontal.png"
+              alt="CargoLink Barbados"
+              className="h-9 w-auto"
+            />
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-white/60 hover:text-white"
