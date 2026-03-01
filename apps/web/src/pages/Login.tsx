@@ -53,11 +53,13 @@ export const Login = () => {
       if (error.name === 'UserNotConfirmedException') {
         toast.error('Please verify your email before logging in')
       } else if (error.name === 'NotAuthorizedException') {
-        toast.error(`Auth error: ${error.message ?? 'NotAuthorizedException'}`, { duration: 8000 })
+        toast.error('Incorrect email or password')
       } else if (error.name === 'UserNotFoundException') {
         toast.error('No account found with that email')
       } else if (error.name === 'PasswordResetRequiredException') {
         toast.error('Password reset required — please contact support')
+      } else if (error.name === 'UserAlreadyAuthenticatedException') {
+        toast.error('Session conflict — please refresh the page and try again')
       } else {
         toast.error(error.message ?? 'Login failed. Please try again.')
       }

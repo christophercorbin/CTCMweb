@@ -55,7 +55,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    await cognitoSignIn(email, password)
+    try {
+      await cognitoSignIn(email, password)
+    } catch (err: unknown) {
+      const error = err as { name?: string }
+      // Amplify v6 throws UserAlreadyAuthenticatedException when a stale
+      // in-memory session exists (survives localStorage clears). Sign out
+      // to reset state, then retry once. See aws-amplify/amplify-js#13813
+      if (error.name === 'UserAlreadyAuthenticatedException') {
+        await cognitoSignOut()
+        await cognitoSignIn(email, password)
+      } else {
+        throw err
+      }
+    }
     await loadUser()
   }
 
