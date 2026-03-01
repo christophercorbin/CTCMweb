@@ -48,11 +48,12 @@ export const Login = () => {
       toast.success('Logged in successfully')
       await redirectAfterLogin(navigate)
     } catch (err: unknown) {
+      console.error('[Login] sign-in error:', err)
       const error = err as { name?: string; message?: string }
       if (error.name === 'UserNotConfirmedException') {
         toast.error('Please verify your email before logging in')
       } else if (error.name === 'NotAuthorizedException') {
-        toast.error('Invalid email or password')
+        toast.error(`Auth error: ${error.message ?? 'NotAuthorizedException'}`, { duration: 8000 })
       } else if (error.name === 'UserNotFoundException') {
         toast.error('No account found with that email')
       } else if (error.name === 'PasswordResetRequiredException') {
