@@ -4,9 +4,7 @@
     "aws_region": "us-east-1",
     "user_pool_client_id": "3kc1l1utbif4t3mrl49bbp9f1h",
     "identity_pool_id": "us-east-1:ab5eacb9-abb1-4969-9498-95647bfcd40c",
-    "mfa_methods": [
-      "TOTP"
-    ],
+    "mfa_methods": [],
     "standard_required_attributes": [
       "email"
     ],
@@ -28,7 +26,7 @@
         }
       }
     ],
-    "mfa_configuration": "OPTIONAL",
+    "mfa_configuration": "NONE",
     "password_policy": {
       "min_length": 8,
       "require_lowercase": true,
