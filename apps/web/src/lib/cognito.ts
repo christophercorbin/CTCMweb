@@ -32,9 +32,6 @@ export async function cognitoSignIn(
   email: string,
   password: string
 ): Promise<SignInOutput> {
-  // Clear any stale session before attempting a fresh sign-in
-  try { await signOut() } catch { /* no active session — ignore */ }
-
   const result = await signIn({ username: email, password, options: { authFlowType: 'USER_PASSWORD_AUTH' } })
 
   if (!result.isSignedIn) {
