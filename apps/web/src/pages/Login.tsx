@@ -8,6 +8,7 @@ import { Button, Input } from '../components'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye } from 'lucide-react'
 import { enableDemoMode, enableAdminDemoMode } from '../utils/mockData'
+import { redirectAfterLogin } from '../auth/useAuthRedirect'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -19,7 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 export const Login = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const { signIn, user } = useAuth()
+  const { signIn } = useAuth()
   const {
     register,
     handleSubmit,
@@ -45,22 +46,19 @@ export const Login = () => {
     try {
       await signIn(data.email, data.password)
       toast.success('Logged in successfully')
-
-      // Redirect based on Cognito group membership (set after loadUser in AuthContext)
-      setTimeout(() => {
-        const isAdmin = user?.groups?.includes('admin') ?? user?.role === 'admin'
-        navigate(isAdmin ? '/admin/dashboard' : '/dashboard')
-      }, 500)
+      await redirectAfterLogin(navigate)
     } catch (err: unknown) {
-      const error = err as { name?: string }
+      const error = err as { name?: string; message?: string }
       if (error.name === 'UserNotConfirmedException') {
         toast.error('Please verify your email before logging in')
       } else if (error.name === 'NotAuthorizedException') {
         toast.error('Invalid email or password')
       } else if (error.name === 'UserNotFoundException') {
-        toast.error('User not found')
+        toast.error('No account found with that email')
+      } else if (error.name === 'PasswordResetRequiredException') {
+        toast.error('Password reset required — please contact support')
       } else {
-        toast.error('Login failed. Please try again.')
+        toast.error(error.message ?? 'Login failed. Please try again.')
       }
     } finally {
       setLoading(false)

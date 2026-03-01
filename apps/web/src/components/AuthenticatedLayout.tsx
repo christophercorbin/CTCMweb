@@ -85,9 +85,10 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
           <p className="text-xs text-white/60 mb-1">{user?.email}</p>
           <p className="text-xs text-white/40 mb-4 capitalize">{user?.role}</p>
           <button
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await logout();
               setSidebarOpen(false);
+              navigate('/login');
             }}
             className="w-full flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >

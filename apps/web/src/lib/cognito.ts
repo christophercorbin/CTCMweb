@@ -32,7 +32,17 @@ export async function cognitoSignIn(
   email: string,
   password: string
 ): Promise<SignInOutput> {
-  return signIn({ username: email, password, options: { authFlowType: 'USER_PASSWORD_AUTH' } })
+  const result = await signIn({ username: email, password, options: { authFlowType: 'USER_PASSWORD_AUTH' } })
+
+  if (!result.isSignedIn) {
+    // Surface the challenge step as a readable error so the caller can handle it
+    const step = result.nextStep?.signInStep ?? 'UNKNOWN'
+    const err = new Error(`Sign-in requires additional step: ${step}`)
+    err.name = step
+    throw err
+  }
+
+  return result
 }
 
 export async function cognitoSignUp(

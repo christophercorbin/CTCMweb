@@ -32,8 +32,7 @@ export const auth = defineAuth({
   },
   groups: ["admin", "customer"],
   multifactor: {
-    mode: "OPTIONAL", // REQUIRED for admin in prod — enforce via Cognito console
-    totp: true,
+    mode: "OFF",
   },
   triggers: {
     postConfirmation,
