@@ -185,6 +185,18 @@
                     ]
                   },
                   {
+                    "provider": "userPools",
+                    "ownerField": "cognitoSub",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
                     "groupClaim": "cognito:groups",
                     "provider": "userPools",
                     "allow": "groups",
@@ -689,6 +701,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "customerCognitoSub": {
+              "name": "customerCognitoSub",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "shipment": {
               "name": "shipment",
               "isArray": false,
@@ -735,6 +754,18 @@
                   {
                     "provider": "userPools",
                     "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "provider": "userPools",
+                    "ownerField": "customerCognitoSub",
                     "allow": "owner",
                     "identityClaim": "cognito:username",
                     "operations": [
@@ -994,6 +1025,20 @@
               "isRequired": false,
               "attributes": []
             },
+            "customerCognitoSub": {
+              "name": "customerCognitoSub",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "trackingNumber": {
+              "name": "trackingNumber",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "customer": {
               "name": "customer",
               "isArray": false,
@@ -1075,6 +1120,18 @@
                   {
                     "provider": "userPools",
                     "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "provider": "userPools",
+                    "ownerField": "customerCognitoSub",
                     "allow": "owner",
                     "identityClaim": "cognito:username",
                     "operations": [
