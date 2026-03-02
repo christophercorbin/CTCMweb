@@ -4,38 +4,28 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { EmptyState } from '../components/EmptyState';
-import { getCurrentUser } from '../auth';
 import toast from 'react-hot-toast';
 import { FileText, Download, Calendar, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { generateClient } from 'aws-amplify/data';
+import { getUrl } from 'aws-amplify/storage';
+import type { Schema } from '../../../../amplify/data/resource';
 
-interface Invoice {
-  id: string;
-  invoice_number: string;
-  shipment_id: string;
-  shipment_tracking: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'overdue';
-  issue_date: string;
-  due_date: string;
-  paid_date?: string;
-}
+const client = generateClient<Schema>();
+type AppSyncInvoice = Schema['Invoice']['type'];
+
+const normalizeStatus = (s: string | null | undefined): 'paid' | 'pending' | 'overdue' => {
+  if (s === 'PAID') return 'paid';
+  if (s === 'OVERDUE') return 'overdue';
+  return 'pending'; // SENT, DRAFT, CANCELLED → pending badge
+};
 
 export const Invoices = () => {
   const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<AppSyncInvoice[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        setError('User not authenticated');
-        setLoading(false);
-        return;
-      }
-      fetchInvoices();
-    };
-    checkAuth();
+    fetchInvoices();
   }, []);
 
   const fetchInvoices = async () => {
@@ -43,11 +33,12 @@ export const Invoices = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: Phase 3 - Fetch invoices from AWS RDS via API Gateway
-      console.log('Invoices: Database not yet migrated. Using demo mode.');
-      
-      // Mock data for now
-      setInvoices([]);
+      const { data, errors } = await client.models.Invoice.list();
+      if (errors?.length) throw new Error(errors[0].message);
+      const sorted = [...(data ?? [])].sort(
+        (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+      );
+      setInvoices(sorted);
     } catch (error) {
       console.error('Unexpected error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -84,7 +75,8 @@ export const Invoices = () => {
     }
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return '—';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -92,15 +84,25 @@ export const Invoices = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null | undefined) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(amount ?? 0);
   };
 
-  const handleDownload = (_invoiceId: string, invoiceNumber: string) => {
-    toast.success(`Downloading invoice ${invoiceNumber}...`);
+  const handleDownload = async (invoiceId: string, invoiceNumber: string) => {
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv?.s3Key) {
+      toast.error('No PDF available for this invoice');
+      return;
+    }
+    try {
+      const { url } = await getUrl({ path: inv.s3Key, options: { expiresIn: 300 } });
+      window.open(url.toString(), '_blank');
+    } catch {
+      toast.error(`Failed to download ${invoiceNumber}`);
+    }
   };
 
   if (loading) {
@@ -150,13 +152,13 @@ export const Invoices = () => {
     );
   }
 
-  const totalAmount = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
   const paidAmount = invoices
-    .filter((inv) => inv.status === 'paid')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+    .filter(inv => inv.status === 'PAID')
+    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
   const pendingAmount = invoices
-    .filter((inv) => inv.status === 'pending')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+    .filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
+    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -232,55 +234,60 @@ export const Invoices = () => {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium text-gray-900">
-                        {invoice.invoice_number}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600">{invoice.shipment_tracking}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="font-semibold text-gray-900">
-                      {formatCurrency(invoice.amount)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(invoice.issue_date)}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(invoice.due_date)}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <Badge variant={getStatusColor(invoice.status)}>
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(invoice.status)}
-                        <span className="capitalize">{invoice.status}</span>
+              {invoices.map((invoice) => {
+                const uiStatus = normalizeStatus(invoice.status);
+                return (
+                  <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium text-gray-900">
+                          {invoice.invoiceNumber}
+                        </span>
                       </div>
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-4">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleDownload(invoice.id, invoice.invoice_number)}
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-sm text-gray-600">{invoice.trackingNumber ?? '—'}</span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="font-semibold text-gray-900">
+                        {formatCurrency(invoice.totalAmount)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(invoice.createdAt)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(invoice.dueDate)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <Badge variant={getStatusColor(uiStatus)}>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(uiStatus)}
+                          <span className="capitalize">{uiStatus}</span>
+                        </div>
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleDownload(invoice.id, invoice.invoiceNumber)}
+                        disabled={!invoice.s3Key}
+                        title={invoice.s3Key ? 'Download PDF' : 'No PDF available'}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -51,8 +51,9 @@ const schema = a
         invoices: a.hasMany("Invoice", "customerId"),
       })
       .authorization((allow) => [
-        allow.owner(), // customer sees own record
-        allow.group("admin"), // admin full CRUD
+        allow.owner(),                      // customer self-registered records
+        allow.ownerDefinedIn("cognitoSub"), // Lambda-created records (post-confirmation sets cognitoSub)
+        allow.group("admin"),
       ]),
 
     // ─── Shipment ────────────────────────────────────────────────────
@@ -116,9 +117,14 @@ const schema = a
         amount: a.float().required(),
         currency: a.string().default("USD"),
         description: a.string(),
+        customerCognitoSub: a.string(),
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.owner(),
+        allow.ownerDefinedIn("customerCognitoSub"),
+        allow.group("admin"),
+      ]),
 
     // ─── ShipmentEvent (timeline) ────────────────────────────────────
     ShipmentEvent: a
@@ -149,6 +155,8 @@ const schema = a
         paidAt: a.datetime(),
         notes: a.string(),
         s3Key: a.string(), // path to PDF in S3
+        customerCognitoSub: a.string(), // admin sets to customer.cognitoSub so customer can read
+        trackingNumber: a.string(), // denormalized from Shipment
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         shipment: a.belongsTo("Shipment", "shipmentId"),
@@ -157,7 +165,11 @@ const schema = a
         index("customerId"), // invoices by customer
         index("invoiceNumber"), // lookup by invoice number
       ])
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.owner(),
+        allow.ownerDefinedIn("customerCognitoSub"),
+        allow.group("admin"),
+      ]),
     // ─── Custom mutation: send status notification email ─────────────
     sendStatusNotification: a
       .mutation()

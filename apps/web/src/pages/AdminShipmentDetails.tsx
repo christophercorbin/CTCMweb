@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Mail, MailX } from 'lucide-react'
+import { ArrowLeft, Mail, MailX, Download, Plus, X } from 'lucide-react'
 import { Button, Card, CardSkeleton, Badge, Timeline } from '../components'
 import { generateClient } from 'aws-amplify/data'
+import { uploadData, getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
 import { TrackingItem, ShipmentStatus } from '../types'
 
@@ -40,6 +41,15 @@ const STATUS_OPTIONS: { value: ShipmentStatus; label: string }[] = [
   { value: 'RETURNED',         label: 'Returned' },
 ]
 
+const CHARGE_TYPE_OPTIONS = [
+  { value: 'FREIGHT',      label: 'Shipping / Freight' },
+  { value: 'CUSTOMS_DUTY', label: 'Customs Duty' },
+  { value: 'HANDLING',     label: 'Broker / Handling Fee' },
+  { value: 'STORAGE',      label: 'Storage' },
+  { value: 'INSURANCE',    label: 'Insurance' },
+  { value: 'OTHER',        label: 'Other' },
+]
+
 const DEFAULT_MESSAGES: Record<string, string> = {
   MIAMI_WAREHOUSE:  'Your package has been received at our Miami warehouse and is being prepared for shipment to Barbados.',
   IN_THE_AIR:       'Your package has departed from Miami and is currently in transit by air to Barbados.',
@@ -53,6 +63,12 @@ const DEFAULT_MESSAGES: Record<string, string> = {
   OUT_FOR_DELIVERY: 'Your package is out for delivery today. Please ensure someone is available to receive it at your delivery address.',
   DELIVERED:        'Your package has been successfully delivered. Thank you for choosing CargoLink Barbados!',
   DELAYED:          'Your package has been delayed. We sincerely apologize for the inconvenience and will keep you updated as soon as possible.',
+}
+
+interface ChargeLineItem {
+  chargeType: 'FREIGHT' | 'CUSTOMS_DUTY' | 'HANDLING' | 'STORAGE' | 'INSURANCE' | 'OTHER'
+  amount: string
+  description: string
 }
 
 export const AdminShipmentDetails = () => {
@@ -70,6 +86,23 @@ export const AdminShipmentDetails = () => {
   const [notifyCustomer, setNotifyCustomer] = useState(false)
   const [useCustomMessage, setUseCustomMessage] = useState(false)
   const [customMessage, setCustomMessage] = useState('')
+
+  // Invoice state
+  const [invoices, setInvoices] = useState<Schema['Invoice']['type'][]>([])
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false)
+  const [creatingInvoice, setCreatingInvoice] = useState(false)
+  const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [invoiceNotes, setInvoiceNotes] = useState('')
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [chargeLines, setChargeLines] = useState<ChargeLineItem[]>([
+    { chargeType: 'FREIGHT', amount: '', description: '' }
+  ])
+  const [markingPaid, setMarkingPaid] = useState<Record<string, boolean>>({})
+
+  const invoiceTotal = chargeLines.reduce((sum, l) => {
+    const n = parseFloat(l.amount); return sum + (isNaN(n) ? 0 : n)
+  }, 0)
 
   // When status changes, auto-toggle notify and reset message
   const handleStatusChange = (status: ShipmentStatus) => {
@@ -102,6 +135,11 @@ export const AdminShipmentDetails = () => {
             (a, b) => new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
           )
         )
+
+        const { data: invoiceList } = await client.models.Invoice.list({
+          filter: { shipmentId: { eq: s.id } },
+        })
+        setInvoices(invoiceList ?? [])
       }
     } catch {
       toast.error('Failed to load shipment details')
@@ -169,6 +207,110 @@ export const AdminShipmentDetails = () => {
     }
   }
 
+  const handleCreateInvoice = async () => {
+    if (!shipment || !customer?.cognitoSub) {
+      toast.error('Customer Cognito sub not available — cannot create invoice')
+      return
+    }
+    if (!invoiceNumber.trim()) {
+      toast.error('Invoice number is required')
+      return
+    }
+    const validCharges = chargeLines.filter(l => {
+      const n = parseFloat(l.amount)
+      return !isNaN(n) && n > 0
+    })
+    if (validCharges.length === 0) {
+      toast.error('At least one charge with an amount > 0 is required')
+      return
+    }
+
+    setCreatingInvoice(true)
+    try {
+      // 1. Create ShipmentCharge records
+      for (const line of validCharges) {
+        await client.models.ShipmentCharge.create({
+          shipmentId: shipment.id,
+          chargeType: line.chargeType,
+          amount: parseFloat(line.amount),
+          description: line.description || undefined,
+          customerCognitoSub: customer.cognitoSub,
+        })
+      }
+
+      // 2. Create Invoice record
+      const { data: newInvoice, errors } = await client.models.Invoice.create({
+        customerId: shipment.customerId,
+        shipmentId: shipment.id,
+        invoiceNumber: invoiceNumber.trim(),
+        totalAmount: invoiceTotal,
+        status: 'SENT',
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+        notes: invoiceNotes.trim() || undefined,
+        customerCognitoSub: customer.cognitoSub,
+        trackingNumber: shipment.trackingNumber,
+      })
+
+      if (errors?.length || !newInvoice) {
+        throw new Error(errors?.[0]?.message ?? 'Invoice creation failed')
+      }
+
+      // 3. Upload PDF if provided
+      if (pdfFile) {
+        const s3Key = `invoices/${customer.cognitoSub}/${newInvoice.id}.pdf`
+        await uploadData({
+          path: s3Key,
+          data: pdfFile,
+          options: { contentType: 'application/pdf' },
+        }).result
+        await client.models.Invoice.update({ id: newInvoice.id, s3Key })
+      }
+
+      toast.success('Invoice created successfully')
+
+      // Reset form
+      setShowInvoiceForm(false)
+      setInvoiceNumber('')
+      setDueDate('')
+      setInvoiceNotes('')
+      setPdfFile(null)
+      setChargeLines([{ chargeType: 'FREIGHT', amount: '', description: '' }])
+
+      fetchData()
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to create invoice')
+    } finally {
+      setCreatingInvoice(false)
+    }
+  }
+
+  const handleMarkPaid = async (invoiceId: string) => {
+    setMarkingPaid(prev => ({ ...prev, [invoiceId]: true }))
+    try {
+      await client.models.Invoice.update({
+        id: invoiceId,
+        status: 'PAID',
+        paidAt: new Date().toISOString(),
+      })
+      toast.success('Invoice marked as paid')
+      fetchData()
+    } catch {
+      toast.error('Failed to mark invoice as paid')
+    } finally {
+      setMarkingPaid(prev => ({ ...prev, [invoiceId]: false }))
+    }
+  }
+
+  const handleDownloadInvoice = async (s3Key: string) => {
+    try {
+      const { url } = await getUrl({ path: s3Key, options: { expiresIn: 300 } })
+      window.open(url.toString(), '_blank')
+    } catch {
+      toast.error('Failed to download invoice PDF')
+    }
+  }
+
   if (loading) return <CardSkeleton />
 
   if (!shipment) {
@@ -205,7 +347,7 @@ export const AdminShipmentDetails = () => {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left: shipment info + timeline ── */}
+        {/* ── Left: shipment info + timeline + invoices ── */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <div className="flex items-start justify-between mb-6">
@@ -255,6 +397,219 @@ export const AdminShipmentDetails = () => {
               <Timeline items={trackingItems} />
             ) : (
               <p className="text-gray-500 text-sm text-center py-8">No tracking updates yet</p>
+            )}
+          </Card>
+
+          {/* ── Invoices card ── */}
+          <Card>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-gray-900">Invoices</h2>
+              {!showInvoiceForm && (
+                <button
+                  onClick={() => setShowInvoiceForm(true)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Invoice
+                </button>
+              )}
+            </div>
+
+            {/* Existing invoices list */}
+            {invoices.length > 0 ? (
+              <div className="space-y-3 mb-5">
+                {invoices.map(inv => (
+                  <div key={inv.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{inv.invoiceNumber}</p>
+                      <p className="text-xs text-gray-500">
+                        {inv.totalAmount != null ? `$${inv.totalAmount.toFixed(2)}` : '—'}
+                        {inv.dueDate ? ` · Due ${new Date(inv.dueDate).toLocaleDateString()}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        inv.status === 'PAID'      ? 'bg-green-100 text-green-700' :
+                        inv.status === 'OVERDUE'   ? 'bg-red-100 text-red-700' :
+                        inv.status === 'CANCELLED' ? 'bg-gray-100 text-gray-500' :
+                                                     'bg-amber-100 text-amber-700'
+                      }`}>
+                        {inv.status}
+                      </span>
+                      {inv.s3Key && (
+                        <button
+                          onClick={() => handleDownloadInvoice(inv.s3Key!)}
+                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
+                      {inv.status !== 'PAID' && inv.status !== 'CANCELLED' && (
+                        <button
+                          onClick={() => handleMarkPaid(inv.id)}
+                          disabled={markingPaid[inv.id]}
+                          className="text-xs font-medium text-green-600 hover:text-green-700 disabled:opacity-50 px-2 py-1 border border-green-200 rounded hover:bg-green-50"
+                        >
+                          {markingPaid[inv.id] ? 'Saving…' : 'Mark Paid'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              !showInvoiceForm && (
+                <p className="text-sm text-gray-400 text-center py-6">No invoices yet for this shipment</p>
+              )
+            )}
+
+            {/* New invoice form */}
+            {showInvoiceForm && (
+              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-blue-900">New Invoice</h3>
+                  <button onClick={() => setShowInvoiceForm(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Invoice number */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Invoice Number *</label>
+                  <input
+                    type="text"
+                    value={invoiceNumber}
+                    onChange={e => setInvoiceNumber(e.target.value)}
+                    placeholder="e.g. INV-2024-001"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+
+                {/* Charge lines */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Charges *</label>
+                  <div className="space-y-2">
+                    {chargeLines.map((line, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <select
+                          value={line.chargeType}
+                          onChange={e => {
+                            const updated = [...chargeLines]
+                            updated[idx] = { ...updated[idx], chargeType: e.target.value as ChargeLineItem['chargeType'] }
+                            setChargeLines(updated)
+                          }}
+                          className="border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          {CHARGE_TYPE_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={line.amount}
+                          onChange={e => {
+                            const updated = [...chargeLines]
+                            updated[idx] = { ...updated[idx], amount: e.target.value }
+                            setChargeLines(updated)
+                          }}
+                          placeholder="Amount"
+                          className="w-28 border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={line.description}
+                          onChange={e => {
+                            const updated = [...chargeLines]
+                            updated[idx] = { ...updated[idx], description: e.target.value }
+                            setChargeLines(updated)
+                          }}
+                          placeholder="Description (optional)"
+                          className="flex-1 border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                        {chargeLines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setChargeLines(chargeLines.filter((_, i) => i !== idx))}
+                            className="mt-1 text-gray-400 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setChargeLines([...chargeLines, { chargeType: 'OTHER', amount: '', description: '' }])}
+                    className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    + Add charge
+                  </button>
+                </div>
+
+                {/* Total (read-only) */}
+                <div className="flex justify-between items-center text-sm font-semibold text-gray-900 border-t border-blue-200 pt-2">
+                  <span>Total</span>
+                  <span>${invoiceTotal.toFixed(2)}</span>
+                </div>
+
+                {/* Due date */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={e => setDueDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    value={invoiceNotes}
+                    onChange={e => setInvoiceNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Optional notes for the customer"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none"
+                  />
+                </div>
+
+                {/* PDF upload */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Invoice PDF</label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={e => setPdfFile(e.target.files?.[0] ?? null)}
+                    className="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:text-blue-600 hover:file:bg-blue-50 file:border file:border-gray-200"
+                  />
+                  {pdfFile && <p className="text-xs text-green-600 mt-1">{pdfFile.name} selected</p>}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    onClick={handleCreateInvoice}
+                    loading={creatingInvoice}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Create Invoice
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowInvoiceForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             )}
           </Card>
         </div>
