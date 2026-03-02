@@ -27,6 +27,7 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('shipments')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'' | 'AIR' | 'SEA'>('')
 
   if (error) {
     toast.error('Failed to load shipments')
@@ -38,6 +39,7 @@ export const AdminDashboard = () => {
 
   const filteredShipments = shipments
     .filter((s) => statusFilter === '' || s.status === statusFilter)
+    .filter((s) => typeFilter === '' || s.type === typeFilter)
     .filter((s) =>
       s.trackingNumber.toLowerCase().includes(search.toLowerCase())
     )
@@ -158,7 +160,7 @@ export const AdminDashboard = () => {
           <Card>
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">All Shipments</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   placeholder="Search by tracking number..."
                   value={search}
@@ -169,6 +171,22 @@ export const AdminDashboard = () => {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 />
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium">
+                  {(['', 'AIR', 'SEA'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTypeFilter(t)}
+                      className={`flex-1 py-2 transition-colors ${
+                        typeFilter === t
+                          ? 'text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                      style={typeFilter === t ? { backgroundColor: '#1B2D78' } : {}}
+                    >
+                      {t === '' ? 'All' : t === 'AIR' ? '✈ Air' : '🚢 Sea'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

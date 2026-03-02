@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Home, Settings, User, FileText, Receipt } from 'lucide-react';
+import { Menu, X, LogOut, Home, User, FileText, Receipt } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth';
 import type { CognitoUser } from '../auth';
 
@@ -22,9 +22,8 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
 
   const navigationItems = isAdmin
     ? [
-        { label: 'Dashboard',     path: '/admin/dashboard', icon: Home },
-        { label: 'All Shipments', path: '/admin/shipments',  icon: Settings },
-        { label: 'Invoices',      path: '/admin/invoices',   icon: Receipt },
+        { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
+        { label: 'Invoices',  path: '/admin/invoices',  icon: Receipt },
       ]
     : [
         { label: 'My Shipments', path: '/dashboard', icon: Home },
