@@ -100,6 +100,16 @@ export const AdminShipmentDetails = () => {
   ])
   const [markingPaid, setMarkingPaid] = useState<Record<string, boolean>>({})
 
+  // Edit invoice state
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ invoiceNumber: '', dueDate: '', notes: '', status: 'SENT' })
+  const [editPdfFile, setEditPdfFile] = useState<File | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  // Delete invoice state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deletingInvoice, setDeletingInvoice] = useState(false)
+
   const invoiceTotal = chargeLines.reduce((sum, l) => {
     const n = parseFloat(l.amount); return sum + (isNaN(n) ? 0 : n)
   }, 0)
@@ -311,6 +321,66 @@ export const AdminShipmentDetails = () => {
     }
   }
 
+  const startEditInvoice = (inv: Schema['Invoice']['type']) => {
+    setEditingInvoiceId(inv.id)
+    setEditForm({
+      invoiceNumber: inv.invoiceNumber ?? '',
+      dueDate: inv.dueDate ? inv.dueDate.slice(0, 10) : '',
+      notes: inv.notes ?? '',
+      status: inv.status ?? 'SENT',
+    })
+    setEditPdfFile(null)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingInvoiceId || !editForm.invoiceNumber.trim()) {
+      toast.error('Invoice number is required')
+      return
+    }
+    setSavingEdit(true)
+    try {
+      await client.models.Invoice.update({
+        id: editingInvoiceId,
+        invoiceNumber: editForm.invoiceNumber.trim(),
+        dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : undefined,
+        notes: editForm.notes.trim() || undefined,
+        status: editForm.status as Schema['Invoice']['type']['status'],
+      })
+
+      if (editPdfFile && customer?.cognitoSub) {
+        const s3Key = `invoices/${customer.cognitoSub}/${editingInvoiceId}.pdf`
+        await uploadData({
+          path: s3Key,
+          data: editPdfFile,
+          options: { contentType: 'application/pdf' },
+        }).result
+        await client.models.Invoice.update({ id: editingInvoiceId, s3Key })
+      }
+
+      toast.success('Invoice updated')
+      setEditingInvoiceId(null)
+      fetchData()
+    } catch {
+      toast.error('Failed to update invoice')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    setDeletingInvoice(true)
+    try {
+      await client.models.Invoice.delete({ id: invoiceId })
+      toast.success('Invoice deleted')
+      setConfirmDeleteId(null)
+      fetchData()
+    } catch {
+      toast.error('Failed to delete invoice')
+    } finally {
+      setDeletingInvoice(false)
+    }
+  }
+
   if (loading) return <CardSkeleton />
 
   if (!shipment) {
@@ -419,42 +489,147 @@ export const AdminShipmentDetails = () => {
             {invoices.length > 0 ? (
               <div className="space-y-3 mb-5">
                 {invoices.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{inv.invoiceNumber}</p>
-                      <p className="text-xs text-gray-500">
-                        {inv.totalAmount != null ? `$${inv.totalAmount.toFixed(2)}` : '—'}
-                        {inv.dueDate ? ` · Due ${new Date(inv.dueDate).toLocaleDateString()}` : ''}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        inv.status === 'PAID'      ? 'bg-green-100 text-green-700' :
-                        inv.status === 'OVERDUE'   ? 'bg-red-100 text-red-700' :
-                        inv.status === 'CANCELLED' ? 'bg-gray-100 text-gray-500' :
-                                                     'bg-amber-100 text-amber-700'
-                      }`}>
-                        {inv.status}
-                      </span>
-                      {inv.s3Key && (
-                        <button
-                          onClick={() => handleDownloadInvoice(inv.s3Key!)}
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                          title="Download PDF"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      )}
-                      {inv.status !== 'PAID' && inv.status !== 'CANCELLED' && (
-                        <button
-                          onClick={() => handleMarkPaid(inv.id)}
-                          disabled={markingPaid[inv.id]}
-                          className="text-xs font-medium text-green-600 hover:text-green-700 disabled:opacity-50 px-2 py-1 border border-green-200 rounded hover:bg-green-50"
-                        >
-                          {markingPaid[inv.id] ? 'Saving…' : 'Mark Paid'}
-                        </button>
-                      )}
-                    </div>
+                  <div key={inv.id}>
+                    {editingInvoiceId === inv.id ? (
+                      /* ── Inline edit form ── */
+                      <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-blue-900">Edit Invoice</p>
+                          <button onClick={() => setEditingInvoiceId(null)} className="text-gray-400 hover:text-gray-600">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Invoice Number *</label>
+                            <input
+                              type="text"
+                              value={editForm.invoiceNumber}
+                              onChange={e => setEditForm(f => ({ ...f, invoiceNumber: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                            <select
+                              value={editForm.status}
+                              onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {['DRAFT','SENT','PAID','OVERDUE','CANCELLED'].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Due Date</label>
+                            <input
+                              type="date"
+                              value={editForm.dueDate}
+                              onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Replace PDF</label>
+                            <input
+                              type="file"
+                              accept="application/pdf"
+                              onChange={e => setEditPdfFile(e.target.files?.[0] ?? null)}
+                              className="w-full text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-2 file:rounded file:border file:border-gray-200 file:text-xs file:bg-white file:text-blue-600"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                          <textarea
+                            value={editForm.notes}
+                            onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                            rows={2}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSaveEdit} loading={savingEdit} className="flex-1">
+                            Save Changes
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => setEditingInvoiceId(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : confirmDeleteId === inv.id ? (
+                      /* ── Delete confirmation ── */
+                      <div className="flex items-center justify-between border border-red-200 rounded-lg px-4 py-3 bg-red-50">
+                        <p className="text-sm text-red-700 font-medium">Delete <span className="font-mono">{inv.invoiceNumber}</span>? This cannot be undone.</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleDeleteInvoice(inv.id)}
+                            disabled={deletingInvoice}
+                            className="text-xs font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded"
+                          >
+                            {deletingInvoice ? 'Deleting…' : 'Yes, delete'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-xs font-medium text-gray-600 hover:text-gray-900 px-3 py-1.5 border border-gray-300 rounded bg-white"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ── Normal row ── */
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{inv.invoiceNumber}</p>
+                          <p className="text-xs text-gray-500">
+                            {inv.totalAmount != null ? `$${inv.totalAmount.toFixed(2)}` : '—'}
+                            {inv.dueDate ? ` · Due ${new Date(inv.dueDate).toLocaleDateString()}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            inv.status === 'PAID'      ? 'bg-green-100 text-green-700' :
+                            inv.status === 'OVERDUE'   ? 'bg-red-100 text-red-700' :
+                            inv.status === 'CANCELLED' ? 'bg-gray-100 text-gray-500' :
+                                                         'bg-amber-100 text-amber-700'
+                          }`}>
+                            {inv.status}
+                          </span>
+                          {inv.s3Key && (
+                            <button
+                              onClick={() => handleDownloadInvoice(inv.s3Key!)}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              title="Download PDF"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          )}
+                          {inv.status !== 'PAID' && inv.status !== 'CANCELLED' && (
+                            <button
+                              onClick={() => handleMarkPaid(inv.id)}
+                              disabled={markingPaid[inv.id]}
+                              className="text-xs font-medium text-green-600 hover:text-green-700 disabled:opacity-50 px-2 py-1 border border-green-200 rounded hover:bg-green-50"
+                            >
+                              {markingPaid[inv.id] ? 'Saving…' : 'Mark Paid'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => startEditInvoice(inv)}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-200 rounded hover:bg-blue-50"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(inv.id)}
+                            className="text-xs font-medium text-red-500 hover:text-red-700 px-2 py-1 border border-red-200 rounded hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

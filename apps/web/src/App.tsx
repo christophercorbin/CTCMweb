@@ -12,6 +12,7 @@ import { CustomerInfo } from './pages/CustomerInfo'
 import { Invoices } from './pages/Invoices'
 import { AdminDashboard } from './pages/AdminDashboard'
 import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
+import { AdminInvoices } from './pages/AdminInvoices'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
 import { PendingPackages } from './pages/PendingPackages'
 
@@ -107,6 +108,17 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AuthenticatedLayout>
                 <AdminShipmentDetails />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/invoices"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <AdminInvoices />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
