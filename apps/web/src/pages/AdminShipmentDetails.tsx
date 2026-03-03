@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Mail, MailX, Download, Plus, X, Truck, PauseCircle, Pencil, Trash2, Save } from 'lucide-react'
+import { ArrowLeft, Mail, MailX, Download, Plus, X, Truck, PauseCircle, Pencil, Trash2, Save, HelpCircle } from 'lucide-react'
 import { Button, Card, CardSkeleton, Badge, Timeline } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl } from 'aws-amplify/storage'
@@ -760,23 +760,39 @@ export const AdminShipmentDetails = () => {
                   )}
                 </div>
 
-                {shipment.customerInstruction && (
+                {/* Always show customer instruction status when shipment is at a decision point */}
+                {(shipment.customerInstruction ||
+                  shipment.status === 'MIAMI_WAREHOUSE' ||
+                  shipment.status === 'AT_WAREHOUSE' ||
+                  shipment.status === 'PENDING') && (
                   <div className={`flex items-center gap-3 rounded-lg px-4 py-3 mb-4 ${
                     shipment.customerInstruction === 'HOLD'
                       ? 'bg-amber-50 border border-amber-200'
-                      : 'bg-blue-50 border border-blue-200'
+                      : shipment.customerInstruction === 'SHIP'
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'bg-gray-50 border border-gray-200'
                   }`}>
                     {shipment.customerInstruction === 'HOLD'
                       ? <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      : <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      : shipment.customerInstruction === 'SHIP'
+                      ? <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      : <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     }
                     <div>
                       <p className={`text-sm font-semibold ${
-                        shipment.customerInstruction === 'HOLD' ? 'text-amber-800' : 'text-blue-800'
+                        shipment.customerInstruction === 'HOLD' ? 'text-amber-800' :
+                        shipment.customerInstruction === 'SHIP' ? 'text-blue-800' :
+                        'text-gray-600'
                       }`}>
-                        Customer instruction: {shipment.customerInstruction === 'HOLD' ? 'Hold at warehouse' : 'Ship to Barbados'}
+                        {shipment.customerInstruction === 'HOLD'
+                          ? 'Customer instruction: Hold at warehouse'
+                          : shipment.customerInstruction === 'SHIP'
+                          ? 'Customer instruction: Ship to Barbados'
+                          : 'Awaiting customer decision'}
                       </p>
-                      <p className="text-xs text-gray-500">Set by customer</p>
+                      <p className="text-xs text-gray-500">
+                        {shipment.customerInstruction ? 'Set by customer' : 'Customer has not yet selected Ship or Hold'}
+                      </p>
                     </div>
                   </div>
                 )}

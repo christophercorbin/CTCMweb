@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse } from 'lucide-react'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle } from 'lucide-react'
 import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
@@ -260,6 +260,17 @@ export const AdminDashboard = () => {
                             {shipment.customerInstruction === 'HOLD' && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
                                 <PauseCircle className="w-3 h-3" /> Hold
+                              </span>
+                            )}
+                            {shipment.customerInstruction === 'SHIP' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200">
+                                <Truck className="w-3 h-3" /> Ship
+                              </span>
+                            )}
+                            {!shipment.customerInstruction &&
+                              (shipment.status === 'MIAMI_WAREHOUSE' || shipment.status === 'AT_WAREHOUSE') && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-200">
+                                <HelpCircle className="w-3 h-3" /> Awaiting
                               </span>
                             )}
                           </div>
