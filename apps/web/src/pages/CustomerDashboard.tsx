@@ -4,7 +4,7 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 import {
   Plus, Search, Eye, Package, Truck, CheckCircle,
-  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X,
+  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X, PauseCircle,
 } from 'lucide-react'
 import { uploadData } from 'aws-amplify/storage'
 import toast from 'react-hot-toast'
@@ -95,6 +95,7 @@ export const CustomerDashboard = () => {
     inTransit: shipments.filter((s) => IN_TRANSIT_STATUSES.has(s.status)).length,
     delivered: shipments.filter((s) => s.status === 'DELIVERED').length,
     customs:   shipments.filter((s) => CUSTOMS_STATUSES.has(s.status)).length,
+    onHold:    shipments.filter((s) => s.customerInstruction === 'HOLD').length,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [shipments])
 
@@ -164,7 +165,7 @@ export const CustomerDashboard = () => {
         <div className="space-y-6">
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard
               icon={<Package className="w-5 h-5 text-blue-600" />}
               label="Total Shipments"
@@ -188,6 +189,13 @@ export const CustomerDashboard = () => {
               label="In Customs"
               value={loading ? '—' : stats.customs}
               color="bg-orange-50"
+            />
+            <StatCard
+              icon={<PauseCircle className="w-5 h-5 text-amber-600" />}
+              label="On Hold"
+              value={loading ? '—' : stats.onHold}
+              sub="Held at warehouse"
+              color="bg-amber-50"
             />
           </div>
 
@@ -297,7 +305,14 @@ export const CustomerDashboard = () => {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <StatusBadge status={s.status} />
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <StatusBadge status={s.status} />
+                            {s.customerInstruction === 'HOLD' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
+                                <PauseCircle className="w-3 h-3" /> Hold
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${

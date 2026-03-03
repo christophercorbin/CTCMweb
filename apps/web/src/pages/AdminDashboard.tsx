@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users } from 'lucide-react'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle } from 'lucide-react'
 import { Button, Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { ShipmentStatus } from '../types'
@@ -36,6 +36,7 @@ export const AdminDashboard = () => {
   const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED')
   const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD')
   const delayedShipments = shipments.filter((s) => s.status === 'RETURNED')
+  const heldShipments = shipments.filter((s) => s.customerInstruction === 'HOLD')
 
   const filteredShipments = shipments
     .filter((s) => statusFilter === '' || s.status === statusFilter)
@@ -123,7 +124,7 @@ export const AdminDashboard = () => {
         <CustomerManagement />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <MetricCard
               icon={Package}
               title="Active Shipments"
@@ -154,6 +155,13 @@ export const AdminDashboard = () => {
               subtitle="Needs attention"
               color="bg-red-600"
               onClick={() => setStatusFilter('RETURNED')}
+            />
+            <MetricCard
+              icon={PauseCircle}
+              title="On Hold"
+              value={heldShipments.length}
+              subtitle="Customer requested hold"
+              color="bg-amber-500"
             />
           </div>
 
@@ -239,7 +247,14 @@ export const AdminDashboard = () => {
                           {shipment.origin ?? '-'} → {shipment.destination ?? '-'}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge status={shipment.status as ShipmentStatus} />
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge status={shipment.status as ShipmentStatus} />
+                            {shipment.customerInstruction === 'HOLD' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
+                                <PauseCircle className="w-3 h-3" /> Hold
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-gray-600 text-xs">
                           {shipment.updatedAt

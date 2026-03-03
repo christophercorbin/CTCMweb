@@ -34,6 +34,7 @@ const schema = a
       "OTHER",
     ]),
     InvoiceStatus: a.enum(["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"]),
+    ShipmentInstruction: a.enum(["SHIP", "HOLD"]),
 
     // ─── Customer ────────────────────────────────────────────────────
     Customer: a
@@ -71,6 +72,8 @@ const schema = a
         // Set to the customer's Cognito sub so admin-created shipments
         // are visible to the customer via allow.ownerDefinedIn below
         customerCognitoSub: a.string(),
+        // Customer's shipping instruction — set by customer after warehouse notification
+        customerInstruction: a.ref("ShipmentInstruction"),
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         packages: a.hasMany("Package", "shipmentId"),

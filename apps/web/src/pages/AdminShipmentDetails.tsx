@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Mail, MailX, Download, Plus, X } from 'lucide-react'
+import { ArrowLeft, Mail, MailX, Download, Plus, X, Truck, PauseCircle } from 'lucide-react'
 import { Button, Card, CardSkeleton, Badge, Timeline } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl } from 'aws-amplify/storage'
@@ -452,6 +452,27 @@ export const AdminShipmentDetails = () => {
                 </div>
               )}
             </div>
+
+            {shipment.customerInstruction && (
+              <div className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                shipment.customerInstruction === 'HOLD'
+                  ? 'bg-amber-50 border border-amber-200'
+                  : 'bg-blue-50 border border-blue-200'
+              }`}>
+                {shipment.customerInstruction === 'HOLD'
+                  ? <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  : <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                }
+                <div>
+                  <p className={`text-sm font-semibold ${
+                    shipment.customerInstruction === 'HOLD' ? 'text-amber-800' : 'text-blue-800'
+                  }`}>
+                    Customer instruction: {shipment.customerInstruction === 'HOLD' ? 'Hold at warehouse' : 'Ship to Barbados'}
+                  </p>
+                  <p className="text-xs text-gray-500">Set by customer</p>
+                </div>
+              </div>
+            )}
 
             {shipment.description && (
               <div>

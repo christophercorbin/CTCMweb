@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2 } from 'lucide-react'
 import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
@@ -18,6 +18,7 @@ export const ShipmentDetails = () => {
   const [events, setEvents] = useState<Schema['ShipmentEvent']['type'][]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [settingInstruction, setSettingInstruction] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -56,6 +57,30 @@ export const ShipmentDetails = () => {
 
     return () => sub.unsubscribe()
   }, [id])
+
+  // Statuses where the customer can still set a shipping instruction
+  const INSTRUCTION_ELIGIBLE = new Set(['PENDING', 'MIAMI_WAREHOUSE', 'AT_WAREHOUSE'])
+
+  const handleSetInstruction = async (instruction: 'SHIP' | 'HOLD') => {
+    if (!shipment) return
+    setSettingInstruction(true)
+    try {
+      const { data: updated } = await client.models.Shipment.update({
+        id: shipment.id,
+        customerInstruction: instruction,
+      })
+      setShipment(updated)
+      toast.success(
+        instruction === 'SHIP'
+          ? 'Got it — your package will be shipped to Barbados.'
+          : 'Got it — your package will be held at the warehouse.'
+      )
+    } catch {
+      toast.error('Failed to save your preference. Please try again.')
+    } finally {
+      setSettingInstruction(false)
+    }
+  }
 
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -179,7 +204,87 @@ export const ShipmentDetails = () => {
           </Card>
         </div>
 
-        <div>
+        <div className="space-y-6">
+          {/* ── Ship / Hold instruction card ── */}
+          {INSTRUCTION_ELIGIBLE.has(shipment.status) && (
+            <Card>
+              <h2 className="text-base font-bold text-gray-900 mb-1">Shipping Preference</h2>
+              <p className="text-xs text-gray-500 mb-4">
+                Your package has arrived at the warehouse. Let us know how you'd like to proceed.
+              </p>
+
+              {shipment.customerInstruction ? (
+                /* Instruction already set — show current + change option */
+                <div>
+                  <div className={`flex items-center gap-3 rounded-xl p-4 mb-3 ${
+                    shipment.customerInstruction === 'SHIP'
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'bg-amber-50 border border-amber-200'
+                  }`}>
+                    {shipment.customerInstruction === 'SHIP'
+                      ? <Truck className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      : <PauseCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    }
+                    <div>
+                      <p className={`text-sm font-semibold ${
+                        shipment.customerInstruction === 'SHIP' ? 'text-blue-800' : 'text-amber-800'
+                      }`}>
+                        {shipment.customerInstruction === 'SHIP' ? 'Ship to Barbados' : 'Hold at Warehouse'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">Your current preference</p>
+                    </div>
+                    <CheckCircle2 className={`w-4 h-4 ml-auto ${
+                      shipment.customerInstruction === 'SHIP' ? 'text-blue-500' : 'text-amber-500'
+                    }`} />
+                  </div>
+                  <p className="text-xs text-gray-400 text-center mb-2">Need to change your mind?</p>
+                  <div className="flex gap-2">
+                    {shipment.customerInstruction !== 'SHIP' && (
+                      <button
+                        onClick={() => handleSetInstruction('SHIP')}
+                        disabled={settingInstruction}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                      >
+                        <Truck className="w-3.5 h-3.5" /> Ship it
+                      </button>
+                    )}
+                    {shipment.customerInstruction !== 'HOLD' && (
+                      <button
+                        onClick={() => handleSetInstruction('HOLD')}
+                        disabled={settingInstruction}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-amber-600 border border-amber-300 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                      >
+                        <PauseCircle className="w-3.5 h-3.5" /> Hold it
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* No instruction yet — prominent action buttons */
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleSetInstruction('SHIP')}
+                    disabled={settingInstruction}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-blue-200 hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50 transition-colors group"
+                  >
+                    <Truck className="w-7 h-7 text-blue-500 group-hover:text-blue-700" />
+                    <span className="text-sm font-bold text-blue-700">Ship it</span>
+                    <span className="text-xs text-gray-400 text-center leading-tight">Send to Barbados</span>
+                  </button>
+                  <button
+                    onClick={() => handleSetInstruction('HOLD')}
+                    disabled={settingInstruction}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-amber-200 hover:border-amber-500 hover:bg-amber-50 disabled:opacity-50 transition-colors group"
+                  >
+                    <PauseCircle className="w-7 h-7 text-amber-500 group-hover:text-amber-700" />
+                    <span className="text-sm font-bold text-amber-700">Hold it</span>
+                    <span className="text-xs text-gray-400 text-center leading-tight">Keep at warehouse</span>
+                  </button>
+                </div>
+              )}
+            </Card>
+          )}
+
           <Card>
             <h2 className="text-xl font-bold text-gray-900 mb-6">Invoices</h2>
             <div className="mb-6">
@@ -207,7 +312,7 @@ export const ShipmentDetails = () => {
               <p>Only PDF files are accepted.</p>
             </div>
           </Card>
-        </div>
+        </div>  {/* end right column */}
       </div>
     </div>
   )
