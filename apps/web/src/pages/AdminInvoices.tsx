@@ -69,9 +69,9 @@ export const AdminInvoices = () => {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const now = new Date()
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const stats = useMemo(() => {
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const unpaid  = invoices.filter(i => i.status === 'SENT' || i.status === 'OVERDUE' || i.status === 'DRAFT')
     const paid    = invoices.filter(i => i.status === 'PAID')
     const monthly = invoices.filter(i =>

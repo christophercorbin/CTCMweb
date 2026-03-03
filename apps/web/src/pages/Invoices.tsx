@@ -107,6 +107,28 @@ export const Invoices = () => {
     }
   };
 
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return invoices.filter(inv => {
+      const matchStatus =
+        statusFilter === 'all' ||
+        normalizeStatus(inv.status) === statusFilter;
+      const matchSearch =
+        !q ||
+        inv.invoiceNumber?.toLowerCase().includes(q) ||
+        inv.trackingNumber?.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [invoices, search, statusFilter]);
+
+  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
+  const paidAmount = invoices
+    .filter(inv => inv.status === 'PAID')
+    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
+  const pendingAmount = invoices
+    .filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
+    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
@@ -153,28 +175,6 @@ export const Invoices = () => {
       </div>
     );
   }
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return invoices.filter(inv => {
-      const matchStatus =
-        statusFilter === 'all' ||
-        normalizeStatus(inv.status) === statusFilter;
-      const matchSearch =
-        !q ||
-        inv.invoiceNumber?.toLowerCase().includes(q) ||
-        inv.trackingNumber?.toLowerCase().includes(q);
-      return matchStatus && matchSearch;
-    });
-  }, [invoices, search, statusFilter]);
-
-  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
-  const paidAmount = invoices
-    .filter(inv => inv.status === 'PAID')
-    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
-  const pendingAmount = invoices
-    .filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
-    .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto">
