@@ -300,7 +300,7 @@ export const CustomerInfo = () => {
             <Package className="w-7 h-7 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Your Miami Shipping Addresses</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Your Skybox Addresses</h2>
             <p className="text-sm text-gray-600 mb-4">Use these addresses when placing orders online — your package will be forwarded to Barbados</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

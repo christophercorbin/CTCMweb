@@ -436,7 +436,7 @@ export const CustomerDashboard = () => {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 text-white">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-4 h-4 text-blue-200" />
-              <h3 className="text-sm font-semibold">My Shipping Addresses</h3>
+              <h3 className="text-sm font-semibold">My Skybox Addresses</h3>
             </div>
             {skybox === null ? (
               <p className="text-blue-200 text-xs">Loading addresses...</p>

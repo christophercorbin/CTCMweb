@@ -325,7 +325,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
         {/* ── Air address ── */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">✈ Air Freight Address</label>
+            <label className="block text-sm font-medium text-gray-700">✈ Air Skybox Address</label>
             {manualEdit.air && !customer && (
               <button
                 type="button"
@@ -351,7 +351,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
         {/* ── Sea address ── */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">🚢 Sea Freight Address</label>
+            <label className="block text-sm font-medium text-gray-700">🚢 Sea Skybox Address</label>
             {manualEdit.sea && !customer && (
               <button
                 type="button"
