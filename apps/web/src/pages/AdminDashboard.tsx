@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle } from 'lucide-react'
-import { Button, Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse } from 'lucide-react'
+import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
+import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
 import { ShipmentStatus } from '../types'
 import { useShipments } from '../hooks/useShipments'
 import type { Schema } from '../../../../amplify/data/resource'
 
 type DynamoShipment = Schema['Shipment']['type']
-type AdminTab = 'shipments' | 'customers'
+type AdminTab = 'shipments' | 'customers' | 'receipts'
 
 const statusOptions = [
   { value: '', label: 'All Statuses' },
@@ -84,15 +85,9 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">CargoLink Barbados Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Daily workflow and shipment management</p>
-        </div>
-        <Button onClick={() => navigate('/admin/warehouse-receipt')} size="lg">
-          <Package className="w-5 h-5 mr-2" />
-          New Warehouse Receipt
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">CargoLink Barbados Admin Dashboard</h1>
+        <p className="text-gray-600 mt-1">Daily workflow and shipment management</p>
       </div>
 
       <div className="flex gap-4 border-b border-gray-200">
@@ -118,9 +113,22 @@ export const AdminDashboard = () => {
           <Users className="w-5 h-5" />
           Customers
         </button>
+        <button
+          onClick={() => setActiveTab('receipts')}
+          className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative ${
+            activeTab === 'receipts'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Warehouse className="w-5 h-5" />
+          Warehouse Receipts
+        </button>
       </div>
 
-      {activeTab === 'customers' ? (
+      {activeTab === 'receipts' ? (
+        <WarehouseReceiptIntake onSuccess={() => setActiveTab('shipments')} />
+      ) : activeTab === 'customers' ? (
         <CustomerManagement />
       ) : (
         <div className="space-y-6">
