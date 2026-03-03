@@ -304,6 +304,15 @@
               "isRequired": false,
               "attributes": []
             },
+            "customerInstruction": {
+              "name": "customerInstruction",
+              "isArray": false,
+              "type": {
+                "enum": "ShipmentInstruction"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
             "customer": {
               "name": "customer",
               "isArray": false,
@@ -1222,6 +1231,13 @@
             "PAID",
             "OVERDUE",
             "CANCELLED"
+          ]
+        },
+        "ShipmentInstruction": {
+          "name": "ShipmentInstruction",
+          "values": [
+            "SHIP",
+            "HOLD"
           ]
         }
       },
