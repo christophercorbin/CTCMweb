@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { EmptyState } from '../components/EmptyState';
 import toast from 'react-hot-toast';
-import { FileText, Download, Calendar, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { FileText, Download, Calendar, DollarSign, CheckCircle, Clock, XCircle, Search } from 'lucide-react';
 import { generateClient } from 'aws-amplify/data';
 import { getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -23,6 +23,8 @@ export const Invoices = () => {
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<AppSyncInvoice[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
 
   useEffect(() => {
     fetchInvoices();
@@ -152,6 +154,20 @@ export const Invoices = () => {
     );
   }
 
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return invoices.filter(inv => {
+      const matchStatus =
+        statusFilter === 'all' ||
+        normalizeStatus(inv.status) === statusFilter;
+      const matchSearch =
+        !q ||
+        inv.invoiceNumber?.toLowerCase().includes(q) ||
+        inv.trackingNumber?.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [invoices, search, statusFilter]);
+
   const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
   const paidAmount = invoices
     .filter(inv => inv.status === 'PAID')
@@ -206,6 +222,35 @@ export const Invoices = () => {
       </div>
 
       <Card>
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search invoice # or tracking #…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium">
+            {(['all', 'pending', 'paid', 'overdue'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`flex-1 px-3 py-2 transition-colors whitespace-nowrap ${
+                  statusFilter === s
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -234,7 +279,13 @@ export const Invoices = () => {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => {
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-sm text-gray-400">
+                    No invoices match your filters
+                  </td>
+                </tr>
+              ) : filtered.map((invoice) => {
                 const uiStatus = normalizeStatus(invoice.status);
                 return (
                   <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
