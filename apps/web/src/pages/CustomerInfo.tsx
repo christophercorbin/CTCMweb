@@ -1,37 +1,91 @@
 import { useState, useEffect } from 'react';
+import { generateClient } from 'aws-amplify/data';
+import type { Schema } from '../../../../amplify/data/resource';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { getCurrentUser } from '../auth';
 import toast from 'react-hot-toast';
-import { User, Mail, Phone, MapPin, Building, Plane, Ship, Package } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building, Plane, Ship, Package, Copy, Check } from 'lucide-react';
 
-interface CustomerInfo {
+const client = generateClient<Schema>();
+
+interface CustomerData {
   id: string;
   name: string;
   email: string;
   phone: string;
   address: string;
   company: string;
-  air_skybox_address?: string;
-  sea_skybox_address?: string;
+  airSkyboxAddress: string;
+  seaSkyboxAddress: string;
+}
+
+const EMPTY: CustomerData = {
+  id: '',
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  company: '',
+  airSkyboxAddress: '',
+  seaSkyboxAddress: '',
+};
+
+function AddressBlock({ icon, title, address, sub }: {
+  icon: React.ReactNode
+  title: string
+  address: string
+  sub: string
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!address) return;
+    navigator.clipboard.writeText(address).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
+        </div>
+        {address && (
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+          >
+            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        )}
+      </div>
+      {address ? (
+        <pre className="text-sm text-gray-700 font-mono bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-wrap leading-relaxed">
+          {address}
+        </pre>
+      ) : (
+        <p className="text-sm text-gray-400 italic bg-gray-50 p-3 rounded border border-gray-200">
+          Not set — contact support
+        </p>
+      )}
+      <p className="text-xs text-gray-500 mt-2">{sub}</p>
+    </div>
+  );
 }
 
 export const CustomerInfo = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    id: '',
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    company: '',
-    air_skybox_address: '',
-    sea_skybox_address: '',
-  });
+  const [customerData, setCustomerData] = useState<CustomerData>(EMPTY);
+  // Snapshot to restore on cancel
+  const [snapshot, setSnapshot] = useState<CustomerData>(EMPTY);
 
   useEffect(() => {
     fetchCustomerInfo();
@@ -40,21 +94,36 @@ export const CustomerInfo = () => {
   const fetchCustomerInfo = async () => {
     try {
       setLoading(true);
-      const user = await getCurrentUser();
+      const { data, errors } = await client.models.Customer.list();
 
-      if (!user) {
-        toast.error('Not authenticated');
+      if (errors?.length) {
+        console.error('[CustomerInfo] AppSync errors:', errors);
+        toast.error('Failed to load customer information');
+        return;
+      }
+
+      const record = data?.[0];
+      if (!record) {
+        // No Customer record yet (e.g. admin-created account without post-confirmation trigger)
         setLoading(false);
         return;
       }
 
-      // TODO: Phase 3 - Fetch from AWS RDS via API Gateway
-      setCustomerInfo((prev) => ({
-        ...prev,
-        email: user.email || '',
-      }));
+      const loaded: CustomerData = {
+        id: record.id,
+        name: record.name ?? '',
+        email: record.email ?? '',
+        phone: record.phone ?? '',
+        address: record.address ?? '',
+        company: record.company ?? '',
+        airSkyboxAddress: record.airSkyboxAddress ?? '',
+        seaSkyboxAddress: record.seaSkyboxAddress ?? '',
+      };
+
+      setCustomerData(loaded);
+      setSnapshot(loaded);
     } catch (error) {
-      console.error('Error fetching customer info:', error);
+      console.error('[CustomerInfo] fetch error:', error);
       toast.error('Failed to load customer information');
     } finally {
       setLoading(false);
@@ -62,26 +131,42 @@ export const CustomerInfo = () => {
   };
 
   const handleSave = async () => {
+    if (!customerData.id) {
+      toast.error('No customer record found');
+      return;
+    }
+
     try {
       setSaving(true);
 
-      const user = await getCurrentUser();
+      const { errors } = await client.models.Customer.update({
+        id: customerData.id,
+        name: customerData.name,
+        phone: customerData.phone || undefined,
+        address: customerData.address || undefined,
+        company: customerData.company || undefined,
+      });
 
-      if (!user) {
-        toast.error('Not authenticated');
-        setSaving(false);
+      if (errors?.length) {
+        console.error('[CustomerInfo] update errors:', errors);
+        toast.error('Failed to save customer information');
         return;
       }
 
-      // TODO: Phase 3 - Save to AWS RDS via API Gateway
-      toast('Database features coming in Phase 3', { icon: 'ℹ️' });
+      setSnapshot(customerData);
       setEditing(false);
+      toast.success('Profile updated successfully');
     } catch (error) {
-      console.error('Error saving customer info:', error);
+      console.error('[CustomerInfo] save error:', error);
       toast.error('Failed to save customer information');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    setCustomerData(snapshot);
+    setEditing(false);
   };
 
   if (loading) {
@@ -127,10 +212,8 @@ export const CustomerInfo = () => {
                 </div>
               </label>
               <Input
-                value={customerInfo.name}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, name: e.target.value })
-                }
+                value={customerData.name}
+                onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
                 disabled={!editing}
                 placeholder="Enter your full name"
               />
@@ -145,12 +228,9 @@ export const CustomerInfo = () => {
               </label>
               <Input
                 type="email"
-                value={customerInfo.email}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, email: e.target.value })
-                }
-                disabled={!editing}
-                placeholder="Enter your email"
+                value={customerData.email}
+                disabled
+                placeholder="Your email address"
               />
             </div>
 
@@ -163,10 +243,8 @@ export const CustomerInfo = () => {
               </label>
               <Input
                 type="tel"
-                value={customerInfo.phone}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, phone: e.target.value })
-                }
+                value={customerData.phone}
+                onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
                 disabled={!editing}
                 placeholder="Enter your phone number"
               />
@@ -180,10 +258,8 @@ export const CustomerInfo = () => {
                 </div>
               </label>
               <Input
-                value={customerInfo.company}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, company: e.target.value })
-                }
+                value={customerData.company}
+                onChange={(e) => setCustomerData({ ...customerData, company: e.target.value })}
                 disabled={!editing}
                 placeholder="Enter your company name"
               />
@@ -197,10 +273,8 @@ export const CustomerInfo = () => {
                 </div>
               </label>
               <Input
-                value={customerInfo.address}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, address: e.target.value })
-                }
+                value={customerData.address}
+                onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
                 disabled={!editing}
                 placeholder="Enter your full address"
               />
@@ -212,14 +286,7 @@ export const CustomerInfo = () => {
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
-              <Button
-                onClick={() => {
-                  setEditing(false);
-                  fetchCustomerInfo();
-                }}
-                variant="secondary"
-                disabled={saving}
-              >
+              <Button onClick={handleCancel} variant="secondary" disabled={saving}>
                 Cancel
               </Button>
             </div>
@@ -227,53 +294,38 @@ export const CustomerInfo = () => {
         </div>
       </Card>
 
-      {customerInfo.air_skybox_address || customerInfo.sea_skybox_address ? (
-        <Card className="bg-gradient-to-br from-blue-50 to-teal-50 border-blue-200 mt-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-600 rounded-lg">
-              <Package className="w-7 h-7 text-white" />
+      <Card className="bg-gradient-to-br from-blue-50 to-teal-50 border-blue-200 mt-6">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-600 rounded-lg flex-shrink-0">
+            <Package className="w-7 h-7 text-white" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Your Miami Shipping Addresses</h2>
+            <p className="text-sm text-gray-600 mb-4">Use these addresses when placing orders online — your package will be forwarded to Barbados</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AddressBlock
+                icon={<Plane className="w-5 h-5 text-blue-600" />}
+                title="✈ Air Freight"
+                address={customerData.airSkyboxAddress}
+                sub="Faster delivery · typically 3–5 days"
+              />
+              <AddressBlock
+                icon={<Ship className="w-5 h-5 text-teal-600" />}
+                title="🚢 Sea Freight"
+                address={customerData.seaSkyboxAddress}
+                sub="Cost-effective · typically 3–4 weeks"
+              />
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Your Skybox Addresses</h2>
-              <p className="text-sm text-gray-600 mb-4">Use these addresses when shipping your packages</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {customerInfo.air_skybox_address && (
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Plane className="w-5 h-5 text-blue-600" />
-                      <h3 className="font-bold text-gray-900">Air Freight Address</h3>
-                    </div>
-                    <p className="text-sm text-gray-700 font-mono bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-line">
-                      {customerInfo.air_skybox_address}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">For faster delivery via air freight</p>
-                  </div>
-                )}
-
-                {customerInfo.sea_skybox_address && (
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Ship className="w-5 h-5 text-teal-600" />
-                      <h3 className="font-bold text-gray-900">Sea Freight Address</h3>
-                    </div>
-                    <p className="text-sm text-gray-700 font-mono bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-line">
-                      {customerInfo.sea_skybox_address}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">For cost-effective shipping via sea freight</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 bg-blue-100 rounded-lg p-3">
-                <p className="text-sm text-blue-900">
-                  <span className="font-semibold">Tip:</span> Always include your skybox address as the Barbados address when ordering online
-                </p>
-              </div>
+            <div className="mt-4 bg-blue-100 rounded-lg p-3">
+              <p className="text-sm text-blue-900">
+                <span className="font-semibold">Tip:</span> Copy and paste your shipping address directly into checkout — your name is already included at the top.
+              </p>
             </div>
           </div>
-        </Card>
-      ) : null}
+        </div>
+      </Card>
     </div>
   );
 };

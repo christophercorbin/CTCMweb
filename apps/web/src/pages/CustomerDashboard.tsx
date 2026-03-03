@@ -4,7 +4,7 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 import {
   Plus, Search, Eye, Package, Truck, CheckCircle,
-  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X, PauseCircle,
+  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X, PauseCircle, Copy, Check,
 } from 'lucide-react'
 import { uploadData } from 'aws-amplify/storage'
 import toast from 'react-hot-toast'
@@ -79,6 +79,14 @@ export const CustomerDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [copied, setCopied] = useState<'air' | 'sea' | null>(null)
+
+  const handleCopy = (text: string, type: 'air' | 'sea') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(type)
+      setTimeout(() => setCopied(null), 2000)
+    })
+  }
 
   // Fetch this customer's skybox addresses
   useEffect(() => {
@@ -428,23 +436,49 @@ export const CustomerDashboard = () => {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 text-white">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-4 h-4 text-blue-200" />
-              <h3 className="text-sm font-semibold">My Skybox Addresses</h3>
+              <h3 className="text-sm font-semibold">My Shipping Addresses</h3>
             </div>
             {skybox === null ? (
               <p className="text-blue-200 text-xs">Loading addresses...</p>
             ) : (
               <div className="space-y-3">
+                {/* Air */}
                 <div className="bg-white/10 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide mb-1">✈ Air Freight</p>
-                  <p className="text-sm text-white font-mono leading-relaxed">
-                    {skybox.air ?? <span className="text-blue-300 italic">Not set — contact support</span>}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide">✈ Air Freight</p>
+                    {skybox.air && (
+                      <button
+                        onClick={() => handleCopy(skybox.air!, 'air')}
+                        className="flex items-center gap-1 text-xs text-blue-200 hover:text-white border border-blue-400/50 rounded px-1.5 py-0.5 transition-colors"
+                      >
+                        {copied === 'air' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copied === 'air' ? 'Copied' : 'Copy'}
+                      </button>
+                    )}
+                  </div>
+                  {skybox.air
+                    ? <pre className="text-sm text-white font-mono leading-relaxed whitespace-pre-wrap">{skybox.air}</pre>
+                    : <p className="text-blue-300 italic text-xs">Not set — contact support</p>
+                  }
                 </div>
+                {/* Sea */}
                 <div className="bg-white/10 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide mb-1">🚢 Sea Freight</p>
-                  <p className="text-sm text-white font-mono leading-relaxed">
-                    {skybox.sea ?? <span className="text-blue-300 italic">Not set — contact support</span>}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide">🚢 Sea Freight</p>
+                    {skybox.sea && (
+                      <button
+                        onClick={() => handleCopy(skybox.sea!, 'sea')}
+                        className="flex items-center gap-1 text-xs text-blue-200 hover:text-white border border-blue-400/50 rounded px-1.5 py-0.5 transition-colors"
+                      >
+                        {copied === 'sea' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copied === 'sea' ? 'Copied' : 'Copy'}
+                      </button>
+                    )}
+                  </div>
+                  {skybox.sea
+                    ? <pre className="text-sm text-white font-mono leading-relaxed whitespace-pre-wrap">{skybox.sea}</pre>
+                    : <p className="text-blue-300 italic text-xs">Not set — contact support</p>
+                  }
                 </div>
               </div>
             )}

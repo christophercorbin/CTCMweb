@@ -8,6 +8,13 @@ import { Customer } from '../types';
 
 const client = generateClient<Schema>();
 
+// ── Shipping address templates ────────────────────────────────────
+const buildAirAddress = (name: string) =>
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral, FL 33182`
+
+const buildSeaAddress = (name: string) =>
+  `${name}\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B\nMEDLEY, FL 33178`
+
 function mapCustomer(c: Schema['Customer']['type']): Customer {
   return {
     id: c.id,
@@ -210,10 +217,33 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     sea_skybox_address: customer?.sea_skybox_address || '',
   });
 
+  // For new customers: auto-generate addresses as name is typed.
+  // For existing customers: addresses start as "manually set" so name edits don't overwrite them.
+  const [manualEdit, setManualEdit] = useState({
+    air: !!customer?.air_skybox_address,
+    sea: !!customer?.sea_skybox_address,
+  });
+
+  const handleNameChange = (name: string) => {
+    const updates: Partial<typeof formData> = { name };
+    if (!manualEdit.air) updates.air_skybox_address = name ? buildAirAddress(name) : '';
+    if (!manualEdit.sea) updates.sea_skybox_address = name ? buildSeaAddress(name) : '';
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleAirChange = (val: string) => {
+    setManualEdit(prev => ({ ...prev, air: true }));
+    setFormData(prev => ({ ...prev, air_skybox_address: val }));
+  };
+
+  const handleSeaChange = (val: string) => {
+    setManualEdit(prev => ({ ...prev, sea: true }));
+    setFormData(prev => ({ ...prev, sea_skybox_address: val }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (customer) {
         const { errors } = await client.models.Customer.update({
@@ -246,6 +276,8 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     }
   };
 
+  const fieldCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white';
+
   return (
     <Modal
       isOpen={true}
@@ -254,36 +286,32 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Full Name
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
           <Input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="John Doe"
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder="Jane Smith"
             required
           />
+          {!customer && (
+            <p className="text-xs text-gray-400 mt-1">Shipping addresses will be auto-generated from this name.</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="john@example.com"
+              placeholder="jane@example.com"
               required
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
             <Input
               type="tel"
               value={formData.phone}
@@ -294,49 +322,63 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           </div>
         </div>
 
+        {/* ── Air address ── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Air Freight Skybox Address
-          </label>
-          <Input
-            type="text"
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">✈ Air Freight Address</label>
+            {manualEdit.air && !customer && (
+              <button
+                type="button"
+                onClick={() => {
+                  setManualEdit(prev => ({ ...prev, air: false }));
+                  setFormData(prev => ({ ...prev, air_skybox_address: formData.name ? buildAirAddress(formData.name) : '' }));
+                }}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Reset to auto
+              </button>
+            )}
+          </div>
+          <textarea
             value={formData.air_skybox_address}
-            onChange={(e) => setFormData({ ...formData, air_skybox_address: e.target.value })}
-            placeholder="Miami, FL 33101, USA - Box #12345"
-            required
+            onChange={(e) => handleAirChange(e.target.value)}
+            rows={4}
+            className={`${fieldCls} font-mono resize-none`}
+            placeholder={`Customer Name\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral, FL 33182`}
           />
-          <p className="text-xs text-gray-500 mt-1">Customer's skybox address for air freight shipments</p>
         </div>
 
+        {/* ── Sea address ── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sea Freight Skybox Address
-          </label>
-          <Input
-            type="text"
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">🚢 Sea Freight Address</label>
+            {manualEdit.sea && !customer && (
+              <button
+                type="button"
+                onClick={() => {
+                  setManualEdit(prev => ({ ...prev, sea: false }));
+                  setFormData(prev => ({ ...prev, sea_skybox_address: formData.name ? buildSeaAddress(formData.name) : '' }));
+                }}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Reset to auto
+              </button>
+            )}
+          </div>
+          <textarea
             value={formData.sea_skybox_address}
-            onChange={(e) => setFormData({ ...formData, sea_skybox_address: e.target.value })}
-            placeholder="Miami Port, FL 33132, USA - Box #12345"
-            required
+            onChange={(e) => handleSeaChange(e.target.value)}
+            rows={4}
+            className={`${fieldCls} font-mono resize-none`}
+            placeholder={`Customer Name\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B\nMEDLEY, FL 33178`}
           />
-          <p className="text-xs text-gray-500 mt-1">Customer's skybox address for sea freight shipments</p>
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="secondary"
-            className="flex-1"
-          >
+        <div className="flex gap-3 pt-2">
+          <Button type="button" onClick={onClose} variant="secondary" className="flex-1">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={loading}
-            className="flex-1"
-          >
+          <Button type="submit" variant="primary" disabled={loading} className="flex-1">
             {loading ? 'Saving...' : customer ? 'Update Customer' : 'Add Customer'}
           </Button>
         </div>
