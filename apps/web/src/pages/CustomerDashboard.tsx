@@ -4,8 +4,10 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 import {
   Plus, Search, Eye, Package, Truck, CheckCircle,
-  FileText, MapPin, Phone, ChevronRight, ArrowRight,
+  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X,
 } from 'lucide-react'
+import { uploadData } from 'aws-amplify/storage'
+import toast from 'react-hot-toast'
 import { LoadingSkeleton, EmptyState } from '../components'
 import { useShipments } from '../hooks/useShipments'
 import { useAuth } from '../contexts/AuthContext'
@@ -74,6 +76,9 @@ export const CustomerDashboard = () => {
   const [dateTo, setDateTo] = useState('')
   const [trackInput, setTrackInput] = useState('')
   const [skybox, setSkybox] = useState<{ air?: string | null; sea?: string | null } | null>(null)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   // Fetch this customer's skybox addresses
   useEffect(() => {
@@ -109,6 +114,27 @@ export const CustomerDashboard = () => {
       })
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   }, [shipments, search, statusFilter, dateFrom, dateTo])
+
+  const handleUploadInvoice = async () => {
+    if (!uploadFile) { toast.error('Please select a file'); return }
+    setUploading(true)
+    try {
+      const timestamp = Date.now()
+      const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      await uploadData({
+        path: ({ identityId }) => `documents/${identityId}/invoices/${timestamp}-${safeName}`,
+        data: uploadFile,
+        options: { contentType: uploadFile.type || 'application/pdf' },
+      }).result
+      toast.success('Invoice uploaded successfully')
+      setShowUploadModal(false)
+      setUploadFile(null)
+    } catch {
+      toast.error('Upload failed — please try again')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const displayName = user?.email?.split('@')[0] ?? 'there'
 
@@ -350,16 +376,16 @@ export const CustomerDashboard = () => {
             </div>
             {[
               {
-                icon: <FileText className="w-4 h-4 text-blue-500" />,
-                label: 'View Invoices',
-                sub: 'Billing & payments',
-                onClick: () => navigate('/invoices'),
+                icon: <Warehouse className="w-4 h-4 text-blue-500" />,
+                label: 'View Warehouse Receipts',
+                sub: 'Packages at our warehouse',
+                onClick: () => navigate('/dashboard/pending-packages'),
               },
               {
-                icon: <Package className="w-4 h-4 text-blue-500" />,
-                label: 'Pending Packages',
-                sub: 'Awaiting processing',
-                onClick: () => navigate('/dashboard/pending-packages'),
+                icon: <Upload className="w-4 h-4 text-blue-500" />,
+                label: 'Upload Invoice',
+                sub: 'Send us your invoice',
+                onClick: () => setShowUploadModal(true),
               },
               {
                 icon: <Phone className="w-4 h-4 text-blue-500" />,
@@ -411,6 +437,64 @@ export const CustomerDashboard = () => {
 
         </div>
       </div>
+
+      {/* ── Upload Invoice Modal ── */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Upload Invoice</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Send us a copy of your invoice</p>
+              </div>
+              <button
+                onClick={() => { setShowUploadModal(false); setUploadFile(null) }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <label className="block">
+              <div className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                uploadFile ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/40'
+              }`}>
+                <Upload className={`w-8 h-8 mx-auto mb-2 ${uploadFile ? 'text-blue-500' : 'text-gray-400'}`} />
+                {uploadFile ? (
+                  <p className="text-sm font-medium text-blue-700">{uploadFile.name}</p>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-gray-700">Click to select a file</p>
+                    <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG — max 10 MB</p>
+                  </>
+                )}
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="hidden"
+                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={handleUploadInvoice}
+                disabled={!uploadFile || uploading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+              >
+                {uploading ? 'Uploading…' : 'Upload'}
+              </button>
+              <button
+                onClick={() => { setShowUploadModal(false); setUploadFile(null) }}
+                className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-2.5 rounded-lg text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
