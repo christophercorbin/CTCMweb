@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
@@ -8,12 +8,21 @@ import { Customer } from '../types';
 
 const client = generateClient<Schema>();
 
-// ── Shipping address templates ────────────────────────────────────
+// ── Skybox address templates ──────────────────────────────────────
 const buildAirAddress = (name: string) =>
-  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral, FL 33182`
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`
 
 const buildSeaAddress = (name: string) =>
-  `${name}\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B\nMEDLEY, FL 33178`
+  `${name}\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`
+
+// ── Phone auto-formatter ──────────────────────────────────────────
+const formatPhone = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '').slice(-10) // keep last 10 digits
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
+}
 
 function mapCustomer(c: Schema['Customer']['type']): Customer {
   return {
@@ -145,14 +154,14 @@ export const CustomerManagement = () => {
                           <Package className="w-4 h-4 text-blue-600" />
                           <span className="text-xs font-semibold text-blue-900 uppercase">Air Freight</span>
                         </div>
-                        <p className="text-sm text-gray-700 font-mono">{customer.air_skybox_address}</p>
+                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.air_skybox_address || '—'}</pre>
                       </div>
                       <div className="bg-teal-50 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <Package className="w-4 h-4 text-teal-600" />
                           <span className="text-xs font-semibold text-teal-900 uppercase">Sea Freight</span>
                         </div>
-                        <p className="text-sm text-gray-700 font-mono">{customer.sea_skybox_address}</p>
+                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.sea_skybox_address || '—'}</pre>
                       </div>
                     </div>
                   </div>
@@ -217,28 +226,34 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     sea_skybox_address: customer?.sea_skybox_address || '',
   });
 
-  // For new customers: auto-generate addresses as name is typed.
-  // For existing customers: addresses start as "manually set" so name edits don't overwrite them.
-  const [manualEdit, setManualEdit] = useState({
+  // Use a ref (not state) so handleNameChange always reads the latest value
+  // without stale closure issues or accidental browser-autofill interference.
+  const manualEdit = useRef({
     air: !!customer?.air_skybox_address,
     sea: !!customer?.sea_skybox_address,
   });
 
   const handleNameChange = (name: string) => {
-    const updates: Partial<typeof formData> = { name };
-    if (!manualEdit.air) updates.air_skybox_address = name ? buildAirAddress(name) : '';
-    if (!manualEdit.sea) updates.sea_skybox_address = name ? buildSeaAddress(name) : '';
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => ({
+      ...prev,
+      name,
+      air_skybox_address: manualEdit.current.air ? prev.air_skybox_address : (name ? buildAirAddress(name) : ''),
+      sea_skybox_address: manualEdit.current.sea ? prev.sea_skybox_address : (name ? buildSeaAddress(name) : ''),
+    }));
   };
 
   const handleAirChange = (val: string) => {
-    setManualEdit(prev => ({ ...prev, air: true }));
+    manualEdit.current.air = true;
     setFormData(prev => ({ ...prev, air_skybox_address: val }));
   };
 
   const handleSeaChange = (val: string) => {
-    setManualEdit(prev => ({ ...prev, sea: true }));
+    manualEdit.current.sea = true;
     setFormData(prev => ({ ...prev, sea_skybox_address: val }));
+  };
+
+  const handlePhoneChange = (raw: string) => {
+    setFormData(prev => ({ ...prev, phone: formatPhone(raw) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -315,8 +330,8 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
             <Input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="+1 (246) 123-4567"
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder="(246) 123-4567"
               required
             />
           </div>
@@ -326,12 +341,12 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-gray-700">✈ Air Skybox Address</label>
-            {manualEdit.air && !customer && (
+            {manualEdit.current.air && !customer && (
               <button
                 type="button"
                 onClick={() => {
-                  setManualEdit(prev => ({ ...prev, air: false }));
-                  setFormData(prev => ({ ...prev, air_skybox_address: formData.name ? buildAirAddress(formData.name) : '' }));
+                  manualEdit.current.air = false;
+                  setFormData(prev => ({ ...prev, air_skybox_address: prev.name ? buildAirAddress(prev.name) : '' }));
                 }}
                 className="text-xs text-blue-600 hover:underline"
               >
@@ -352,12 +367,12 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-gray-700">🚢 Sea Skybox Address</label>
-            {manualEdit.sea && !customer && (
+            {manualEdit.current.sea && !customer && (
               <button
                 type="button"
                 onClick={() => {
-                  setManualEdit(prev => ({ ...prev, sea: false }));
-                  setFormData(prev => ({ ...prev, sea_skybox_address: formData.name ? buildSeaAddress(formData.name) : '' }));
+                  manualEdit.current.sea = false;
+                  setFormData(prev => ({ ...prev, sea_skybox_address: prev.name ? buildSeaAddress(prev.name) : '' }));
                 }}
                 className="text-xs text-blue-600 hover:underline"
               >
