@@ -1,281 +1,319 @@
-import { useState, useEffect } from 'react';
-import { Package, Send, Clock, Box, Scale, Ruler } from 'lucide-react';
-import { Card, Button, Badge, LoadingSkeleton, EmptyState, Modal } from '../components';
-import { Shipment, Package as PackageType } from '../types';
-import toast from 'react-hot-toast';
+import { useEffect, useState, useRef } from 'react'
+import { generateClient } from 'aws-amplify/data'
+import type { Schema } from '../../../../amplify/data/resource'
+import { useShipments } from '../hooks/useShipments'
+import {
+  Package, Send, Clock, Box, Scale, CheckCircle2, AlertCircle,
+} from 'lucide-react'
+import { Card, Button, LoadingSkeleton, EmptyState, Modal } from '../components'
+import toast from 'react-hot-toast'
 
-export const PendingPackages = () => {
-  const [packages, setPackages] = useState<(Shipment & { packages?: PackageType[] })[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
-  const [showConsolidateModal, setShowConsolidateModal] = useState(false);
-  const [consolidating, setConsolidating] = useState(false);
+const client = generateClient<Schema>()
 
-  useEffect(() => {
-    fetchPendingPackages();
+type ShipmentType = Schema['Shipment']['type']
+type PackageType  = Schema['Package']['type']
 
-    // TODO: Phase 5 - Real-time updates via AppSync subscriptions
-    console.log('PendingPackages: Real-time not yet implemented. Using polling.');
-  }, []);
+const INSTRUCTION_META = {
+  SHIP: { label: 'Marked for shipping',       color: 'bg-blue-50 text-blue-700 ring-blue-200' },
+  HOLD: { label: 'Held at warehouse',          color: 'bg-amber-50 text-amber-700 ring-amber-200' },
+}
 
-  const fetchPendingPackages = async () => {
-    try {
-      setLoading(true);
+// ── Weight helper ─────────────────────────────────────────────────────────────
+function totalWeight(pkgs: PackageType[]) {
+  return pkgs.reduce((sum, p) => sum + (p.weight ?? 0), 0)
+}
 
-      // TODO: Phase 3 - Connect to AWS RDS via API Gateway
-      console.log('PendingPackages: Database not yet migrated. Using demo mode.');
-      
-      // Mock data for now
-      setPackages([]);
-    } catch (error) {
-      console.error('Error fetching pending packages:', error);
-      toast.error('Failed to load pending packages');
-    } finally {
-      setLoading(false);
-    }
-  };
+// ── Package summary row ───────────────────────────────────────────────────────
+function PackageSummary({ pkg, idx }: { pkg: PackageType; idx: number }) {
+  const dims =
+    pkg.length && pkg.width && pkg.height
+      ? `${pkg.length}×${pkg.width}×${pkg.height} ${pkg.dimensionUnit ?? 'cm'}`
+      : null
+  return (
+    <div className="text-xs text-gray-600 flex items-center gap-2">
+      <span className="font-medium text-gray-700">#{idx + 1}</span>
+      {pkg.quantity && pkg.quantity > 1 && <span>{pkg.quantity}×</span>}
+      <span className="capitalize">{(pkg.packageType ?? 'package').toLowerCase()}</span>
+      {pkg.weight && (
+        <span className="flex items-center gap-0.5">
+          <Scale className="w-3 h-3" />
+          {pkg.weight} {pkg.weightUnit ?? 'kg'}
+        </span>
+      )}
+      {dims && <span className="text-gray-400">{dims}</span>}
+      {pkg.description && <span className="text-gray-400 truncate max-w-[180px]">{pkg.description}</span>}
+    </div>
+  )
+}
 
-  const handleToggleSelect = (shipmentId: string) => {
-    setSelectedPackages((prev) =>
-      prev.includes(shipmentId)
-        ? prev.filter((id) => id !== shipmentId)
-        : [...prev, shipmentId]
-    );
-  };
-
-  const handleShipNow = async (_shipmentId: string) => {
-    try {
-      // TODO: Phase 3 - Update shipment status via API Gateway
-      console.log('PendingPackages: API not yet implemented. Using demo mode.');
-      toast.success('Coming in Phase 3: Ship package via AWS API');
-      fetchPendingPackages();
-    } catch (error) {
-      console.error('Error updating shipment:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process shipment';
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleConsolidateSelected = async () => {
-    if (selectedPackages.length < 2) {
-      toast.error('Please select at least 2 packages to consolidate');
-      return;
-    }
-
-    setConsolidating(true);
-
-    try {
-      // TODO: Phase 3 - Consolidate packages via API Gateway
-      console.log('PendingPackages: API not yet implemented. Using demo mode.');
-      toast.success('Coming in Phase 3: Consolidate packages via AWS API');
-      setSelectedPackages([]);
-      setShowConsolidateModal(false);
-      fetchPendingPackages();
-    } catch (error) {
-      console.error('Error consolidating packages:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to consolidate packages';
-      toast.error(errorMessage);
-    } finally {
-      setConsolidating(false);
-    }
-  };
-
-  const getTotalWeight = (pkgs?: PackageType[]) => {
-    if (!pkgs) return 0;
-    return pkgs.reduce((sum, pkg) => sum + (pkg.weight || 0), 0);
-  };
-
-  const getTotalVolume = (pkgs?: PackageType[]) => {
-    if (!pkgs) return 0;
-    return pkgs.reduce((sum, pkg) => sum + (pkg.volume || 0), 0);
-  };
+// ── Shipment card ─────────────────────────────────────────────────────────────
+function ShipmentCard({
+  shipment,
+  pkgs,
+  selected,
+  onToggle,
+  onInstruction,
+  updating,
+}: {
+  shipment: ShipmentType
+  pkgs: PackageType[]
+  selected: boolean
+  onToggle: () => void
+  onInstruction: (instruction: 'SHIP' | 'HOLD') => void
+  updating: boolean
+}) {
+  const instruction = shipment.customerInstruction as 'SHIP' | 'HOLD' | null | undefined
+  const meta = instruction ? INSTRUCTION_META[instruction] : null
+  const kg = totalWeight(pkgs)
+  const received = new Date(shipment.createdAt).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  })
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pending Packages</h1>
-            <p className="text-gray-600 mt-1">
-              Packages waiting at warehouse - ship now or consolidate for bulk shipping
-            </p>
+    <Card className={`transition-all ${selected ? 'ring-2 ring-blue-500 bg-blue-50/40' : ''}`}>
+      <div className="flex items-start gap-4">
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+        />
+
+        <div className="flex-1 min-w-0">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div>
+              <p className="font-mono font-bold text-gray-900">{shipment.trackingNumber}</p>
+              {shipment.description && (
+                <p className="text-sm text-gray-600 mt-0.5 truncate">{shipment.description}</p>
+              )}
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xs text-gray-400">Received</p>
+              <p className="text-sm font-medium text-gray-700">{received}</p>
+            </div>
           </div>
-          {selectedPackages.length > 0 && (
-            <Button onClick={() => setShowConsolidateModal(true)} size="lg">
-              <Box className="w-5 h-5 mr-2" />
-              Consolidate {selectedPackages.length} Packages
-            </Button>
+
+          {/* Stats row */}
+          {pkgs.length > 0 && (
+            <div className="flex flex-wrap items-center gap-4 mb-3">
+              <span className="flex items-center gap-1.5 text-sm text-gray-600">
+                <Box className="w-4 h-4 text-gray-400" />
+                {pkgs.length} {pkgs.length === 1 ? 'package' : 'packages'}
+              </span>
+              {kg > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-gray-600">
+                  <Scale className="w-4 h-4 text-gray-400" />
+                  {kg.toFixed(2)} kg
+                </span>
+              )}
+            </div>
           )}
+
+          {/* Package detail list */}
+          {pkgs.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-3 mb-3 space-y-1">
+              {pkgs.map((pkg, idx) => (
+                <PackageSummary key={pkg.id} pkg={pkg} idx={idx} />
+              ))}
+            </div>
+          )}
+
+          {/* Instruction status banner */}
+          {meta && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ring-1 ring-inset text-sm font-medium mb-3 ${meta.color}`}>
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {meta.label}
+              <span className="ml-auto text-xs font-normal opacity-70">Tap below to change</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => onInstruction('SHIP')}
+              variant={instruction === 'SHIP' ? 'primary' : 'secondary'}
+              size="sm"
+              disabled={updating}
+            >
+              <Send className="w-4 h-4 mr-1.5" />
+              {instruction === 'SHIP' ? 'Shipping ✓' : 'Ship Now'}
+            </Button>
+            <Button
+              onClick={() => onInstruction('HOLD')}
+              variant={instruction === 'HOLD' ? 'primary' : 'secondary'}
+              size="sm"
+              disabled={updating}
+            >
+              <Clock className="w-4 h-4 mr-1.5" />
+              {instruction === 'HOLD' ? 'On Hold ✓' : 'Hold for Consolidation'}
+            </Button>
+          </div>
         </div>
       </div>
+    </Card>
+  )
+}
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+export const PendingPackages = () => {
+  const { shipments, loading } = useShipments()
+  const [pkgMap, setPkgMap]       = useState<Record<string, PackageType[]>>({})
+  const [updating, setUpdating]   = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [showModal, setShowModal] = useState(false)
+  const [consolidating, setConsolidating] = useState(false)
+  const fetchedRef = useRef<Set<string>>(new Set())
+
+  // Only MIAMI_WAREHOUSE shipments (no customer instruction yet, or any)
+  const pending = shipments.filter((s) => s.status === 'MIAMI_WAREHOUSE')
+
+  // Fetch packages for any pending shipments we haven't loaded yet
+  useEffect(() => {
+    pending.forEach(async (s) => {
+      if (fetchedRef.current.has(s.id)) return
+      fetchedRef.current.add(s.id)
+      const { data } = await client.models.Package.list({
+        filter: { shipmentId: { eq: s.id } },
+      })
+      if (data?.length) {
+        setPkgMap((prev) => ({ ...prev, [s.id]: data }))
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending.map((s) => s.id).join(',')])
+
+  const setInstruction = async (id: string, instruction: 'SHIP' | 'HOLD') => {
+    setUpdating(id)
+    try {
+      await client.models.Shipment.update({ id, customerInstruction: instruction })
+      toast.success(
+        instruction === 'SHIP'
+          ? 'Great! We\'ll ship your package to Barbados.'
+          : 'Package held — we\'ll wait for your consolidation.',
+      )
+    } catch {
+      toast.error('Failed to update — please try again')
+    } finally {
+      setUpdating(null)
+    }
+  }
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+
+  const handleConsolidate = async () => {
+    setConsolidating(true)
+    try {
+      await Promise.all(
+        selectedIds.map((id) =>
+          client.models.Shipment.update({ id, customerInstruction: 'HOLD' }),
+        ),
+      )
+      toast.success(`${selectedIds.length} packages held for consolidation`)
+      setSelectedIds([])
+      setShowModal(false)
+    } catch {
+      toast.error('Failed to consolidate — please try again')
+    } finally {
+      setConsolidating(false)
+    }
+  }
+
+  const awaitingDecision = pending.filter((s) => !s.customerInstruction).length
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Packages at Warehouse</h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            {pending.length === 0
+              ? 'No packages waiting at our Miami warehouse.'
+              : `${pending.length} shipment${pending.length > 1 ? 's' : ''} at our Miami warehouse — choose to ship or hold each one.`}
+          </p>
+        </div>
+        {selectedIds.length > 1 && (
+          <Button onClick={() => setShowModal(true)}>
+            <Box className="w-4 h-4 mr-2" />
+            Consolidate {selectedIds.length}
+          </Button>
+        )}
+      </div>
+
+      {/* Awaiting decision alert */}
+      {awaitingDecision > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            <strong>{awaitingDecision} package{awaitingDecision > 1 ? 's' : ''}</strong>{' '}
+            {awaitingDecision > 1 ? 'are' : 'is'} waiting for your Ship or Hold decision.
+          </p>
+        </div>
+      )}
+
+      {/* List */}
       {loading ? (
         <LoadingSkeleton />
-      ) : packages.length === 0 ? (
+      ) : pending.length === 0 ? (
         <EmptyState
           icon={<Package className="w-12 h-12" />}
-          title="No pending packages"
-          message="All your packages have been processed. New arrivals will appear here."
+          title="No packages at warehouse"
+          message="When packages arrive at our Miami warehouse you'll see them here."
         />
       ) : (
         <div className="space-y-4">
-          {packages.map((shipment) => {
-            const isSelected = selectedPackages.includes(shipment.id);
-            const totalWeight = getTotalWeight(shipment.packages);
-            const totalVolume = getTotalVolume(shipment.packages);
-
-            return (
-              <Card
-                key={shipment.id}
-                className={`transition-all ${
-                  isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleToggleSelect(shipment.id)}
-                      className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">
-                            {shipment.tracking_number}
-                          </h3>
-                          {shipment.warehouse_receipt_number && (
-                            <p className="text-sm text-gray-600">
-                              WR: {shipment.warehouse_receipt_number}
-                            </p>
-                          )}
-                          <Badge status={shipment.status} />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-600">Received</p>
-                          <p className="font-medium text-gray-900">
-                            {shipment.received_date
-                              ? new Date(shipment.received_date).toLocaleDateString()
-                              : 'N/A'}
-                          </p>
-                          {shipment.received_by && (
-                            <p className="text-xs text-gray-500">by {shipment.received_by}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Scale className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600">Weight:</span>
-                          <span className="font-medium text-gray-900">
-                            {totalWeight.toFixed(2)} lb ({(totalWeight * 0.453592).toFixed(2)} kg)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Ruler className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600">Volume:</span>
-                          <span className="font-medium text-gray-900">
-                            {totalVolume.toFixed(2)} ft³
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Package className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600">Pieces:</span>
-                          <span className="font-medium text-gray-900">
-                            {shipment.packages?.reduce((sum, pkg) => sum + pkg.pieces_count, 0) || 0}
-                          </span>
-                        </div>
-                      </div>
-
-                      {shipment.description && (
-                        <p className="text-sm text-gray-600 mb-4">{shipment.description}</p>
-                      )}
-
-                      {shipment.packages && shipment.packages.length > 0 && (
-                        <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                          <p className="text-xs font-medium text-gray-700 mb-2">Package Details:</p>
-                          <div className="space-y-1">
-                            {shipment.packages.map((pkg, idx) => (
-                              <div key={pkg.id} className="text-xs text-gray-600">
-                                #{idx + 1}: {pkg.pieces_count}x {pkg.package_type} -{' '}
-                                {pkg.length && pkg.width && pkg.height
-                                  ? `${pkg.length}"×${pkg.width}"×${pkg.height}"`
-                                  : 'N/A'}{' '}
-                                - {pkg.weight || 0} lb
-                                {pkg.description && ` - ${pkg.description}`}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleShipNow(shipment.id)}
-                          variant="primary"
-                          size="sm"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Ship This Package Now
-                        </Button>
-                        <Button
-                          onClick={() => handleToggleSelect(shipment.id)}
-                          variant="secondary"
-                          size="sm"
-                        >
-                          <Clock className="w-4 h-4 mr-2" />
-                          {isSelected ? 'Remove from Consolidation' : 'Hold for Consolidation'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {pending.map((s) => (
+            <ShipmentCard
+              key={s.id}
+              shipment={s}
+              pkgs={pkgMap[s.id] ?? []}
+              selected={selectedIds.includes(s.id)}
+              onToggle={() => toggleSelect(s.id)}
+              onInstruction={(instr) => setInstruction(s.id, instr)}
+              updating={updating === s.id}
+            />
+          ))}
         </div>
       )}
 
-      {showConsolidateModal && (
-        <Modal
-          isOpen={showConsolidateModal}
-          onClose={() => setShowConsolidateModal(false)}
-          title="Consolidate Packages"
-        >
-          <div className="space-y-4">
-            <p className="text-gray-700">
-              You are about to consolidate {selectedPackages.length} packages for bulk shipping.
-              This will combine them into a single shipment, potentially reducing shipping costs.
-            </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900 font-medium">Benefits of consolidation:</p>
-              <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
-                <li>Lower per-item shipping costs</li>
-                <li>Single tracking number for all packages</li>
-                <li>Reduced customs processing time</li>
-              </ul>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={handleConsolidateSelected}
-                disabled={consolidating}
-                className="flex-1"
-              >
-                {consolidating ? 'Processing...' : 'Confirm Consolidation'}
-              </Button>
-              <Button
-                onClick={() => setShowConsolidateModal(false)}
-                variant="secondary"
-              >
-                Cancel
-              </Button>
-            </div>
+      {/* Consolidate confirmation modal */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Consolidate Packages"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Hold <strong>{selectedIds.length} packages</strong> at our warehouse for consolidated shipping.
+            We'll combine them into a single shipment — saving on freight and customs costs.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-900 mb-1">Benefits of consolidation</p>
+            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <li>Lower per-item shipping costs</li>
+              <li>Single tracking number for all packages</li>
+              <li>Reduced customs processing time</li>
+            </ul>
           </div>
-        </Modal>
-      )}
+          <div className="flex gap-3">
+            <Button
+              onClick={handleConsolidate}
+              disabled={consolidating}
+              className="flex-1"
+            >
+              {consolidating ? 'Processing…' : 'Hold for Consolidation'}
+            </Button>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
-  );
-};
+  )
+}
