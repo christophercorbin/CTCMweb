@@ -52,8 +52,9 @@ const schema = a
         invoices: a.hasMany("Invoice", "customerId"),
       })
       .authorization((allow) => [
-        allow.owner(),                      // customer self-registered records
-        allow.ownerDefinedIn("cognitoSub"), // Lambda-created records (post-confirmation sets cognitoSub)
+        allow.owner(),                                                // customer self-registered records
+        allow.ownerDefinedIn("cognitoSub"),                          // post-confirmation Lambda records
+        allow.ownerDefinedIn("email").identityClaim("email"),        // admin-created accounts (no cognitoSub)
         allow.group("admin"),
       ]),
 

@@ -36,28 +36,32 @@ export const CreateShipment = () => {
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([])
 
   useEffect(() => {
-    // Primary: read custom:customerId set by the post-confirmation Lambda
-    // (works for all users regardless of who created the DynamoDB record)
     fetchUserAttributes()
-      .then((attrs) => {
+      .then(async (attrs) => {
+        // 1. custom:customerId set by post-confirmation Lambda (self-registered users)
         const cid = attrs['custom:customerId']
-        if (cid) {
-          setCustomerId(cid)
-          setCustomerLoading(false)
-          return
+        if (cid) { setCustomerId(cid); return }
+
+        // 2. Customer.list() — works when allow.owner() or allow.ownerDefinedIn("cognitoSub") match
+        // Also now works for admin-created accounts via allow.ownerDefinedIn("email")
+        const { data } = await client.models.Customer.list()
+        if (data?.[0]) { setCustomerId(data[0].id); return }
+
+        // 3. Explicit email filter — belt-and-suspenders for edge cases
+        const email = attrs['email']
+        if (email) {
+          const { data: byEmail } = await client.models.Customer.list({
+            filter: { email: { eq: email } },
+          })
+          if (byEmail?.[0]) setCustomerId(byEmail[0].id)
         }
-        // Fallback: query DynamoDB (works for self-registered users)
-        return client.models.Customer.list().then(({ data }) => {
-          if (data?.[0]) setCustomerId(data[0].id)
-          setCustomerLoading(false)
-        })
       })
       .catch(() => {
         client.models.Customer.list().then(({ data }) => {
           if (data?.[0]) setCustomerId(data[0].id)
-          setCustomerLoading(false)
         })
       })
+      .finally(() => setCustomerLoading(false))
   }, [])
 
   const {
