@@ -8,6 +8,7 @@ import { ArrowLeft, Upload, X, FileText } from 'lucide-react'
 import { Button, Input, Textarea, Card, Select } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
+import { fetchUserAttributes } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
 
 const client = generateClient<Schema>()
@@ -31,13 +32,32 @@ export const CreateShipment = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [customerId, setCustomerId] = useState<string | null>(null)
+  const [customerLoading, setCustomerLoading] = useState(true)
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([])
 
-  // Auto-fetch the logged-in customer's own record ID
   useEffect(() => {
-    client.models.Customer.list().then(({ data }) => {
-      if (data?.[0]) setCustomerId(data[0].id)
-    })
+    // Primary: read custom:customerId set by the post-confirmation Lambda
+    // (works for all users regardless of who created the DynamoDB record)
+    fetchUserAttributes()
+      .then((attrs) => {
+        const cid = attrs['custom:customerId']
+        if (cid) {
+          setCustomerId(cid)
+          setCustomerLoading(false)
+          return
+        }
+        // Fallback: query DynamoDB (works for self-registered users)
+        return client.models.Customer.list().then(({ data }) => {
+          if (data?.[0]) setCustomerId(data[0].id)
+          setCustomerLoading(false)
+        })
+      })
+      .catch(() => {
+        client.models.Customer.list().then(({ data }) => {
+          if (data?.[0]) setCustomerId(data[0].id)
+          setCustomerLoading(false)
+        })
+      })
   }, [])
 
   const {
@@ -213,8 +233,8 @@ export const CreateShipment = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" loading={loading}>
-              Create Shipment
+            <Button type="submit" loading={loading || customerLoading} disabled={customerLoading}>
+              {customerLoading ? 'Loading…' : 'Create Shipment'}
             </Button>
           </div>
         </form>
