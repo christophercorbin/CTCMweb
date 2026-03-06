@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,20 +8,17 @@ import { ArrowLeft, Upload, X, FileText } from 'lucide-react'
 import { Button, Input, Textarea, Card, Select } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
-import { getCurrentUser } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
 
 const client = generateClient<Schema>()
 
-const createShipmentSchema = z
-  .object({
-    trackingNumber: z.string().min(3, 'Tracking number is required'),
-    type: z.enum(['AIR', 'SEA'], { message: 'Shipping type is required' }),
-    origin: z.string().min(2, 'Origin is required'),
-    destination: z.string().min(2, 'Barbados address is required'),
-    description: z.string().min(5, 'Description must be at least 5 characters'),
-    customerId: z.string().min(1, 'Customer ID is required'),
-  })
+const createShipmentSchema = z.object({
+  trackingNumber: z.string().min(3, 'Tracking number is required'),
+  type: z.enum(['AIR', 'SEA'], { message: 'Shipping type is required' }),
+  origin: z.string().min(2, 'Origin is required'),
+  destination: z.string().min(2, 'Barbados address is required'),
+  description: z.string().min(5, 'Description must be at least 5 characters'),
+})
 
 type CreateShipmentData = z.infer<typeof createShipmentSchema>
 
@@ -33,7 +30,16 @@ const shippingTypeOptions = [
 export const CreateShipment = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [customerId, setCustomerId] = useState<string | null>(null)
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([])
+
+  // Auto-fetch the logged-in customer's own record ID
+  useEffect(() => {
+    client.models.Customer.list().then(({ data }) => {
+      if (data?.[0]) setCustomerId(data[0].id)
+    })
+  }, [])
+
   const {
     register,
     handleSubmit,
@@ -54,6 +60,10 @@ export const CreateShipment = () => {
   }
 
   const onSubmit = async (data: CreateShipmentData) => {
+    if (!customerId) {
+      toast.error('Customer record not found — please try again')
+      return
+    }
     setLoading(true)
     try {
       const { data: shipment, errors } = await client.models.Shipment.create({
@@ -63,20 +73,20 @@ export const CreateShipment = () => {
         origin: data.origin,
         destination: data.destination,
         description: data.description,
-        customerId: data.customerId,
+        customerId,
       })
 
       if (errors || !shipment) {
         throw new Error('Failed to create shipment')
       }
 
-      // Upload invoice documents to S3 under the shipment folder
+      // Upload invoice documents to documents/{identityId}/... (customers have write access)
       if (invoiceFiles.length > 0) {
-        const { username } = await getCurrentUser()
         await Promise.all(
           invoiceFiles.map((file) =>
             uploadData({
-              path: `shipments/${username}/${shipment.id}/${file.name}`,
+              path: ({ identityId }) =>
+                `documents/${identityId}/shipments/${shipment.id}/${file.name}`,
               data: file,
               options: { contentType: 'application/pdf' },
             }).result
@@ -85,7 +95,7 @@ export const CreateShipment = () => {
       }
 
       toast.success('Shipment created successfully')
-      setTimeout(() => navigate('/admin/dashboard'), 500)
+      setTimeout(() => navigate('/dashboard'), 500)
     } catch {
       toast.error('Failed to create shipment')
     } finally {
@@ -97,7 +107,7 @@ export const CreateShipment = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/admin/dashboard')}
+          onClick={() => navigate('/dashboard')}
           className="text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
@@ -110,13 +120,6 @@ export const CreateShipment = () => {
 
       <Card className="max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Input
-            label="Customer ID"
-            placeholder="DynamoDB Customer ID"
-            error={errors.customerId?.message}
-            {...register('customerId')}
-          />
-
           <Input
             label="Tracking Number"
             placeholder="e.g., CL-2026-001"
@@ -206,7 +209,7 @@ export const CreateShipment = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => navigate('/admin/dashboard')}
+              onClick={() => navigate('/dashboard')}
             >
               Cancel
             </Button>
