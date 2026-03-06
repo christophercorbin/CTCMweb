@@ -197,6 +197,18 @@
                     ]
                   },
                   {
+                    "provider": "userPools",
+                    "ownerField": "email",
+                    "allow": "owner",
+                    "identityClaim": "email",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
                     "groupClaim": "cognito:groups",
                     "provider": "userPools",
                     "allow": "groups",
