@@ -48,8 +48,8 @@ export async function uploadDocument(options: UploadOptions): Promise<UploadResu
   // have wildcard write access to those prefixes.
   const isIdentityPath = documentType === 'documents';
   const resolvedPath = isIdentityPath
-    ? ({ identityId }: { identityId: string }) =>
-        `${documentType}/${identityId}/${entityId}/${timestamp}-${sanitizedFilename}`
+    ? ({ identityId }: { identityId?: string }) =>
+        `${documentType}/${identityId ?? ''}/${entityId}/${timestamp}-${sanitizedFilename}`
     : `${documentType}/${entityId}/${timestamp}-${sanitizedFilename}`;
 
   try {
