@@ -38,16 +38,23 @@ export interface UploadResult {
  */
 export async function uploadDocument(options: UploadOptions): Promise<UploadResult> {
   const { documentType, entityId, file, onProgress } = options;
-  
-  // Construct the S3 key with tenant isolation
+
   const timestamp = Date.now();
   const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const key = `${documentType}/${entityId}/${timestamp}-${sanitizedFilename}`;
-  
+
+  // For customer-owned paths use the identity callback so the path matches
+  // the IAM policy variable ${cognito-identity.amazonaws.com:sub}.
+  // Admin paths (receipts, invoices) use a static entityId since admins
+  // have wildcard write access to those prefixes.
+  const isIdentityPath = documentType === 'documents';
+  const resolvedPath = isIdentityPath
+    ? ({ identityId }: { identityId: string }) =>
+        `${documentType}/${identityId}/${entityId}/${timestamp}-${sanitizedFilename}`
+    : `${documentType}/${entityId}/${timestamp}-${sanitizedFilename}`;
+
   try {
-    // Upload file to S3 via Amplify Storage
     const result = await uploadData({
-      key,
+      path: resolvedPath,
       data: file,
       options: {
         contentType: file.type,
@@ -63,17 +70,15 @@ export async function uploadDocument(options: UploadOptions): Promise<UploadResu
         },
       },
     }).result;
-    
-    // Generate presigned URL for immediate access
+
+    const s3Path = typeof resolvedPath === 'string' ? resolvedPath : result.path;
     const urlResult = await getUrl({
-      key: result.key,
-      options: {
-        expiresIn: 3600, // 1 hour
-      },
+      path: s3Path,
+      options: { expiresIn: 3600 },
     });
-    
+
     return {
-      key: result.key,
+      key: s3Path,
       url: urlResult.url.toString(),
     };
   } catch (error) {
@@ -91,13 +96,7 @@ export async function uploadDocument(options: UploadOptions): Promise<UploadResu
  */
 export async function getDocumentUrl(key: string, expiresIn: number = 3600): Promise<string> {
   try {
-    const result = await getUrl({
-      key,
-      options: {
-        expiresIn,
-      },
-    });
-    
+    const result = await getUrl({ path: key, options: { expiresIn } });
     return result.url.toString();
   } catch (error) {
     console.error('Failed to get document URL:', error);
@@ -117,12 +116,8 @@ export async function listDocuments(
   entityId: string
 ): Promise<string[]> {
   try {
-    const prefix = `${documentType}/${entityId}/`;
-    const result = await list({
-      prefix,
-    });
-    
-    return result.items.map(item => item.key);
+    const result = await list({ path: `${documentType}/${entityId}/` });
+    return result.items.map(item => item.path);
   } catch (error) {
     console.error('Failed to list documents:', error);
     throw new Error(`Failed to list documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -142,9 +137,7 @@ export async function deleteDocument(key: string): Promise<void> {
       throw new Error('Only admin users can delete documents');
     }
     
-    await remove({
-      key,
-    });
+    await remove({ path: key });
   } catch (error) {
     console.error('Failed to delete document:', error);
     throw new Error(`Failed to delete document: ${error instanceof Error ? error.message : 'Unknown error'}`);

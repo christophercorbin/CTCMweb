@@ -5,7 +5,6 @@ import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2 } from 'lu
 import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
-import { getCurrentUser } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
 import { TrackingItem, ShipmentStatus } from '../types'
 
@@ -93,9 +92,11 @@ export const ShipmentDetails = () => {
 
     setUploading(true)
     try {
-      const { username } = await getCurrentUser()
-      const key = `documents/${username}/invoices/${id}/${file.name}`
-      await uploadData({ path: key, data: file, options: { contentType: 'application/pdf' } }).result
+      await uploadData({
+        path: ({ identityId }) => `documents/${identityId}/invoices/${id}/${file.name}`,
+        data: file,
+        options: { contentType: 'application/pdf' },
+      }).result
       toast.success('Invoice uploaded successfully')
     } catch {
       toast.error('Failed to upload invoice')
