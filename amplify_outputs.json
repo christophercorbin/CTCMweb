@@ -1335,6 +1335,12 @@
             ]
           },
           "receipts/*": {
+            "groupscustomer": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ],
             "groupsadmin": [
               "get",
               "list",
@@ -1349,6 +1355,10 @@
             ]
           },
           "invoices/*": {
+            "groupscustomer": [
+              "get",
+              "list"
+            ],
             "groupsadmin": [
               "get",
               "list",
@@ -1365,6 +1375,12 @@
             ]
           },
           "documents/*": {
+            "groupscustomer": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ],
             "groupsadmin": [
               "get",
               "list",
@@ -1379,6 +1395,10 @@
             ]
           },
           "shipments/*": {
+            "groupscustomer": [
+              "get",
+              "list"
+            ],
             "groupsadmin": [
               "get",
               "list",
