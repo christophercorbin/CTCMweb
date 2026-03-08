@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2, FileText, Download } from 'lucide-react'
 import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
 import { generateClient } from 'aws-amplify/data'
-import { uploadData } from 'aws-amplify/storage'
+import { uploadData, getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
 import { TrackingItem, ShipmentStatus } from '../types'
 
@@ -15,6 +15,7 @@ export const ShipmentDetails = () => {
   const navigate = useNavigate()
   const [shipment, setShipment] = useState<Schema['Shipment']['type'] | null>(null)
   const [events, setEvents] = useState<Schema['ShipmentEvent']['type'][]>([])
+  const [invoices, setInvoices] = useState<Schema['Invoice']['type'][]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [settingInstruction, setSettingInstruction] = useState(false)
@@ -29,10 +30,12 @@ export const ShipmentDetails = () => {
         setShipment(data)
 
         if (data) {
-          const { data: eventList } = await client.models.ShipmentEvent.list({
-            filter: { shipmentId: { eq: data.id } },
-          })
+          const [{ data: eventList }, { data: invoiceList }] = await Promise.all([
+            client.models.ShipmentEvent.list({ filter: { shipmentId: { eq: data.id } } }),
+            client.models.Invoice.list({ filter: { shipmentId: { eq: data.id } } }),
+          ])
           setEvents(eventList ?? [])
+          setInvoices(invoiceList ?? [])
         }
       } catch {
         toast.error('Failed to load shipment details')
@@ -81,9 +84,18 @@ export const ShipmentDetails = () => {
     }
   }
 
+  const handleDownload = async (s3Key: string) => {
+    try {
+      const { url } = await getUrl({ path: s3Key, options: { expiresIn: 300 } })
+      window.open(url.toString(), '_blank')
+    } catch {
+      toast.error('Failed to open document')
+    }
+  }
+
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !id) return
+    if (!file || !id || !shipment) return
 
     if (!file.type.includes('pdf')) {
       toast.error('Only PDF files are allowed')
@@ -92,16 +104,31 @@ export const ShipmentDetails = () => {
 
     setUploading(true)
     try {
-      await uploadData({
+      const result = await uploadData({
         path: ({ identityId }) => `documents/${identityId}/invoices/${id}/${file.name}`,
         data: file,
         options: { contentType: 'application/pdf' },
       }).result
+
+      // Save to Invoice table so admins and customer can see/download it
+      const { data: newInvoice } = await client.models.Invoice.create({
+        customerId: shipment.customerId,
+        shipmentId: shipment.id,
+        invoiceNumber: `CUST-${shipment.trackingNumber}-${Date.now()}`,
+        totalAmount: 0,
+        status: 'DRAFT',
+        s3Key: result.path,
+        trackingNumber: shipment.trackingNumber,
+        notes: 'Customer uploaded document',
+      })
+      if (newInvoice) setInvoices((prev) => [...prev, newInvoice])
+
       toast.success('Invoice uploaded successfully')
     } catch {
       toast.error('Failed to upload invoice')
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -287,31 +314,60 @@ export const ShipmentDetails = () => {
           )}
 
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Invoices</h2>
-            <div className="mb-6">
-              <label className="block">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleInvoiceUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-                <span
-                  className={`inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer ${
-                    uploading ? 'opacity-50 cursor-not-allowed' : ''
-                  } bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 text-base`}
-                >
-                  {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Invoice PDF
-                </span>
-              </label>
-            </div>
-            <div className="text-sm text-gray-600">
-              <p className="mb-2 font-medium">Upload your shipment invoice here.</p>
-              <p>Only PDF files are accepted.</p>
-            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Invoices & Documents</h2>
+
+            <label className="block mb-4">
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handleInvoiceUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+              <span
+                className={`inline-flex items-center justify-center font-medium rounded-lg transition-colors w-full cursor-pointer ${
+                  uploading ? 'opacity-50 cursor-not-allowed' : ''
+                } bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 text-base`}
+              >
+                {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Invoice PDF
+              </span>
+            </label>
+
+            {invoices.length > 0 ? (
+              <div className="space-y-2">
+                {invoices.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{inv.invoiceNumber}</p>
+                        <p className="text-xs text-gray-500">
+                          {inv.notes === 'Customer uploaded document'
+                            ? 'Your document'
+                            : inv.totalAmount
+                              ? `$${inv.totalAmount.toFixed(2)}`
+                              : 'Document'}{' '}
+                          · {new Date(inv.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    {inv.s3Key && (
+                      <button
+                        onClick={() => handleDownload(inv.s3Key!)}
+                        className="flex-shrink-0 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium ml-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        View
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+            )}
           </Card>
         </div>  {/* end right column */}
       </div>

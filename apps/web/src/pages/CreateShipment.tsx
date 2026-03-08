@@ -104,21 +104,38 @@ export const CreateShipment = () => {
         throw new Error('Failed to create shipment')
       }
 
-      // Upload invoice documents to documents/{identityId}/... (customers have write access)
+      // Upload invoice documents — failures are non-fatal (shipment already created)
       if (invoiceFiles.length > 0) {
-        await Promise.all(
-          invoiceFiles.map((file) =>
-            uploadData({
+        const uploadResults = await Promise.allSettled(
+          invoiceFiles.map(async (file) => {
+            const result = await uploadData({
               path: ({ identityId }) =>
-                `documents/${identityId}/shipments/${shipment.id}/${file.name}`,
+                `documents/${identityId}/invoices/${shipment.id}/${file.name}`,
               data: file,
               options: { contentType: 'application/pdf' },
             }).result
-          )
+            await client.models.Invoice.create({
+              customerId,
+              shipmentId: shipment.id,
+              invoiceNumber: `CUST-${shipment.trackingNumber}-${Date.now()}`,
+              totalAmount: 0,
+              status: 'DRAFT',
+              s3Key: result.path,
+              trackingNumber: shipment.trackingNumber,
+              notes: 'Customer uploaded document',
+            })
+          })
         )
+        const anyFailed = uploadResults.some((r) => r.status === 'rejected')
+        if (anyFailed) {
+          toast('Shipment created — some invoices failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
+        } else {
+          toast.success('Shipment created successfully')
+        }
+      } else {
+        toast.success('Shipment created successfully')
       }
 
-      toast.success('Shipment created successfully')
       setTimeout(() => navigate('/dashboard'), 500)
     } catch {
       toast.error('Failed to create shipment')

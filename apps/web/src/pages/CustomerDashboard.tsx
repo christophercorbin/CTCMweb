@@ -70,6 +70,8 @@ export const CustomerDashboard = () => {
   const { user } = useAuth()
   const { shipments, loading, error } = useShipments()
 
+  const [shipmentIdsWithInvoices, setShipmentIdsWithInvoices] = useState<Set<string>>(new Set())
+
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [dateFrom, setDateFrom] = useState('')
@@ -88,10 +90,17 @@ export const CustomerDashboard = () => {
     })
   }
 
-  // Fetch this customer's skybox addresses
+  const TERMINAL_STATUSES = new Set(['DELIVERED', 'CANCELLED', 'RETURNED'])
+
+  // Fetch this customer's skybox addresses and invoices
   useEffect(() => {
     client.models.Customer.list().then(({ data }) => {
       if (data.length) setSkybox({ air: data[0].airSkyboxAddress, sea: data[0].seaSkyboxAddress })
+    }).catch(() => {})
+
+    client.models.Invoice.list().then(({ data }) => {
+      const ids = new Set(data.filter((inv) => inv.shipmentId).map((inv) => inv.shipmentId!))
+      setShipmentIdsWithInvoices(ids)
     }).catch(() => {})
   }, [])
 
@@ -318,6 +327,11 @@ export const CustomerDashboard = () => {
                             {s.customerInstruction === 'HOLD' && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
                                 <PauseCircle className="w-3 h-3" /> Hold
+                              </span>
+                            )}
+                            {!shipmentIdsWithInvoices.has(s.id) && !TERMINAL_STATUSES.has(s.status) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">
+                                <Upload className="w-3 h-3" /> Upload invoice
                               </span>
                             )}
                           </div>
