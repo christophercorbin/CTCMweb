@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Mail, MailX, Download, Plus, X, Truck, PauseCircle, Pencil, Trash2, Save, HelpCircle } from 'lucide-react'
+import { ArrowLeft, Mail, MailX, Download, Plus, X, Truck, PauseCircle, Pencil, Trash2, Save, HelpCircle, FileText } from 'lucide-react'
 import { Button, Card, CardSkeleton, Badge, Timeline } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl } from 'aws-amplify/storage'
@@ -1033,6 +1033,50 @@ export const AdminShipmentDetails = () => {
             )}
           </Card>
 
+          {/* ── Order Receipts card ── */}
+          {(() => {
+            const receipts = invoices.filter(inv => inv.notes === 'Order receipt')
+            return (
+              <Card>
+                <div className="mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Order Receipts</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Store receipts uploaded by the customer for customs processing</p>
+                </div>
+                {receipts.length > 0 ? (
+                  <div className="space-y-2">
+                    {receipts.map((rcpt, i) => (
+                      <div key={rcpt.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">
+                              Order Receipt {receipts.length > 1 ? `#${i + 1}` : ''}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded {new Date(rcpt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                        {rcpt.s3Key ? (
+                          <button
+                            onClick={() => handleDownloadInvoice(rcpt.s3Key!)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" /> View Receipt
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">No file</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-5">No order receipts uploaded yet</p>
+                )}
+              </Card>
+            )
+          })()}
+
           {/* ── Invoices card ── */}
           <Card>
             <div className="flex items-center justify-between mb-5">
@@ -1047,9 +1091,9 @@ export const AdminShipmentDetails = () => {
               )}
             </div>
 
-            {invoices.length > 0 ? (
+            {invoices.filter(inv => inv.notes !== 'Order receipt').length > 0 ? (
               <div className="space-y-3 mb-5">
-                {invoices.map(inv => (
+                {invoices.filter(inv => inv.notes !== 'Order receipt').map(inv => (
                   <div key={inv.id}>
                     {editingInvoiceId === inv.id ? (
                       <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-3">
