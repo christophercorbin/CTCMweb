@@ -186,7 +186,7 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
     ? [{ label: 'Dashboard', path: '/admin/dashboard', icon: Home, badge: 0 }]
     : [
         { label: 'My Shipments',         path: '/dashboard',                   icon: Home,      badge: 0 },
-        { label: 'Packages at Warehouse', path: '/dashboard/pending-packages',  icon: Warehouse, badge: pendingCount },
+        { label: 'Ship or Hold',           path: '/dashboard/pending-packages',  icon: Warehouse, badge: pendingCount },
         { label: 'Customer Info',         path: '/customer-info',               icon: User,      badge: 0 },
         { label: 'Invoices',              path: '/invoices',                    icon: FileText,  badge: 0 },
       ];

@@ -414,8 +414,8 @@ export const CustomerDashboard = () => {
             {[
               {
                 icon: <Warehouse className="w-4 h-4 text-blue-500" />,
-                label: 'View Warehouse Receipts',
-                sub: 'Packages at our warehouse',
+                label: 'Ship or Hold',
+                sub: 'Decide on packages at the warehouse',
                 onClick: () => navigate('/dashboard/pending-packages'),
               },
               {
