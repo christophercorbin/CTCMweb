@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell } from 'lucide-react';
+import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell, ScanLine } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth';
 import type { CognitoUser } from '../auth';
 import { useShipments } from '../hooks/useShipments';
@@ -183,7 +183,10 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const handlePendingCount = useCallback((n: number) => setPendingCount(n), []);
 
   const navigationItems = isAdmin
-    ? [{ label: 'Dashboard', path: '/admin/dashboard', icon: Home, badge: 0 }]
+    ? [
+        { label: 'Dashboard',       path: '/admin/dashboard',         icon: Home,     badge: 0 },
+        { label: 'Process Receipt', path: '/admin/warehouse-receipt', icon: ScanLine, badge: 0 },
+      ]
     : [
         { label: 'My Shipments',         path: '/dashboard',                   icon: Home,      badge: 0 },
         { label: 'Ship or Hold',           path: '/dashboard/pending-packages',  icon: Warehouse, badge: pendingCount },

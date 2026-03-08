@@ -14,6 +14,7 @@ import { AdminDashboard } from './pages/AdminDashboard'
 import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
 import { AdminInvoices } from './pages/AdminInvoices'
 import { PendingPackages } from './pages/PendingPackages'
+import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
 
 function App() {
   return (
@@ -118,6 +119,17 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AuthenticatedLayout>
                 <AdminInvoices />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/warehouse-receipt"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <WarehouseReceiptIntake />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
