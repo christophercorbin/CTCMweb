@@ -144,11 +144,11 @@ export const CustomerDashboard = () => {
         data: uploadFile,
         options: { contentType: uploadFile.type || 'application/pdf' },
       }).result
-      toast.success('Invoice uploaded successfully')
+      toast.success('Order receipt uploaded successfully')
       setShowUploadModal(false)
       setUploadFile(null)
     } catch {
-      toast.error('Upload failed — please try again')
+      toast.error('Receipt upload failed — please try again')
     } finally {
       setUploading(false)
     }
@@ -331,7 +331,7 @@ export const CustomerDashboard = () => {
                             )}
                             {!shipmentIdsWithInvoices.has(s.id) && !TERMINAL_STATUSES.has(s.status) && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">
-                                <Upload className="w-3 h-3" /> Upload invoice
+                                <Upload className="w-3 h-3" /> Upload receipt
                               </span>
                             )}
                           </div>
@@ -420,8 +420,8 @@ export const CustomerDashboard = () => {
               },
               {
                 icon: <Upload className="w-4 h-4 text-blue-500" />,
-                label: 'Upload Invoice',
-                sub: 'Send us your invoice',
+                label: 'Upload Order Receipt',
+                sub: 'Required for customs processing',
                 onClick: () => setShowUploadModal(true),
               },
               {
@@ -507,8 +507,8 @@ export const CustomerDashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Upload Invoice</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Send us a copy of your invoice</p>
+                <h2 className="text-lg font-bold text-gray-900">Upload Order Receipt</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Store receipt needed for customs (Amazon, Shopify, etc.)</p>
               </div>
               <button
                 onClick={() => { setShowUploadModal(false); setUploadFile(null) }}

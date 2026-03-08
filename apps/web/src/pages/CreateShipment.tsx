@@ -104,7 +104,7 @@ export const CreateShipment = () => {
         throw new Error('Failed to create shipment')
       }
 
-      // Upload invoice documents — failures are non-fatal (shipment already created)
+      // Upload order receipts — failures are non-fatal (shipment already created)
       if (invoiceFiles.length > 0) {
         const uploadResults = await Promise.allSettled(
           invoiceFiles.map(async (file) => {
@@ -117,18 +117,18 @@ export const CreateShipment = () => {
             await client.models.Invoice.create({
               customerId,
               shipmentId: shipment.id,
-              invoiceNumber: `CUST-${shipment.trackingNumber}-${Date.now()}`,
+              invoiceNumber: `RCPT-${shipment.trackingNumber}-${Date.now()}`,
               totalAmount: 0,
               status: 'DRAFT',
               s3Key: result.path,
               trackingNumber: shipment.trackingNumber,
-              notes: 'Customer uploaded document',
+              notes: 'Order receipt',
             })
           })
         )
         const anyFailed = uploadResults.some((r) => r.status === 'rejected')
         if (anyFailed) {
-          toast('Shipment created — some invoices failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
+          toast('Shipment created — some receipts failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
         } else {
           toast.success('Shipment created successfully')
         }
@@ -198,9 +198,14 @@ export const CreateShipment = () => {
           />
 
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Invoice Documents
-            </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Order Receipt(s)
+              </label>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Upload your store receipt (Amazon, Shopify, etc.) for customs processing. PDF only.
+              </p>
+            </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
                 type="file"
@@ -212,7 +217,7 @@ export const CreateShipment = () => {
               />
               <label htmlFor="invoice-upload" className="cursor-pointer flex flex-col items-center">
                 <Upload className="w-10 h-10 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600">Click to upload invoice PDFs</span>
+                <span className="text-sm text-gray-600">Click to upload order receipt(s)</span>
                 <span className="text-xs text-gray-500 mt-1">PDF files only</span>
               </label>
             </div>

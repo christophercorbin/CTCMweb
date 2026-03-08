@@ -114,18 +114,18 @@ export const ShipmentDetails = () => {
       const { data: newInvoice } = await client.models.Invoice.create({
         customerId: shipment.customerId,
         shipmentId: shipment.id,
-        invoiceNumber: `CUST-${shipment.trackingNumber}-${Date.now()}`,
+        invoiceNumber: `RCPT-${shipment.trackingNumber}-${Date.now()}`,
         totalAmount: 0,
         status: 'DRAFT',
         s3Key: result.path,
         trackingNumber: shipment.trackingNumber,
-        notes: 'Customer uploaded document',
+        notes: 'Order receipt',
       })
       if (newInvoice) setInvoices((prev) => [...prev, newInvoice])
 
-      toast.success('Invoice uploaded successfully')
+      toast.success('Order receipt uploaded successfully')
     } catch {
-      toast.error('Failed to upload invoice')
+      toast.error('Failed to upload order receipt')
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -314,7 +314,10 @@ export const ShipmentDetails = () => {
           )}
 
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Invoices & Documents</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Order Receipts</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Upload the store receipt for this shipment (e.g. Amazon, Shopify order confirmation). This is required for customs processing.
+            </p>
 
             <label className="block mb-4">
               <input
@@ -331,7 +334,7 @@ export const ShipmentDetails = () => {
               >
                 {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Invoice PDF
+                Upload Order Receipt (PDF)
               </span>
             </label>
 
@@ -342,10 +345,12 @@ export const ShipmentDetails = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{inv.invoiceNumber}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {inv.notes === 'Order receipt' ? 'Order Receipt' : inv.invoiceNumber}
+                        </p>
                         <p className="text-xs text-gray-500">
-                          {inv.notes === 'Customer uploaded document'
-                            ? 'Your document'
+                          {inv.notes === 'Order receipt'
+                            ? 'Your receipt'
                             : inv.totalAmount
                               ? `$${inv.totalAmount.toFixed(2)}`
                               : 'Document'}{' '}
@@ -366,7 +371,7 @@ export const ShipmentDetails = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+              <p className="text-sm text-gray-500">No receipts uploaded yet.</p>
             )}
           </Card>
         </div>  {/* end right column */}
