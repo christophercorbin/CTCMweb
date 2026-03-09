@@ -7,6 +7,7 @@ import {
   signUp,
   signOut,
   confirmSignUp,
+  confirmSignIn,
   resetPassword,
   confirmResetPassword,
   getCurrentUser,
@@ -64,6 +65,20 @@ export async function cognitoConfirmSignUp(
   code: string
 ): Promise<void> {
   await confirmSignUp({ username: email, confirmationCode: code })
+}
+
+/**
+ * Called after signIn returns CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED.
+ * Amplify holds the challenge in memory so this must run in the same session.
+ */
+export async function cognitoConfirmNewPassword(newPassword: string): Promise<void> {
+  const result = await confirmSignIn({ challengeResponse: newPassword })
+  if (!result.isSignedIn) {
+    const step = result.nextStep?.signInStep ?? 'UNKNOWN'
+    const err = new Error(`Unexpected step after new password: ${step}`)
+    err.name = step
+    throw err
+  }
 }
 
 export async function cognitoSignOut(): Promise<void> {
