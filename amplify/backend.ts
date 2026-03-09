@@ -162,7 +162,7 @@ adminCreateCustomerFn.addToRolePolicy(
 adminCreateCustomerFn.addEnvironment("USER_POOL_ID", userPool.userPoolId);
 adminCreateCustomerFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
-  backend.data.resources.graphqlApi.graphqlUrl
+  backend.data.resources.graphqlApi.url
 );
 
 // Grant Lambda permission to call AppSync mutations (createCustomer)
@@ -174,7 +174,7 @@ const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.F
 // Pass AppSync endpoint as env var
 postConfirmationFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
-  backend.data.resources.graphqlApi.graphqlUrl
+  backend.data.resources.graphqlApi.url
 );
 
 // Grant Lambda permission to call AppSync mutations (createCustomer)
