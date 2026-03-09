@@ -5,6 +5,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute'
 import { AuthenticatedLayout } from './components/AuthenticatedLayout'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
+import { ConfirmSignUp } from './pages/ConfirmSignUp'
 import { CustomerDashboard } from './pages/CustomerDashboard'
 import { CreateShipment } from './pages/CreateShipment'
 import { ShipmentDetails } from './pages/ShipmentDetails'
@@ -24,6 +25,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/confirm" element={<ConfirmSignUp />} />
 
         <Route
           path="/dashboard"

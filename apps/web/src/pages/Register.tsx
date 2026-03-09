@@ -37,8 +37,8 @@ export const Register = () => {
     setLoading(true)
     try {
       await signUp(data.email, data.password, data.name)
-      toast.success('Account created! Please check your email to verify your account.')
-      setTimeout(() => navigate('/login'), 2000)
+      toast.success('Account created! Check your email for a verification code.')
+      navigate(`/confirm?email=${encodeURIComponent(data.email)}`)
     } catch (err: unknown) {
       console.error('Registration error:', err)
       const error = err as { name?: string; message?: string }
