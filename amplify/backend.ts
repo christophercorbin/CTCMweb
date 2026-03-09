@@ -6,6 +6,7 @@ import { ocrTrigger } from "./functions/ocr-trigger/resource";
 import { ocrProcessor } from "./functions/ocr-processor/resource";
 import { postConfirmation } from "./functions/post-confirmation/resource";
 import { statusNotifier } from "./functions/status-notifier/resource";
+import { adminCreateCustomer } from "./functions/admin-create-customer/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
@@ -22,6 +23,7 @@ const backend = defineBackend({
   ocrProcessor,
   postConfirmation,
   statusNotifier,
+  adminCreateCustomer,
 });
 
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
@@ -133,5 +135,49 @@ statusNotifierFn.addToRolePolicy(
     resources: ["*"],
   })
 );
+
+// ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
+const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
+const userPool = backend.auth.resources.userPool;
+
+adminCreateCustomerFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: [
+      "cognito-idp:AdminCreateUser",
+      "cognito-idp:AdminAddUserToGroup",
+      "cognito-idp:AdminUpdateUserAttributes",
+    ],
+    resources: [userPool.userPoolArn],
+  })
+);
+
+adminCreateCustomerFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: ["*"],
+  })
+);
+
+// Pass User Pool ID and AppSync endpoint as env vars
+adminCreateCustomerFn.addEnvironment("USER_POOL_ID", userPool.userPoolId);
+adminCreateCustomerFn.addEnvironment(
+  "GRAPHQL_API_ENDPOINT",
+  backend.data.resources.graphqlApi.graphqlUrl
+);
+
+// Grant Lambda permission to call AppSync mutations (createCustomer)
+backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
+
+// ─── postConfirmation: AppSync permissions ────────────────────────────────────
+const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;
+
+// Pass AppSync endpoint as env var
+postConfirmationFn.addEnvironment(
+  "GRAPHQL_API_ENDPOINT",
+  backend.data.resources.graphqlApi.graphqlUrl
+);
+
+// Grant Lambda permission to call AppSync mutations (createCustomer)
+backend.data.resources.graphqlApi.grantMutation(postConfirmationFn);
 
 export default backend;
