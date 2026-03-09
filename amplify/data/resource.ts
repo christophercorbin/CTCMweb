@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { postConfirmation } from "../functions/post-confirmation/resource";
 import { ocrProcessor } from "../functions/ocr-processor/resource";
 import { statusNotifier } from "../functions/status-notifier/resource";
+import { adminCreateCustomer } from "../functions/admin-create-customer/resource";
 
 const schema = a
   .schema({
@@ -188,6 +189,25 @@ const schema = a
       .returns(a.customType({ success: a.boolean() }))
       .authorization((allow) => [allow.group("admin")])
       .handler(a.handler.function(statusNotifier)),
+    // ─── Custom mutation: admin creates customer account + sends welcome email ─
+    createCustomerWithAccount: a
+      .mutation()
+      .arguments({
+        name: a.string().required(),
+        email: a.string().required(),
+        phone: a.string(),
+        airSkyboxAddress: a.string(),
+        seaSkyboxAddress: a.string(),
+      })
+      .returns(
+        a.customType({
+          success: a.boolean(),
+          customerId: a.string(),
+          message: a.string(),
+        })
+      )
+      .authorization((allow) => [allow.group("admin")])
+      .handler(a.handler.function(adminCreateCustomer)),
   })
   .authorization((allow) => [
     allow.authenticated(),

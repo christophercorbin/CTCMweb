@@ -272,15 +272,17 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
         if (errors?.length) throw new Error(errors[0].message);
         toast.success('Customer updated');
       } else {
-        const { errors } = await client.models.Customer.create({
+        // Create Cognito account + Customer DB record + send welcome email
+        const { data: result, errors } = await client.mutations.createCustomerWithAccount({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
-          airSkyboxAddress: formData.air_skybox_address,
-          seaSkyboxAddress: formData.sea_skybox_address,
+          phone: formData.phone || undefined,
+          airSkyboxAddress: formData.air_skybox_address || undefined,
+          seaSkyboxAddress: formData.sea_skybox_address || undefined,
         });
         if (errors?.length) throw new Error(errors[0].message);
-        toast.success('Customer added');
+        if (!result?.success) throw new Error(result?.message ?? 'Failed to create account');
+        toast.success(`Account created! Welcome email sent to ${formData.email}`);
       }
       onSuccess();
     } catch (error) {

@@ -26,6 +26,16 @@ const backend = defineBackend({
   adminCreateCustomer,
 });
 
+// ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
+// Required for cognitoSignIn with authFlowType: 'USER_PASSWORD_AUTH'.
+// Amplify Gen 2 only enables USER_SRP_AUTH by default.
+const { cfnUserPoolClient } = backend.auth.resources.cfnResources;
+cfnUserPoolClient.explicitAuthFlows = [
+  "ALLOW_USER_SRP_AUTH",
+  "ALLOW_USER_PASSWORD_AUTH",
+  "ALLOW_REFRESH_TOKEN_AUTH",
+];
+
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
 const ocrProcessorFn = backend.ocrProcessor.resources.lambda as lambda.Function;
 // Use the data stack to avoid circular dependencies (ocrProcessor is in data stack)
@@ -168,8 +178,19 @@ adminCreateCustomerFn.addEnvironment(
 // Grant Lambda permission to call AppSync mutations (createCustomer)
 backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
 
-// ─── postConfirmation: AppSync permissions ────────────────────────────────────
+// ─── postConfirmation: Cognito + AppSync permissions ─────────────────────────
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;
+
+// Explicit Cognito admin permissions (belt-and-suspenders over the auth access grant)
+postConfirmationFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: [
+      "cognito-idp:AdminAddUserToGroup",
+      "cognito-idp:AdminUpdateUserAttributes",
+    ],
+    resources: [userPool.userPoolArn],
+  })
+);
 
 // Pass AppSync endpoint as env var
 postConfirmationFn.addEnvironment(
