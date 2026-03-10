@@ -181,14 +181,16 @@ backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
 // ─── postConfirmation: Cognito + AppSync permissions ─────────────────────────
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;
 
-// Explicit Cognito admin permissions (belt-and-suspenders over the auth access grant)
+// Grant Cognito admin permissions with resources: ["*"] to avoid a CDK cycle.
+// Using userPool.userPoolArn here creates Lambda policy → UserPool dependency,
+// but UserPool also depends on Lambda (trigger) → cycle within auth stack.
 postConfirmationFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: [
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminUpdateUserAttributes",
     ],
-    resources: [userPool.userPoolArn],
+    resources: ["*"],
   })
 );
 

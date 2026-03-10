@@ -37,7 +37,9 @@ export const auth = defineAuth({
   triggers: {
     postConfirmation,
   },
-  access: (allow) => [
-    allow.resource(postConfirmation).to(["addUserToGroup", "updateUserAttributes"]),
-  ],
+  // NOTE: do NOT use allow.resource(postConfirmation).to([...]) here.
+  // Amplify generates a userpoolAccess IAM resource referencing UserPool.Arn,
+  // while the UserPool itself references the Lambda for the trigger —
+  // creating a resource-level cycle within the auth stack.
+  // Cognito admin permissions are granted manually in backend.ts with resources: ["*"].
 });
