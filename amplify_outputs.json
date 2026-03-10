@@ -1265,6 +1265,32 @@
               "attributes": []
             }
           }
+        },
+        "CreateCustomerWithAccountReturnType": {
+          "name": "CreateCustomerWithAccountReturnType",
+          "fields": {
+            "success": {
+              "name": "success",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "customerId": {
+              "name": "customerId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
         }
       },
       "mutations": {
@@ -1308,6 +1334,46 @@
             },
             "customMessage": {
               "name": "customMessage",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            }
+          }
+        },
+        "createCustomerWithAccount": {
+          "name": "createCustomerWithAccount",
+          "isArray": false,
+          "type": {
+            "nonModel": "CreateCustomerWithAccountReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "phone": {
+              "name": "phone",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "airSkyboxAddress": {
+              "name": "airSkyboxAddress",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "seaSkyboxAddress": {
+              "name": "seaSkyboxAddress",
               "isArray": false,
               "type": "String",
               "isRequired": false
