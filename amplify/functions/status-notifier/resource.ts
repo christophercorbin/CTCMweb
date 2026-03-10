@@ -6,4 +6,5 @@ export const statusNotifier = defineFunction({
   runtime: 20,
   timeoutSeconds: 30,
   memoryMB: 256,
+  resourceGroupName: "data", // AppSync mutation handler — assign to data stack
 });
