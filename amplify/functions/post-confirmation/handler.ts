@@ -38,7 +38,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
 
   // 4. Create Customer record in DynamoDB via AppSync (IAM auth via SigV4)
   // The function execution role has grantMutation permission (wired in backend.ts)
-  const endpoint = process.env.GRAPHQL_API_ENDPOINT!;
+  const endpoint = process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT!;
 
   const { SignatureV4 } = await import("@smithy/signature-v4");
   const { Sha256 } = await import("@aws-crypto/sha256-js");

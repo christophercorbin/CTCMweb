@@ -192,13 +192,9 @@ postConfirmationFn.addToRolePolicy(
   })
 );
 
-// Pass AppSync endpoint as env var
-postConfirmationFn.addEnvironment(
-  "GRAPHQL_API_ENDPOINT",
-  (backend.data.resources.graphqlApi as any).graphqlUrl
-);
-
-// Grant Lambda permission to call AppSync mutations (createCustomer)
-backend.data.resources.graphqlApi.grantMutation(postConfirmationFn);
+// NOTE: AMPLIFY_DATA_GRAPHQL_ENDPOINT is auto-injected by Amplify because
+// postConfirmation is listed in allow.resource() in data/resource.ts.
+// No manual addEnvironment or grantMutation needed — doing so creates a
+// cross-stack token (auth → data) that causes a circular dependency.
 
 export default backend;
