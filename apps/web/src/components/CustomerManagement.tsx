@@ -47,9 +47,18 @@ export const CustomerManagement = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const { data, errors } = await client.models.Customer.list();
-      if (errors?.length) throw new Error(errors[0].message);
-      setCustomers(data.map(mapCustomer));
+      const allItems: Schema['Customer']['type'][] = [];
+      let nextToken: string | null | undefined = undefined;
+      do {
+        const { data, errors, nextToken: token } = await client.models.Customer.list({
+          limit: 1000,
+          nextToken,
+        });
+        if (errors?.length) throw new Error(errors[0].message);
+        allItems.push(...data);
+        nextToken = token;
+      } while (nextToken);
+      setCustomers(allItems.map(mapCustomer));
     } catch (error) {
       toast.error('Failed to load customers');
       console.error(error);
