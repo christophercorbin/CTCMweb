@@ -7,6 +7,7 @@ import { ocrProcessor } from "./functions/ocr-processor/resource";
 import { postConfirmation } from "./functions/post-confirmation/resource";
 import { statusNotifier } from "./functions/status-notifier/resource";
 import { adminCreateCustomer } from "./functions/admin-create-customer/resource";
+import { syncCustomers } from "./functions/sync-customers/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
@@ -24,6 +25,7 @@ const backend = defineBackend({
   postConfirmation,
   statusNotifier,
   adminCreateCustomer,
+  syncCustomers,
 });
 
 // ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
@@ -177,6 +179,26 @@ adminCreateCustomerFn.addEnvironment(
 
 // Grant Lambda permission to call AppSync mutations (createCustomer)
 backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
+
+// ─── syncCustomers: Cognito list + AppSync read/write permissions ─────────────
+const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Function;
+
+syncCustomersFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["cognito-idp:ListUsersInGroup"],
+    resources: [userPool.userPoolArn],
+  })
+);
+
+syncCustomersFn.addEnvironment("USER_POOL_ID", userPool.userPoolId);
+syncCustomersFn.addEnvironment(
+  "GRAPHQL_API_ENDPOINT",
+  (backend.data.resources.graphqlApi as any).graphqlUrl
+);
+
+// grantQuery for listCustomers + grantMutation for createCustomer
+backend.data.resources.graphqlApi.grantQuery(syncCustomersFn);
+backend.data.resources.graphqlApi.grantMutation(syncCustomersFn);
 
 // ─── postConfirmation: Cognito + AppSync permissions ─────────────────────────
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;

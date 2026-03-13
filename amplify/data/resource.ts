@@ -3,6 +3,7 @@ import { postConfirmation } from "../functions/post-confirmation/resource";
 import { ocrProcessor } from "../functions/ocr-processor/resource";
 import { statusNotifier } from "../functions/status-notifier/resource";
 import { adminCreateCustomer } from "../functions/admin-create-customer/resource";
+import { syncCustomers } from "../functions/sync-customers/resource";
 
 const schema = a
   .schema({
@@ -208,6 +209,19 @@ const schema = a
       )
       .authorization((allow) => [allow.group("admin")])
       .handler(a.handler.function(adminCreateCustomer)),
+    // ─── Custom mutation: sync missing Customer records from Cognito ──────────
+    syncCustomersFromCognito: a
+      .mutation()
+      .arguments({})
+      .returns(
+        a.customType({
+          synced: a.integer(),
+          skipped: a.integer(),
+          errors: a.integer(),
+        })
+      )
+      .authorization((allow) => [allow.group("admin")])
+      .handler(a.handler.function(syncCustomers)),
   })
   .authorization((allow) => [
     allow.authenticated(),

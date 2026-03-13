@@ -6,5 +6,5 @@ export const adminCreateCustomer = defineFunction({
   runtime: 20,
   timeoutSeconds: 30,
   memoryMB: 512,
-  resourceGroupName: "data", // custom mutation handler — assign to data stack
+  resourceGroupName: "data", // Assign to data stack (custom mutation handler)
 });

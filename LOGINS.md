@@ -9,8 +9,9 @@
 
 | Email | Password | Group | Status |
 |---|---|---|---|
-| admin@ctcm.test | `AdminPass123!` | admin | Confirmed |
-| frank.admin@ctcm.test | `Frank123!` | admin | Confirmed |
+| admin@ctcm.test | `Admin123!` | admin | Confirmed |
+| frank.admin@ctcm.test | `Admin123!` | admin | Confirmed |
+| christophercorbin24@gmail.com | `Admin123!` | admin | Confirmed |
 
 Admins land on `/admin/dashboard` after login.
 
@@ -20,8 +21,8 @@ Admins land on `/admin/dashboard` after login.
 
 | Email | Password | Group | Status |
 |---|---|---|---|
-| customer@ctcm.test | `TestPass123!` | customer | Confirmed |
-| frank.customer@ctcm.test | `Frank123!` | customer | Confirmed |
+| customer@ctcm.test | `Customer123!` | customer | Confirmed |
+| frank.customer@ctcm.test | `Customer123!` | customer | Confirmed |
 
 Customers land on `/dashboard` after login.
 

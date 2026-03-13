@@ -1,173 +1,91 @@
 # Changelog
 
-All notable changes to the CTCM project will be documented in this file.
+All notable changes to CargoLink Barbados are documented here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased]
+---
+
+## [0.3.0] - March 2026
 
 ### Added
-- Comprehensive documentation structure in `docs/` directory
-- Documentation index with categorized guides
-- Improved README with quick start and project overview
-- CHANGELOG for tracking project changes
-
-### Changed
-- Organized documentation into setup, deployment, migration, and guides categories
-- Updated .gitignore with comprehensive exclusions
-- Cleaned up build artifacts and temporary files
-
-## [0.1.0] - 2026-02-14
-
-### Added - Phase 2: Authentication Migration
-- AWS Cognito authentication integration
-- Amplify Auth library for frontend
-- JWT token management
-- User registration and login flows
-- Protected routes with Cognito
-- Test users (customer and admin)
-
-### Added - Phase 1: Frontend Hosting
-- AWS Amplify Hosting setup
-- Automatic CI/CD from GitHub
-- CloudFront CDN distribution
-- Environment variable configuration
-- SPA routing rules
-
-### Added - Phase 0: Monorepo Setup
-- Monorepo structure with npm workspaces
-- TypeScript project references
-- Workspace organization (apps, packages, infra)
-- CDK infrastructure code
-- AWS stack deployments:
-  - NetworkStack (VPC, Security Groups)
-  - AuthStack (Cognito)
-  - DataStack (RDS, S3)
-  - ApiStack (API Gateway, Lambda)
-  - AmplifyFrontendStack (Amplify Hosting)
-  - OcrStack (Textract pipeline)
-  - ObservabilityStack (CloudWatch)
-
-### Removed
-- Supabase dependencies (@supabase/supabase-js)
-- Supabase authentication code
-- Supabase database queries
-- Supabase Edge Functions integration
-- All Supabase environment variables
-
-### Changed
-- Migrated from Supabase Auth to AWS Cognito
-- Updated authentication flow to use Cognito
-- Stubbed database operations for Phase 3
-- Stubbed OCR features for Phase 4
-- Updated frontend to use Cognito tokens for API requests
+- **Warehouse Receipt Intake** (`/admin/warehouse-receipt`): Admin page with DocumentScanner component, accepts PDFs + images, uploads to S3 `receipts/` prefix, triggers Textract OCR via Step Functions
+- **Admin sidebar navigation**: Process Receipt (ScanLine icon) and Invoices (Receipt icon) links
+- **Admin-created customer workflow**: `createCustomerWithAccount` AppSync mutation → `adminCreateCustomer` Lambda creates Cognito account (FORCE_CHANGE_PASSWORD), DynamoDB Customer record, and sends branded SES welcome email with skybox addresses and temp password
+- **Login new-password step**: Handles `CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED` challenge for admin-created accounts transparently in the Login page
+- **`cognitoConfirmNewPassword`** helper in `cognito.ts`
+- **Ship / Hold customer instruction** field on Shipment, with customer-facing decision UI
+- **Edit and delete** for shipments, packages, and invoices in admin views
+- **Admin shipment status display** for ship/hold/awaiting customer decision
+- **Auto-fill shipping addresses** from customer name (Skybox address generation)
+- **Skybox address display formatting** and phone auto-formatting
 
 ### Fixed
-- TypeScript compilation errors after Supabase removal
-- Import errors from removed Supabase client
-- Authentication context to use Cognito
-- Protected routes to check Cognito session
+- **`USER_PASSWORD_AUTH` not enabled**: Added `cfnUserPoolClient.explicitAuthFlows` in `backend.ts` to enable `ALLOW_USER_PASSWORD_AUTH` — without this, all logins via `cognitoSignIn` were failing since Amplify Gen 2 only enables SRP by default
+- **`GRAPHQL_API_ENDPOINT` not set for `postConfirmation` Lambda**: Amplify injects `AMPLIFY_DATA_GRAPHQL_ENDPOINT` for `allow.resource()`, not `GRAPHQL_API_ENDPOINT`. Now explicitly set in `backend.ts`
+- **`UserNotConfirmedException`** at login now redirects to `/confirm?email=...` instead of showing a generic error
+- **`grantMutation` missing for `postConfirmation`**: Lambda now has IAM permission to call AppSync mutations
+- **Skybox address Barbados label terminology** restored throughout UI
 
-## [0.0.1] - 2026-02-01
-
-### Added - Initial Setup
-- React frontend with TypeScript
-- Vite build tool
-- TailwindCSS styling
-- React Router for navigation
-- Supabase integration (legacy)
-- Basic UI components:
-  - Customer dashboard
-  - Admin dashboard
-  - Shipment tracking
-  - Invoice management
-  - Customer management
-  - Warehouse receipt intake
-- Mock data for development
-
-### Infrastructure
-- AWS account setup (404875533723)
-- GitHub repository (christophercorbin/CTCMweb)
-- Development environment configuration
+### Changed
+- `DocumentScanner` no longer shows "Coming in Phase 4" — OCR is live
+- `CustomerManagement` create flow now calls `createCustomerWithAccount` mutation instead of directly creating a DynamoDB record
 
 ---
 
-## Migration Progress
+## [0.2.0] - February 2026
 
-### ✅ Completed Phases
+### Added
+- **Amplify Gen 2 backend**: Full migration from stubbed API to live AppSync + DynamoDB
+- **AppSync schema**: Customer, Shipment, Package, ShipmentCharge, ShipmentEvent, Invoice models
+- **Cognito groups**: `admin` and `customer` with fine-grained AppSync authorization
+- **`post-confirmation` Lambda**: Creates DynamoDB Customer record on email verification, adds user to `customer` group, sets `custom:customerId` and `custom:role` attributes
+- **`status-notifier` Lambda**: AppSync custom mutation handler, sends branded SES emails on shipment status changes
+- **OCR pipeline**: `ocr-trigger` (S3 → Step Functions) + `ocr-processor` (Textract) Lambdas with Step Functions state machine
+- **Real-time shipment list**: `observeQuery` subscription in `useShipments` hook
+- **Admin dashboard**: Full customer and shipment management
+- **Admin shipment details**: Status updates, packages, charges, events, invoices
+- **Admin invoices page** (`/admin/invoices`)
+- **Customer pages**: Dashboard, shipment details, pending packages, customer info, invoices
+- **Self-registration flow**: `/register` → `/confirm` → `/login`
+- **SES email permissions** for `statusNotifier` Lambda
+- **Step Functions OCR state machine** wired in `backend.ts`
 
-#### Phase 0: Monorepo Setup
-- Restructured project as monorepo
-- Set up npm workspaces
-- Configured TypeScript project references
-- Organized code into apps and packages
-
-#### Phase 1: Frontend Hosting
-- Deployed AWS Amplify Hosting
-- Configured automatic CI/CD
-- Set up CloudFront CDN
-- Removed S3 + manual deployment
-
-#### Phase 2: Authentication
-- Migrated to AWS Cognito
-- Implemented JWT token management
-- Removed all Supabase dependencies
-- Updated authentication flows
-
-### 🔄 In Progress
-
-#### Phase 3: Database & API
-- [ ] Migrate database schema to RDS PostgreSQL
-- [ ] Implement Lambda functions for API endpoints
-- [ ] Set up API Gateway REST API
-- [ ] Update frontend to call AWS API
-- [ ] Implement real-time updates (AppSync or WebSocket)
-
-### ⏳ Planned
-
-#### Phase 4: OCR Integration
-- [ ] Implement AWS Textract for document scanning
-- [ ] Create Step Functions workflow
-- [ ] Update DocumentScanner component
-- [ ] Test OCR extraction accuracy
-
-#### Phase 5: Production Readiness
-- [ ] Set up production AWS account
-- [ ] Configure custom domain
-- [ ] Implement monitoring and alerting
-- [ ] Set up backup and disaster recovery
-- [ ] Security audit and hardening
-- [ ] Performance optimization
-- [ ] Load testing
+### Removed
+- All RDS PostgreSQL infrastructure
+- API Gateway REST API
+- Supabase dependencies and code
+- VPC / NetworkStack / CDK manual stacks
+- "Coming in Phase 3/4" placeholder messages (features are now live)
 
 ---
 
-## Version History
+## [0.1.0] - February 2026
 
-- **0.1.0** (2026-02-14) - Phase 2 Complete: Authentication Migration
-- **0.0.1** (2026-02-01) - Initial Setup with Supabase
+### Added
+- AWS Amplify Hosting with automatic CI/CD from GitHub (`main` branch)
+- AWS Cognito authentication (migrated from Supabase)
+- JWT token management via `aws-amplify/auth`
+- Protected routes (`ProtectedRoute` component with `requireAdmin` flag)
+- Monorepo structure with npm workspaces (`apps/web`, `packages/*`, `amplify`)
+- Basic UI components and pages (dashboard, admin, shipment tracking, invoices)
+- Demo / preview mode with mock data (no backend required)
 
----
-
-## Notes
-
-### Breaking Changes
-- **0.1.0**: Removed Supabase - all Supabase code and dependencies removed
-- **0.1.0**: Changed authentication from Supabase to Cognito - requires new user registration
-
-### Migration Notes
-- Users from Supabase need to re-register in Cognito
-- Database data will be migrated in Phase 3
-- OCR features temporarily disabled until Phase 4
-
-### Known Issues
-- Database features show "Coming in Phase 3" messages
-- OCR features show "Coming in Phase 4" messages
-- Some TypeScript errors in legacy code (non-blocking)
-- Cost slightly over $15/month budget (needs optimization)
+### Removed
+- Supabase Auth, Supabase client, all `@supabase/supabase-js` dependencies
+- Supabase Edge Functions
 
 ---
 
-**Maintained by**: Christopher Corbin  
-**Last Updated**: February 14, 2026
+## [0.0.1] - February 2026
+
+### Added
+- Initial React + TypeScript + Vite + Tailwind CSS frontend
+- React Router navigation
+- Core UI components
+- Mock data for development preview
+
+---
+
+**Maintained by**: Christopher Corbin
+**Last Updated**: March 2026

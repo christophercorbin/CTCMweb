@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
-import { Plus, Search, Mail, Phone, Package, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { Button, Input, Card, LoadingSkeleton, EmptyState, Modal } from './index';
 import { Customer } from '../types';
 
@@ -43,6 +43,7 @@ export const CustomerManagement = () => {
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchCustomers = async () => {
     try {
@@ -70,6 +71,30 @@ export const CustomerManagement = () => {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  const handleSyncFromCognito = async () => {
+    setSyncing(true);
+    try {
+      const { data: result, errors } = await client.mutations.syncCustomersFromCognito({});
+      if (errors?.length) throw new Error(errors[0].message);
+      const { synced, skipped, errors: syncErrors } = result ?? {};
+      if ((syncErrors ?? 0) > 0) {
+        toast.error(`Sync finished with ${syncErrors} error(s). Check CloudWatch logs.`);
+      } else {
+        toast.success(
+          synced === 0
+            ? `All customers already synced (${skipped} skipped)`
+            : `Synced ${synced} new customer${synced !== 1 ? 's' : ''}`
+        );
+      }
+      await fetchCustomers();
+    } catch (error) {
+      toast.error('Failed to sync customers from Cognito');
+      console.error(error);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleDelete = async (customerId?: string) => {
     if (!customerId) return;
@@ -99,6 +124,14 @@ export const CustomerManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
           <p className="text-gray-600 mt-1">Manage customer information and skybox addresses</p>
         </div>
+        <Button
+          onClick={handleSyncFromCognito}
+          variant="secondary"
+          loading={syncing}
+          icon={<RefreshCw className="w-4 h-4" />}
+        >
+          Sync from Cognito
+        </Button>
         <Button
           onClick={() => {
             setEditingCustomer(null);
