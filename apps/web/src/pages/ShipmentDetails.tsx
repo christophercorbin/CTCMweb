@@ -7,6 +7,7 @@ import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
 import { TrackingItem, ShipmentStatus } from '../types'
+import { statusLabel } from '../constants/shipmentStatuses'
 
 const client = generateClient<Schema>()
 
@@ -52,7 +53,7 @@ export const ShipmentDetails = () => {
     }).subscribe({
       next: (updated) => {
         setShipment(updated)
-        toast.success(`Status updated: ${updated.status}`)
+        toast.success(`Status updated: ${statusLabel(updated.status)}`)
       },
       error: console.error,
     })
@@ -185,7 +186,7 @@ export const ShipmentDetails = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Status</p>
-                <p className="text-lg font-semibold text-gray-900">{shipment.status}</p>
+                <p className="text-lg font-semibold text-gray-900">{statusLabel(shipment.status)}</p>
               </div>
               {shipment.origin && (
                 <div>

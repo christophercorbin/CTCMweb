@@ -1,0 +1,2732 @@
+{
+ "Parameters": {
+  "DynamoDBModelTableReadIOPS": {
+   "Type": "Number",
+   "Default": 5,
+   "Description": "The number of read IOPS the table should support."
+  },
+  "DynamoDBModelTableWriteIOPS": {
+   "Type": "Number",
+   "Default": 5,
+   "Description": "The number of write IOPS the table should support."
+  },
+  "DynamoDBBillingMode": {
+   "Type": "String",
+   "Default": "PAY_PER_REQUEST",
+   "AllowedValues": [
+    "PAY_PER_REQUEST",
+    "PROVISIONED"
+   ],
+   "Description": "Configure @model types to create DynamoDB tables with PAY_PER_REQUEST or PROVISIONED billing modes."
+  },
+  "DynamoDBEnablePointInTimeRecovery": {
+   "Type": "String",
+   "Default": "false",
+   "AllowedValues": [
+    "true",
+    "false"
+   ],
+   "Description": "Whether to enable Point in Time Recovery on the table."
+  },
+  "DynamoDBEnableServerSideEncryption": {
+   "Type": "String",
+   "Default": "true",
+   "AllowedValues": [
+    "true",
+    "false"
+   ],
+   "Description": "Enable server side encryption powered by KMS."
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataAmplifyTableManagerNestedStackAmplifyTableManagerNestedStackResourceB86013A8Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataAmplifyTab4A7146D9": {
+   "Type": "String"
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId": {
+   "Type": "String"
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name": {
+   "Type": "String"
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref": {
+   "Type": "String"
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef": {
+   "Type": "String"
+  },
+  "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef": {
+   "Type": "String"
+  }
+ },
+ "Conditions": {
+  "HasEnvironmentParameter": {
+   "Fn::Not": [
+    {
+     "Fn::Equals": [
+      "NONE",
+      "NONE"
+     ]
+    }
+   ]
+  },
+  "ShouldUsePayPerRequestBilling": {
+   "Fn::Equals": [
+    {
+     "Ref": "DynamoDBBillingMode"
+    },
+    "PAY_PER_REQUEST"
+   ]
+  },
+  "ShouldUsePointInTimeRecovery": {
+   "Fn::Equals": [
+    {
+     "Ref": "DynamoDBEnablePointInTimeRecovery"
+    },
+    "true"
+   ]
+  },
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-3"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-4"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Equals": [
+      {
+       "Ref": "AWS::Region"
+      },
+      "us-west-2"
+     ]
+    }
+   ]
+  }
+ },
+ "Resources": {
+  "ShipmentTable": {
+   "Type": "Custom::AmplifyDynamoDBTable",
+   "Properties": {
+    "ServiceToken": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataAmplifyTableManagerNestedStackAmplifyTableManagerNestedStackResourceB86013A8Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataAmplifyTab4A7146D9"
+    },
+    "tableName": {
+     "Fn::Join": [
+      "",
+      [
+       "Shipment-",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "-NONE"
+      ]
+     ]
+    },
+    "attributeDefinitions": [
+     {
+      "attributeName": "id",
+      "attributeType": "S"
+     },
+     {
+      "attributeName": "trackingNumber",
+      "attributeType": "S"
+     },
+     {
+      "attributeName": "customerId",
+      "attributeType": "S"
+     }
+    ],
+    "keySchema": [
+     {
+      "attributeName": "id",
+      "keyType": "HASH"
+     }
+    ],
+    "globalSecondaryIndexes": [
+     {
+      "indexName": "shipmentsByTrackingNumber",
+      "keySchema": [
+       {
+        "attributeName": "trackingNumber",
+        "keyType": "HASH"
+       }
+      ],
+      "projection": {
+       "projectionType": "ALL"
+      },
+      "provisionedThroughput": {
+       "Fn::If": [
+        "ShouldUsePayPerRequestBilling",
+        {
+         "Ref": "AWS::NoValue"
+        },
+        {
+         "ReadCapacityUnits": {
+          "Ref": "DynamoDBModelTableReadIOPS"
+         },
+         "WriteCapacityUnits": {
+          "Ref": "DynamoDBModelTableWriteIOPS"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "indexName": "shipmentsByCustomerId",
+      "keySchema": [
+       {
+        "attributeName": "customerId",
+        "keyType": "HASH"
+       }
+      ],
+      "projection": {
+       "projectionType": "ALL"
+      },
+      "provisionedThroughput": {
+       "Fn::If": [
+        "ShouldUsePayPerRequestBilling",
+        {
+         "Ref": "AWS::NoValue"
+        },
+        {
+         "ReadCapacityUnits": {
+          "Ref": "DynamoDBModelTableReadIOPS"
+         },
+         "WriteCapacityUnits": {
+          "Ref": "DynamoDBModelTableWriteIOPS"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "indexName": "gsi-Customer.shipments",
+      "keySchema": [
+       {
+        "attributeName": "customerId",
+        "keyType": "HASH"
+       }
+      ],
+      "projection": {
+       "projectionType": "ALL"
+      },
+      "provisionedThroughput": {
+       "Fn::If": [
+        "ShouldUsePayPerRequestBilling",
+        {
+         "Ref": "AWS::NoValue"
+        },
+        {
+         "ReadCapacityUnits": {
+          "Ref": "DynamoDBModelTableReadIOPS"
+         },
+         "WriteCapacityUnits": {
+          "Ref": "DynamoDBModelTableWriteIOPS"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "provisionedThroughput": {
+     "Fn::If": [
+      "ShouldUsePayPerRequestBilling",
+      {
+       "Ref": "AWS::NoValue"
+      },
+      {
+       "ReadCapacityUnits": {
+        "Ref": "DynamoDBModelTableReadIOPS"
+       },
+       "WriteCapacityUnits": {
+        "Ref": "DynamoDBModelTableWriteIOPS"
+       }
+      }
+     ]
+    },
+    "sseSpecification": {
+     "sseEnabled": false
+    },
+    "streamSpecification": {
+     "streamViewType": "NEW_AND_OLD_IMAGES"
+    },
+    "deletionProtectionEnabled": false,
+    "allowDestructiveGraphqlSchemaUpdates": true,
+    "replaceTableUponGsiUpdate": true,
+    "pointInTimeRecoverySpecification": {
+     "Fn::If": [
+      "ShouldUsePointInTimeRecovery",
+      {
+       "PointInTimeRecoveryEnabled": true
+      },
+      {
+       "Ref": "AWS::NoValue"
+      }
+     ]
+    },
+    "billingMode": {
+     "Fn::If": [
+      "ShouldUsePayPerRequestBilling",
+      "PAY_PER_REQUEST",
+      {
+       "Ref": "AWS::NoValue"
+      }
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/ShipmentTable/Default/Default"
+   }
+  },
+  "ShipmentIAMRole7D993D2A": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Policies": [
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": [
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:GetItem",
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:UpdateItem",
+          "dynamodb:ConditionCheckItem",
+          "dynamodb:DescribeTable",
+          "dynamodb:GetRecords",
+          "dynamodb:GetShardIterator"
+         ],
+         "Effect": "Allow",
+         "Resource": [
+          {
+           "Fn::Sub": [
+            "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+            {
+             "tablename": {
+              "Fn::Join": [
+               "",
+               [
+                "Shipment-",
+                {
+                 "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+                },
+                "-NONE"
+               ]
+              ]
+             }
+            }
+           ]
+          },
+          {
+           "Fn::Sub": [
+            "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}/*",
+            {
+             "tablename": {
+              "Fn::Join": [
+               "",
+               [
+                "Shipment-",
+                {
+                 "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+                },
+                "-NONE"
+               ]
+              ]
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "DynamoDBAccess"
+     }
+    ],
+    "RoleName": {
+     "Fn::Join": [
+      "",
+      [
+       "ShipmentIAMRole772b35-",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "-NONE"
+      ]
+     ]
+    },
+    "Tags": [
+     {
+      "Key": "amplify:deployment-type",
+      "Value": "sandbox"
+     },
+     {
+      "Key": "amplify:friendly-name",
+      "Value": "amplifyData"
+     },
+     {
+      "Key": "created-by",
+      "Value": "amplify"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/ShipmentIAMRole/Resource"
+   }
+  },
+  "ShipmentDataSource": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DynamoDBConfig": {
+     "AwsRegion": {
+      "Ref": "AWS::Region"
+     },
+     "TableName": {
+      "Fn::Select": [
+       1,
+       {
+        "Fn::Split": [
+         "/",
+         {
+          "Fn::Select": [
+           5,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "ShipmentTable",
+               "TableArn"
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "Name": "ShipmentTable",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ShipmentIAMRole7D993D2A",
+      "Arn"
+     ]
+    },
+    "Type": "AMAZON_DYNAMODB"
+   },
+   "DependsOn": [
+    "ShipmentIAMRole7D993D2A"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/ShipmentDataSource/Resource"
+   }
+  },
+  "QuerygetShipmentauth0FunctionQuerygetShipmentauth0FunctionAppSyncFunction653EA328": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerygetShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/03a2793ca54a9bfa2b4b1b0b7ee4fc7b8290d6a67aaa1ba6c5cce1852a097e19.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerygetShipmentauth0Function/QuerygetShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "QuerygetShipmentpostAuth0FunctionQuerygetShipmentpostAuth0FunctionAppSyncFunction90B76F45": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerygetShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerygetShipmentpostAuth0Function/QuerygetShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "QueryGetShipmentDataResolverFnQueryGetShipmentDataResolverFnAppSyncFunction5C92B9BC": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QueryGetShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/08f4d557693d96c1a4efba0f9dc91330e4b19772fd5477c156468843e3d9cb5e.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/4c6a2d29f01c6091bd1d9afe16e5849d456c96f17c3b215938c8067399532719.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QueryGetShipmentDataResolverFn/QueryGetShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "GetShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "getShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "QuerygetShipmentauth0FunctionQuerygetShipmentauth0FunctionAppSyncFunction653EA328",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QuerygetShipmentpostAuth0FunctionQuerygetShipmentpostAuth0FunctionAppSyncFunction90B76F45",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QueryGetShipmentDataResolverFnQueryGetShipmentDataResolverFnAppSyncFunction5C92B9BC",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Query\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"getShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Query"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/queryGetShipmentResolver"
+   }
+  },
+  "QuerylistShipmentsauth0FunctionQuerylistShipmentsauth0FunctionAppSyncFunction289EAB51": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentsauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/03a2793ca54a9bfa2b4b1b0b7ee4fc7b8290d6a67aaa1ba6c5cce1852a097e19.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentsauth0Function/QuerylistShipmentsauth0Function.AppSyncFunction"
+   }
+  },
+  "QuerylistShipmentspostAuth0FunctionQuerylistShipmentspostAuth0FunctionAppSyncFunction1D467407": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentspostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentspostAuth0Function/QuerylistShipmentspostAuth0Function.AppSyncFunction"
+   }
+  },
+  "QueryListShipmentsDataResolverFnQueryListShipmentsDataResolverFnAppSyncFunctionF521500E": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QueryListShipmentsDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/9fcbe070ecd3023c5bf5b966fa9584757db9762eef123bad0820bd87591b2174.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/cc01911d0269d4080ea57505dc445dfc315ef7ad85d3d9d4ea1357858bff451d.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QueryListShipmentsDataResolverFn/QueryListShipmentsDataResolverFn.AppSyncFunction"
+   }
+  },
+  "ListShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "listShipments",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentsauth0FunctionQuerylistShipmentsauth0FunctionAppSyncFunction289EAB51",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentspostAuth0FunctionQuerylistShipmentspostAuth0FunctionAppSyncFunction1D467407",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QueryListShipmentsDataResolverFnQueryListShipmentsDataResolverFnAppSyncFunctionF521500E",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Query\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"listShipments\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Query"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/queryListShipmentsResolver"
+   }
+  },
+  "MutationcreateShipmentinit0FunctionMutationcreateShipmentinit0FunctionAppSyncFunctionA6146DC3": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationcreateShipmentinit0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/a183ddccbd956316c38ef97177b8f088ef0826f62023323f5ae6053d348ccffc.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationcreateShipmentinit0Function/MutationcreateShipmentinit0Function.AppSyncFunction"
+   }
+  },
+  "MutationcreateShipmentauth0FunctionMutationcreateShipmentauth0FunctionAppSyncFunction06C4CD2C": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationcreateShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/fd6e2e71c3deed6f0fb6511f3faac3279248e24a7bdb7e16e04f2bddd37fa63e.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationcreateShipmentauth0Function/MutationcreateShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "MutationcreateShipmentpostAuth0FunctionMutationcreateShipmentpostAuth0FunctionAppSyncFunction17EEED61": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationcreateShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationcreateShipmentpostAuth0Function/MutationcreateShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "MutationCreateShipmentDataResolverFnMutationCreateShipmentDataResolverFnAppSyncFunction5DEEF5F5": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationCreateShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/0739a48c510255e169a7832374e8aa9ef0f98727768a2fd93866d2baf773192e.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/f4a52b72209a9dfa197b5e7367a5c378c5bb86de6e29ddd9e48b49a3fe54b249.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationCreateShipmentDataResolverFn/MutationCreateShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "CreateShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "createShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "MutationcreateShipmentinit0FunctionMutationcreateShipmentinit0FunctionAppSyncFunctionA6146DC3",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationcreateShipmentauth0FunctionMutationcreateShipmentauth0FunctionAppSyncFunction06C4CD2C",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationcreateShipmentpostAuth0FunctionMutationcreateShipmentpostAuth0FunctionAppSyncFunction17EEED61",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationCreateShipmentDataResolverFnMutationCreateShipmentDataResolverFnAppSyncFunction5DEEF5F5",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Mutation\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"createShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Mutation"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/mutationCreateShipmentResolver"
+   }
+  },
+  "MutationupdateShipmentinit0FunctionMutationupdateShipmentinit0FunctionAppSyncFunction44B04C92": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationupdateShipmentinit0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/06db846fd14e6fc371f22b12b5545ba8e2dbfeda85d8c8d586c71c282166657b.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationupdateShipmentinit0Function/MutationupdateShipmentinit0Function.AppSyncFunction"
+   }
+  },
+  "MutationupdateShipmentauth0FunctionMutationupdateShipmentauth0FunctionAppSyncFunctionCDB9FEB5": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationupdateShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/1f5fed297da9c32ae3af922bf3a38ccf23b956078887d16891ec06c20c64722c.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/36c3b433108f2136be8aaaced624028a613b9718bb50ec14d1147c35c838ab2e.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationupdateShipmentauth0Function/MutationupdateShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "MutationupdateShipmentpostAuth0FunctionMutationupdateShipmentpostAuth0FunctionAppSyncFunctionAE676185": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationupdateShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationupdateShipmentpostAuth0Function/MutationupdateShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "MutationUpdateShipmentDataResolverFnMutationUpdateShipmentDataResolverFnAppSyncFunctionCE82000D": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationUpdateShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/474bf0776ec2164a13191d1a0a9e057154931e4918fea5086f49850d02a5371b.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/f4a52b72209a9dfa197b5e7367a5c378c5bb86de6e29ddd9e48b49a3fe54b249.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationUpdateShipmentDataResolverFn/MutationUpdateShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "UpdateShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "updateShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "MutationupdateShipmentinit0FunctionMutationupdateShipmentinit0FunctionAppSyncFunction44B04C92",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationupdateShipmentauth0FunctionMutationupdateShipmentauth0FunctionAppSyncFunctionCDB9FEB5",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationupdateShipmentpostAuth0FunctionMutationupdateShipmentpostAuth0FunctionAppSyncFunctionAE676185",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationUpdateShipmentDataResolverFnMutationUpdateShipmentDataResolverFnAppSyncFunctionCE82000D",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Mutation\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"updateShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Mutation"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/mutationUpdateShipmentResolver"
+   }
+  },
+  "MutationdeleteShipmentauth0FunctionMutationdeleteShipmentauth0FunctionAppSyncFunctionB99E711D": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationdeleteShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/1f5fed297da9c32ae3af922bf3a38ccf23b956078887d16891ec06c20c64722c.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/95229407faf93272324e8b6f63a52e76bab90718105db9a033068e8cbefde73b.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationdeleteShipmentauth0Function/MutationdeleteShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "MutationdeleteShipmentpostAuth0FunctionMutationdeleteShipmentpostAuth0FunctionAppSyncFunction69E3C6D9": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationdeleteShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationdeleteShipmentpostAuth0Function/MutationdeleteShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "MutationDeleteShipmentDataResolverFnMutationDeleteShipmentDataResolverFnAppSyncFunction83E91E5B": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MutationDeleteShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/4f7907d1209a2c9953a0c053df402c634e359546d70c7cc5c2e8e21ea734880f.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/f4a52b72209a9dfa197b5e7367a5c378c5bb86de6e29ddd9e48b49a3fe54b249.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/MutationDeleteShipmentDataResolverFn/MutationDeleteShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "DeleteShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "deleteShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "MutationdeleteShipmentauth0FunctionMutationdeleteShipmentauth0FunctionAppSyncFunctionB99E711D",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationdeleteShipmentpostAuth0FunctionMutationdeleteShipmentpostAuth0FunctionAppSyncFunction69E3C6D9",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MutationDeleteShipmentDataResolverFnMutationDeleteShipmentDataResolverFnAppSyncFunction83E91E5B",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Mutation\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"deleteShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Mutation"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/mutationDeleteShipmentResolver"
+   }
+  },
+  "SubscriptiononCreateShipmentauth0FunctionSubscriptiononCreateShipmentauth0FunctionAppSyncFunction5121A1B8": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononCreateShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/3b46d48b559663384b2d54576ae5efb1a8f7e54e2df468381cf805635ec00b7a.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononCreateShipmentauth0Function/SubscriptiononCreateShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptiononCreateShipmentpostAuth0FunctionSubscriptiononCreateShipmentpostAuth0FunctionAppSyncFunctionB001DF7B": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononCreateShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononCreateShipmentpostAuth0Function/SubscriptiononCreateShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptionOnCreateShipmentDataResolverFnSubscriptionOnCreateShipmentDataResolverFnAppSyncFunction7E19582F": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptionOnCreateShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/fe3c43ada4b9d681a5e2312663ef7a73386424d73b73e51f8e2e9d4b50f7c502.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e0cff47fb007f0bbf2a4e43ca256d6aa7ec109821769fd79fa7c5e83f0e7f9fc.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptionOnCreateShipmentDataResolverFn/SubscriptionOnCreateShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "SubscriptiononCreateShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "onCreateShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononCreateShipmentauth0FunctionSubscriptiononCreateShipmentauth0FunctionAppSyncFunction5121A1B8",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononCreateShipmentpostAuth0FunctionSubscriptiononCreateShipmentpostAuth0FunctionAppSyncFunctionB001DF7B",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptionOnCreateShipmentDataResolverFnSubscriptionOnCreateShipmentDataResolverFnAppSyncFunction7E19582F",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Subscription\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"onCreateShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"NONE\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Subscription"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/subscriptionOnCreateShipmentResolver"
+   }
+  },
+  "SubscriptiononUpdateShipmentauth0FunctionSubscriptiononUpdateShipmentauth0FunctionAppSyncFunctionE9BA618A": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononUpdateShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/3b46d48b559663384b2d54576ae5efb1a8f7e54e2df468381cf805635ec00b7a.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononUpdateShipmentauth0Function/SubscriptiononUpdateShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptiononUpdateShipmentpostAuth0FunctionSubscriptiononUpdateShipmentpostAuth0FunctionAppSyncFunctionDB0C9806": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononUpdateShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononUpdateShipmentpostAuth0Function/SubscriptiononUpdateShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptionOnUpdateShipmentDataResolverFnSubscriptionOnUpdateShipmentDataResolverFnAppSyncFunctionEA8ED0A1": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptionOnUpdateShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/fe3c43ada4b9d681a5e2312663ef7a73386424d73b73e51f8e2e9d4b50f7c502.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e0cff47fb007f0bbf2a4e43ca256d6aa7ec109821769fd79fa7c5e83f0e7f9fc.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptionOnUpdateShipmentDataResolverFn/SubscriptionOnUpdateShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "SubscriptiononUpdateShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "onUpdateShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononUpdateShipmentauth0FunctionSubscriptiononUpdateShipmentauth0FunctionAppSyncFunctionE9BA618A",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononUpdateShipmentpostAuth0FunctionSubscriptiononUpdateShipmentpostAuth0FunctionAppSyncFunctionDB0C9806",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptionOnUpdateShipmentDataResolverFnSubscriptionOnUpdateShipmentDataResolverFnAppSyncFunctionEA8ED0A1",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Subscription\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"onUpdateShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"NONE\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Subscription"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/subscriptionOnUpdateShipmentResolver"
+   }
+  },
+  "SubscriptiononDeleteShipmentauth0FunctionSubscriptiononDeleteShipmentauth0FunctionAppSyncFunction92014437": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononDeleteShipmentauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/3b46d48b559663384b2d54576ae5efb1a8f7e54e2df468381cf805635ec00b7a.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononDeleteShipmentauth0Function/SubscriptiononDeleteShipmentauth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptiononDeleteShipmentpostAuth0FunctionSubscriptiononDeleteShipmentpostAuth0FunctionAppSyncFunction1C278437": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptiononDeleteShipmentpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptiononDeleteShipmentpostAuth0Function/SubscriptiononDeleteShipmentpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "SubscriptionOnDeleteShipmentDataResolverFnSubscriptionOnDeleteShipmentDataResolverFnAppSyncFunctionC135E7A6": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "SubscriptionOnDeleteShipmentDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/fe3c43ada4b9d681a5e2312663ef7a73386424d73b73e51f8e2e9d4b50f7c502.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e0cff47fb007f0bbf2a4e43ca256d6aa7ec109821769fd79fa7c5e83f0e7f9fc.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/SubscriptionOnDeleteShipmentDataResolverFn/SubscriptionOnDeleteShipmentDataResolverFn.AppSyncFunction"
+   }
+  },
+  "SubscriptiononDeleteShipmentResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "onDeleteShipment",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononDeleteShipmentauth0FunctionSubscriptiononDeleteShipmentauth0FunctionAppSyncFunction92014437",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptiononDeleteShipmentpostAuth0FunctionSubscriptiononDeleteShipmentpostAuth0FunctionAppSyncFunction1C278437",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "SubscriptionOnDeleteShipmentDataResolverFnSubscriptionOnDeleteShipmentDataResolverFnAppSyncFunctionC135E7A6",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Subscription\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"onDeleteShipment\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"NONE\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Subscription"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/subscriptionOnDeleteShipmentResolver"
+   }
+  },
+  "QuerylistShipmentByTrackingNumberauth0FunctionQuerylistShipmentByTrackingNumberauth0FunctionAppSyncFunction0C022267": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentByTrackingNumberauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/03a2793ca54a9bfa2b4b1b0b7ee4fc7b8290d6a67aaa1ba6c5cce1852a097e19.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentByTrackingNumberauth0Function/QuerylistShipmentByTrackingNumberauth0Function.AppSyncFunction"
+   }
+  },
+  "QuerylistShipmentByTrackingNumberpostAuth0FunctionQuerylistShipmentByTrackingNumberpostAuth0FunctionAppSyncFunction3F077BD0": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentByTrackingNumberpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentByTrackingNumberpostAuth0Function/QuerylistShipmentByTrackingNumberpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "QueryListShipmentByTrackingNumberDataResolverFnQueryListShipmentByTrackingNumberDataResolverFnAppSyncFunction141D400D": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QueryListShipmentByTrackingNumberDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/d36b8cffbcaaf64cf3e0739d9817fdf59154b801a58e052cfd2bbd4e482d94a8.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/098c998f215c333f57348ca8912f66057ae6b574fe34013033dc54362ee2372c.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QueryListShipmentByTrackingNumberDataResolverFn/QueryListShipmentByTrackingNumberDataResolverFn.AppSyncFunction"
+   }
+  },
+  "QuerylistShipmentByTrackingNumberResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "listShipmentByTrackingNumber",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentByTrackingNumberauth0FunctionQuerylistShipmentByTrackingNumberauth0FunctionAppSyncFunction0C022267",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentByTrackingNumberpostAuth0FunctionQuerylistShipmentByTrackingNumberpostAuth0FunctionAppSyncFunction3F077BD0",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QueryListShipmentByTrackingNumberDataResolverFnQueryListShipmentByTrackingNumberDataResolverFnAppSyncFunction141D400D",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Query\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"listShipmentByTrackingNumber\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Query"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/queryListShipmentByTrackingNumberResolver"
+   }
+  },
+  "QuerylistShipmentByCustomerIdauth0FunctionQuerylistShipmentByCustomerIdauth0FunctionAppSyncFunction1DB2D621": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentByCustomerIdauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/03a2793ca54a9bfa2b4b1b0b7ee4fc7b8290d6a67aaa1ba6c5cce1852a097e19.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentByCustomerIdauth0Function/QuerylistShipmentByCustomerIdauth0Function.AppSyncFunction"
+   }
+  },
+  "QuerylistShipmentByCustomerIdpostAuth0FunctionQuerylistShipmentByCustomerIdpostAuth0FunctionAppSyncFunction8554575E": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QuerylistShipmentByCustomerIdpostAuth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/c1721bcd774e27c514d3454b5be4f9bdd094c0161b57ddf053d618e3b0086a77.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QuerylistShipmentByCustomerIdpostAuth0Function/QuerylistShipmentByCustomerIdpostAuth0Function.AppSyncFunction"
+   }
+  },
+  "QueryListShipmentByCustomerIdDataResolverFnQueryListShipmentByCustomerIdDataResolverFnAppSyncFunction6E3A5DAC": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Fn::GetAtt": [
+      "ShipmentDataSource",
+      "Name"
+     ]
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "QueryListShipmentByCustomerIdDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/0d1e60008160b17cca6d2fe1d3dcba670a76cbb07436a3438e5aa59af07ffc8e.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/098c998f215c333f57348ca8912f66057ae6b574fe34013033dc54362ee2372c.vtl"
+    }
+   },
+   "DependsOn": [
+    "ShipmentDataSource"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/QueryListShipmentByCustomerIdDataResolverFn/QueryListShipmentByCustomerIdDataResolverFn.AppSyncFunction"
+   }
+  },
+  "QuerylistShipmentByCustomerIdResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "listShipmentByCustomerId",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentByCustomerIdauth0FunctionQuerylistShipmentByCustomerIdauth0FunctionAppSyncFunction1DB2D621",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QuerylistShipmentByCustomerIdpostAuth0FunctionQuerylistShipmentByCustomerIdpostAuth0FunctionAppSyncFunction8554575E",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "QueryListShipmentByCustomerIdDataResolverFnQueryListShipmentByCustomerIdDataResolverFnAppSyncFunction6E3A5DAC",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Query\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"listShipmentByCustomerId\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Fn::GetAtt": [
+                 "ShipmentTable",
+                 "TableArn"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Query"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/queryListShipmentByCustomerIdResolver"
+   }
+  },
+  "ShipmentOwnerDataResolverFnShipmentOwnerDataResolverFnAppSyncFunction1155F308": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "ShipmentOwnerDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/041534e5fd916595f752318f161512d7c7f83b9f2cf32d0f0be381c12253ff68.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/064303962e481067b44300212516363b99aaee539b6bafaf756fdd83ff0b60f0.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/ShipmentOwnerDataResolverFn/ShipmentOwnerDataResolverFn.AppSyncFunction"
+   }
+  },
+  "ShipmentownerResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "owner",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "ShipmentOwnerDataResolverFnShipmentOwnerDataResolverFnAppSyncFunction1155F308",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Shipment\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"owner\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"NONE\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Shipment"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/shipmentOwnerResolver"
+   }
+  },
+  "ShipmentCustomerCognitoSubDataResolverFnShipmentCustomerCognitoSubDataResolverFnAppSyncFunctionA461FCCF": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPINONEDSDB23C086Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "ShipmentCustomerCognitoSubDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/041534e5fd916595f752318f161512d7c7f83b9f2cf32d0f0be381c12253ff68.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/8e47503a0f1f560b0f3ce687c2ff379bcc9b02a102b6c0a1b584805cdf01928f.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/ShipmentCustomerCognitoSubDataResolverFn/ShipmentCustomerCognitoSubDataResolverFn.AppSyncFunction"
+   }
+  },
+  "ShipmentcustomerCognitoSubResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+    },
+    "FieldName": "customerCognitoSub",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "ShipmentCustomerCognitoSubDataResolverFnShipmentCustomerCognitoSubDataResolverFnAppSyncFunctionA461FCCF",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Shipment\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"customerCognitoSub\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"NONE\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthauthenticatedUserRoleB078F398Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthunauthenticatedUserRole74746CBFRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthNestedStackauthNestedStackResource7B4C1850Outputsamplifyctcmmonorepochristophercorbinsandbox909b7be8beauthamplifyAuthIdentityPoolE026014DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Shipment"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/shipmentCustomerCognitoSubResolver"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1WOwW6DMAyGn6X31OtAk3ZdQTtuE+xemcSgFHBQ7LSqEO8+QadOO/3+5E/2n0GWv8Jhh1fZW9fvB9/A/EGi5GpF25ui5S+MOJJSXKEI7Lz6wKYiCSlaMkUSDeMftvyY8Sqn2d0Yx+Aa+MZmoCMKGY8jzFUY7nYYaDE4TXJjC3O56WVTomL9OPmf3hPbtUQRuPVdirg1+v08XCguRvITipAKvK1hJIdjsj3pWmBZ3c+kU1KzrWvFznO3GA6O4CxPlyyD5xc47M7i/T4mVj8SVPf8AUYNP/M2AQAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "amplify-ctcmmonorepo-christophercorbin-sandbox-909b7be8be/data/amplifyData/Shipment/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "GetAttShipmentTableStreamArn": {
+   "Description": "Your DynamoDB table StreamArn.",
+   "Value": {
+    "Fn::GetAtt": [
+     "ShipmentTable",
+     "TableStreamArn"
+    ]
+   },
+   "Export": {
+    "Name": {
+     "Fn::Join": [
+      ":",
+      [
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "GetAtt:ShipmentTable:StreamArn"
+      ]
+     ]
+    }
+   }
+  },
+  "GetAttShipmentTableName": {
+   "Description": "Your DynamoDB table name.",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "Shipment-",
+      {
+       "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+      },
+      "-NONE"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": {
+     "Fn::Join": [
+      ":",
+      [
+       {
+        "Ref": "referencetoamplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataGraphQLAPI91FEFEEAApiId"
+       },
+       "GetAtt:ShipmentTable:Name"
+      ]
+     ]
+    }
+   }
+  },
+  "amplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataShipmentShipmentDataSource9CBEFD5CName": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ShipmentDataSource",
+     "Name"
+    ]
+   }
+  },
+  "amplifyctcmmonorepochristophercorbinsandbox909b7be8bedataamplifyDataShipmentShipmentTableCF72F7C9TableArn": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ShipmentTable",
+     "TableArn"
+    ]
+   }
+  }
+ }
+}

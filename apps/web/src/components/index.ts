@@ -10,3 +10,4 @@ export { EmptyState } from './EmptyState';
 export { Timeline } from './Timeline';
 export { ShipmentProgress } from './ShipmentProgress';
 export { DocumentScanner } from './DocumentScanner';
+export { ErrorBoundary } from './ErrorBoundary';

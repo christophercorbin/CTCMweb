@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './routes/ProtectedRoute'
 import { AuthenticatedLayout } from './components/AuthenticatedLayout'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { ConfirmSignUp } from './pages/ConfirmSignUp'
@@ -16,9 +17,11 @@ import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
 import { AdminInvoices } from './pages/AdminInvoices'
 import { PendingPackages } from './pages/PendingPackages'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
+import { ForgotPassword } from './pages/ForgotPassword'
 
 function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <Toaster position="top-right" />
@@ -26,6 +29,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/confirm" element={<ConfirmSignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route
           path="/dashboard"
@@ -142,6 +146,7 @@ function App() {
       </Routes>
     </BrowserRouter>
   </AuthProvider>
+  </ErrorBoundary>
   )
 }
 

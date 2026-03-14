@@ -24,6 +24,7 @@ jobs:
 
       - run: npm ci
 
+      # Typecheck covers both apps/web AND amplify Lambda functions
       - name: Lint + Typecheck + Test
         run: |
           npm run lint --workspaces --if-present

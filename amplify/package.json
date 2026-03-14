@@ -6,7 +6,8 @@
   "scripts": {
     "sandbox": "ampx sandbox",
     "deploy": "ampx deploy",
-    "delete-sandbox": "ampx sandbox delete"
+    "delete-sandbox": "ampx sandbox delete",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-amplify/backend": "^1.0.0",

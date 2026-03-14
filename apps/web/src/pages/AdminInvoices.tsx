@@ -68,9 +68,8 @@ export const AdminInvoices = () => {
   useEffect(() => { fetchData() }, [])
 
   // ── Stats ──────────────────────────────────────────────────────────────────
-  const now = new Date()
-
   const stats = useMemo(() => {
+    const now = new Date()
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const unpaid  = invoices.filter(i => i.status === 'SENT' || i.status === 'OVERDUE' || i.status === 'DRAFT')
     const paid    = invoices.filter(i => i.status === 'PAID')
@@ -178,12 +177,12 @@ export const AdminInvoices = () => {
         {/* Monthly earnings */}
         <Card>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#1B2D78' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-navy">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">
-                {now.toLocaleString('en-US', { month: 'long' })} Earnings
+                {new Date().toLocaleString('en-US', { month: 'long' })} Earnings
               </p>
               <p className="text-3xl font-bold text-gray-900 leading-tight">{fmt(stats.monthlyEarnings)}</p>
               <p className="text-sm text-gray-400 mt-0.5">{stats.monthlyCount} invoice{stats.monthlyCount !== 1 ? 's' : ''} paid this month</p>

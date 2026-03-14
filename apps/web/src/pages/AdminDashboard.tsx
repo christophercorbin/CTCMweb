@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle } from 'lucide-react'
@@ -7,19 +7,32 @@ import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
 import { ShipmentStatus } from '../types'
 import { useShipments } from '../hooks/useShipments'
+import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
+
+const client = generateClient<Schema>()
 
 type DynamoShipment = Schema['Shipment']['type']
 type AdminTab = 'shipments' | 'customers' | 'receipts'
 
+// Status filter uses actual AppSync enum values (not display labels)
 const statusOptions = [
   { value: '', label: 'All Statuses' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'IN_TRANSIT', label: 'In Transit' },
-  { value: 'CUSTOMS', label: 'Customs' },
-  { value: 'DELIVERED', label: 'Delivered' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'RETURNED', label: 'Returned' },
+  { value: 'PENDING',          label: 'Pending' },
+  { value: 'MIAMI_WAREHOUSE',  label: 'Miami Warehouse' },
+  { value: 'IN_THE_AIR',       label: 'In the Air' },
+  { value: 'ON_THE_WATER',     label: 'On the Water' },
+  { value: 'IN_BARBADOS',      label: 'In Barbados (Air)' },
+  { value: 'IN_BARBADOS_SEA',  label: 'In Barbados (Sea)' },
+  { value: 'CUSTOMS_HOLD',     label: 'Customs Hold' },
+  { value: 'BARBADOS_CUSTOMS', label: 'Barbados Customs' },
+  { value: 'AT_WAREHOUSE',     label: 'At Warehouse' },
+  { value: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
+  { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+  { value: 'DELIVERED',        label: 'Delivered' },
+  { value: 'DELAYED',          label: 'Delayed' },
+  { value: 'CANCELLED',        label: 'Cancelled' },
+  { value: 'RETURNED',         label: 'Returned' },
 ]
 
 export const AdminDashboard = () => {
@@ -29,27 +42,55 @@ export const AdminDashboard = () => {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState<'' | 'AIR' | 'SEA'>('')
+  const [customerMap, setCustomerMap] = useState<Record<string, string>>({})
+
+  // Fetch all customers once to show names in the shipment table
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const allItems: Schema['Customer']['type'][] = []
+        let cursor: string | undefined
+        do {
+          const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor })
+          allItems.push(...result.data)
+          cursor = result.nextToken ?? undefined
+        } while (cursor)
+        const map: Record<string, string> = {}
+        allItems.forEach((c) => { map[c.id] = c.name })
+        setCustomerMap(map)
+      } catch { /* non-critical, table degrades gracefully */ }
+    }
+    loadCustomers()
+  }, [])
 
   if (error) {
     toast.error('Failed to load shipments')
   }
 
-  const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED')
-  const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD')
+  const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED' && s.status !== 'CANCELLED' && s.status !== 'RETURNED')
+  const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
   const delayedShipments = shipments.filter((s) => s.status === 'RETURNED')
   const heldShipments = shipments.filter((s) => s.customerInstruction === 'HOLD')
 
-  const filteredShipments = shipments
-    .filter((s) => statusFilter === '' || s.status === statusFilter)
-    .filter((s) => typeFilter === '' || s.type === typeFilter)
-    .filter((s) =>
-      s.trackingNumber.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
-      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
-      return bTime - aTime
-    })
+  const filteredShipments = useMemo(() => {
+    const q = search.toLowerCase()
+    return shipments
+      .filter((s) => statusFilter === '' || s.status === statusFilter)
+      .filter((s) => typeFilter === '' || s.type === typeFilter)
+      .filter((s) => {
+        if (!q) return true
+        const customerName = customerMap[s.customerId]?.toLowerCase() ?? ''
+        return (
+          s.trackingNumber.toLowerCase().includes(q) ||
+          customerName.includes(q)
+        )
+      })
+      .sort((a, b) => {
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+        return bTime - aTime
+      })
+  }, [shipments, statusFilter, typeFilter, search, customerMap])
 
   const MetricCard = ({
     icon: Icon,
@@ -146,7 +187,7 @@ export const AdminDashboard = () => {
               value={customsShipments.length}
               subtitle="Requires clearance"
               color="bg-orange-600"
-              onClick={() => setStatusFilter('CUSTOMS')}
+              onClick={() => setStatusFilter('CUSTOMS_HOLD')}
             />
             <MetricCard
               icon={CheckCircle2}
@@ -178,7 +219,7 @@ export const AdminDashboard = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-4">All Shipments</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
-                  placeholder="Search by tracking number..."
+                  placeholder="Search by tracking # or customer name..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -194,10 +235,9 @@ export const AdminDashboard = () => {
                       onClick={() => setTypeFilter(t)}
                       className={`flex-1 py-2 transition-colors ${
                         typeFilter === t
-                          ? 'text-white'
+                          ? 'bg-brand-navy text-white'
                           : 'bg-white text-gray-600 hover:bg-gray-50'
                       }`}
-                      style={typeFilter === t ? { backgroundColor: '#1B2D78' } : {}}
                     >
                       {t === '' ? 'All' : t === 'AIR' ? '✈ Air' : '🚢 Sea'}
                     </button>
@@ -226,6 +266,9 @@ export const AdminDashboard = () => {
                         Tracking #
                       </th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">
+                        Customer
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">
                         Type
                       </th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">
@@ -249,6 +292,9 @@ export const AdminDashboard = () => {
                           <p className="text-gray-900 font-medium">
                             {shipment.trackingNumber}
                           </p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {customerMap[shipment.customerId] ?? <span className="text-gray-300">—</span>}
                         </td>
                         <td className="px-4 py-3 text-gray-600">{shipment.type}</td>
                         <td className="px-4 py-3 text-gray-600">

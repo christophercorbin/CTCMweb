@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Button, Input } from '../components'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
 
 const registerSchema = z
   .object({
@@ -53,7 +53,7 @@ export const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1B2D78 0%, #243899 60%, #1B2D78 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-brand-gradient">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <img

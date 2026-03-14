@@ -13,6 +13,9 @@ export default {
           'gold-light': '#fdd84e',
         },
       },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, #1B2D78 0%, #243899 60%, #1B2D78 100%)',
+      },
     },
   },
   plugins: [],

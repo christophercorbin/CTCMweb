@@ -4,9 +4,10 @@ import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
 import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { Button, Input, Card, LoadingSkeleton, EmptyState, Modal } from './index';
-import { Customer } from '../types';
 
 const client = generateClient<Schema>();
+
+type AppCustomer = Schema['Customer']['type']
 
 // ── Skybox address templates ──────────────────────────────────────
 const buildAirAddress = (name: string) =>
@@ -24,31 +25,18 @@ const formatPhone = (raw: string): string => {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
 }
 
-function mapCustomer(c: Schema['Customer']['type']): Customer {
-  return {
-    id: c.id,
-    name: c.name,
-    email: c.email,
-    phone: c.phone ?? '',
-    air_skybox_address: c.airSkyboxAddress ?? '',
-    sea_skybox_address: c.seaSkyboxAddress ?? '',
-    created_at: c.createdAt,
-    updated_at: c.updatedAt,
-  };
-}
-
 export const CustomerManagement = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<AppCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<AppCustomer | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const allItems: Schema['Customer']['type'][] = [];
+      const allItems: AppCustomer[] = [];
       let cursor: string | undefined;
       do {
         const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor });
@@ -56,7 +44,7 @@ export const CustomerManagement = () => {
         allItems.push(...result.data);
         cursor = result.nextToken ?? undefined;
       } while (cursor);
-      setCustomers(allItems.map(mapCustomer));
+      setCustomers(allItems);
     } catch (error) {
       toast.error('Failed to load customers');
       console.error(error);
@@ -111,7 +99,7 @@ export const CustomerManagement = () => {
   const filteredCustomers = customers.filter((customer) =>
     customer.name.toLowerCase().includes(search.toLowerCase()) ||
     customer.email.toLowerCase().includes(search.toLowerCase()) ||
-    customer.phone.includes(search)
+    (customer.phone ?? '').includes(search)
   );
 
   return (
@@ -183,7 +171,7 @@ export const CustomerManagement = () => {
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <span>{customer.phone}</span>
+                        <span>{customer.phone ?? '—'}</span>
                       </div>
                     </div>
 
@@ -193,14 +181,14 @@ export const CustomerManagement = () => {
                           <Package className="w-4 h-4 text-blue-600" />
                           <span className="text-xs font-semibold text-blue-900 uppercase">Air Freight</span>
                         </div>
-                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.air_skybox_address || '—'}</pre>
+                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.airSkyboxAddress || '—'}</pre>
                       </div>
                       <div className="bg-teal-50 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <Package className="w-4 h-4 text-teal-600" />
                           <span className="text-xs font-semibold text-teal-900 uppercase">Sea Freight</span>
                         </div>
-                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.sea_skybox_address || '—'}</pre>
+                        <pre className="text-sm text-gray-700 font-mono whitespace-pre-wrap leading-relaxed">{customer.seaSkyboxAddress || '—'}</pre>
                       </div>
                     </div>
                   </div>
@@ -250,7 +238,7 @@ export const CustomerManagement = () => {
 };
 
 interface CustomerFormModalProps {
-  customer: Customer | null;
+  customer: AppCustomer | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -258,37 +246,37 @@ interface CustomerFormModalProps {
 const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: customer?.name || '',
-    phone: customer?.phone || '',
-    email: customer?.email || '',
-    air_skybox_address: customer?.air_skybox_address || '',
-    sea_skybox_address: customer?.sea_skybox_address || '',
+    name: customer?.name ?? '',
+    phone: customer?.phone ?? '',
+    email: customer?.email ?? '',
+    airSkyboxAddress: customer?.airSkyboxAddress ?? '',
+    seaSkyboxAddress: customer?.seaSkyboxAddress ?? '',
   });
 
   // Use a ref (not state) so handleNameChange always reads the latest value
   // without stale closure issues or accidental browser-autofill interference.
   const manualEdit = useRef({
-    air: !!customer?.air_skybox_address,
-    sea: !!customer?.sea_skybox_address,
+    air: !!customer?.airSkyboxAddress,
+    sea: !!customer?.seaSkyboxAddress,
   });
 
   const handleNameChange = (name: string) => {
     setFormData(prev => ({
       ...prev,
       name,
-      air_skybox_address: manualEdit.current.air ? prev.air_skybox_address : (name ? buildAirAddress(name) : ''),
-      sea_skybox_address: manualEdit.current.sea ? prev.sea_skybox_address : (name ? buildSeaAddress(name) : ''),
+      airSkyboxAddress: manualEdit.current.air ? prev.airSkyboxAddress : (name ? buildAirAddress(name) : ''),
+      seaSkyboxAddress: manualEdit.current.sea ? prev.seaSkyboxAddress : (name ? buildSeaAddress(name) : ''),
     }));
   };
 
   const handleAirChange = (val: string) => {
     manualEdit.current.air = true;
-    setFormData(prev => ({ ...prev, air_skybox_address: val }));
+    setFormData(prev => ({ ...prev, airSkyboxAddress: val }));
   };
 
   const handleSeaChange = (val: string) => {
     manualEdit.current.sea = true;
-    setFormData(prev => ({ ...prev, sea_skybox_address: val }));
+    setFormData(prev => ({ ...prev, seaSkyboxAddress: val }));
   };
 
   const handlePhoneChange = (raw: string) => {
@@ -305,8 +293,8 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          airSkyboxAddress: formData.air_skybox_address,
-          seaSkyboxAddress: formData.sea_skybox_address,
+          airSkyboxAddress: formData.airSkyboxAddress,
+          seaSkyboxAddress: formData.seaSkyboxAddress,
         });
         if (errors?.length) throw new Error(errors[0].message);
         toast.success('Customer updated');
@@ -316,8 +304,8 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           name: formData.name,
           email: formData.email,
           phone: formData.phone || undefined,
-          airSkyboxAddress: formData.air_skybox_address || undefined,
-          seaSkyboxAddress: formData.sea_skybox_address || undefined,
+          airSkyboxAddress: formData.airSkyboxAddress || undefined,
+          seaSkyboxAddress: formData.seaSkyboxAddress || undefined,
         });
         if (errors?.length) throw new Error(errors[0].message);
         if (!result?.success) throw new Error(result?.message ?? 'Failed to create account');
@@ -387,7 +375,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
                 type="button"
                 onClick={() => {
                   manualEdit.current.air = false;
-                  setFormData(prev => ({ ...prev, air_skybox_address: prev.name ? buildAirAddress(prev.name) : '' }));
+                  setFormData(prev => ({ ...prev, airSkyboxAddress: prev.name ? buildAirAddress(prev.name) : '' }));
                 }}
                 className="text-xs text-blue-600 hover:underline"
               >
@@ -396,7 +384,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
             )}
           </div>
           <textarea
-            value={formData.air_skybox_address}
+            value={formData.airSkyboxAddress}
             onChange={(e) => handleAirChange(e.target.value)}
             rows={4}
             className={`${fieldCls} font-mono resize-none`}
@@ -413,7 +401,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
                 type="button"
                 onClick={() => {
                   manualEdit.current.sea = false;
-                  setFormData(prev => ({ ...prev, sea_skybox_address: prev.name ? buildSeaAddress(prev.name) : '' }));
+                  setFormData(prev => ({ ...prev, seaSkyboxAddress: prev.name ? buildSeaAddress(prev.name) : '' }));
                 }}
                 className="text-xs text-blue-600 hover:underline"
               >
@@ -422,7 +410,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
             )}
           </div>
           <textarea
-            value={formData.sea_skybox_address}
+            value={formData.seaSkyboxAddress}
             onChange={(e) => handleSeaChange(e.target.value)}
             rows={4}
             className={`${fieldCls} font-mono resize-none`}

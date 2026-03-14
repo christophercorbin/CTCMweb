@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Button, Input } from '../components'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
 import { Eye, KeyRound } from 'lucide-react'
 import { enableDemoMode, enableAdminDemoMode } from '../utils/mockData'
 import { redirectAfterLogin } from '../auth/useAuthRedirect'
@@ -106,7 +106,7 @@ export const Login = () => {
   // ── New-password step ─────────────────────────────────────────────────────
   if (step === 'new-password') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1B2D78 0%, #243899 60%, #1B2D78 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-brand-gradient">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
           <div className="flex items-center justify-center mb-6">
             <img src="/logos/logo-color-stacked.png" alt="CargoLink Barbados" className="h-36 w-auto" />
@@ -146,7 +146,7 @@ export const Login = () => {
 
   // ── Login step ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1B2D78 0%, #243899 60%, #1B2D78 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-brand-gradient">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <img src="/logos/logo-color-stacked.png" alt="CargoLink Barbados" className="h-36 w-auto" />
@@ -174,25 +174,32 @@ export const Login = () => {
           </Button>
         </form>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <Eye className="w-4 h-4 text-green-600" />
-            Preview UI (No Backend Required)
-          </h3>
-          <div className="space-y-2">
-            <Button type="button" variant="secondary" className="w-full" onClick={() => handleDemoMode(false)}>
-              View Customer Dashboard
-            </Button>
-            <Button type="button" variant="secondary" className="w-full" onClick={() => handleDemoMode(true)}>
-              View Admin Dashboard
-            </Button>
+        {import.meta.env.DEV && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Eye className="w-4 h-4 text-green-600" />
+              Preview UI (No Backend Required)
+            </h3>
+            <div className="space-y-2">
+              <Button type="button" variant="secondary" className="w-full" onClick={() => handleDemoMode(false)}>
+                View Customer Dashboard
+              </Button>
+              <Button type="button" variant="secondary" className="w-full" onClick={() => handleDemoMode(true)}>
+                View Admin Dashboard
+              </Button>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              Explore the UI with sample data without connecting to a backend
+            </p>
           </div>
-          <p className="text-xs text-gray-600 mt-2">
-            Explore the UI with sample data without connecting to a backend
-          </p>
-        </div>
+        )}
 
-        <div className="text-center">
+        <div className="text-center space-y-2">
+          <p className="text-gray-600 text-sm">
+            <Link to="/forgot-password" className="text-blue-600 font-medium hover:text-blue-700">
+              Forgot your password?
+            </Link>
+          </p>
           <p className="text-gray-600 text-sm">
             New customer?{' '}
             <Link to="/register" className="text-blue-600 font-medium hover:text-blue-700">

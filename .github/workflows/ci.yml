@@ -25,6 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
+      # Checks both apps/web AND amplify Lambda functions (amplify workspace
+      # now has a typecheck script so Lambda TS errors surface here, not in
+      # the expensive ampx pipeline-deploy step)
       - run: npm run typecheck --workspaces --if-present
 
   test:

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell, ScanLine, Receipt } from 'lucide-react';
-import { getCurrentUser, logout } from '../auth';
-import type { CognitoUser } from '../auth';
+import { useAuth } from '../contexts/useAuth';
 import { useShipments } from '../hooks/useShipments';
 
 // ─── Notification helpers ─────────────────────────────────────────────────────
@@ -165,17 +164,15 @@ interface AuthenticatedLayoutProps {
 
 export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<CognitoUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading: authLoading, signOut } = useAuth();
 
+  // Close mobile sidebar on any route change
   useEffect(() => {
-    getCurrentUser()
-      .then((u) => { setUser(u); setAuthLoading(false); })
-      .catch(() => setAuthLoading(false));
-  }, []);
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const isAdmin = user?.role === 'admin';
 
@@ -205,10 +202,9 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
     <div className="flex h-screen bg-gray-50">
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 text-white transform transition-transform duration-200 lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-brand-navy text-white transform transition-transform duration-200 lg:relative lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ backgroundColor: '#1B2D78' }}
       >
         <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
           <div className="bg-white rounded-lg px-3 py-1.5">
@@ -238,10 +234,9 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
                 onClick={() => { navigate(item.path); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                   active
-                    ? 'text-white font-semibold'
+                    ? 'bg-brand-gold text-brand-navy font-semibold'
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
-                style={active ? { backgroundColor: '#F5C518', color: '#1B2D78' } : {}}
               >
                 {/* Icon with optional bounce + badge */}
                 <div className="relative flex-shrink-0">
@@ -262,7 +257,7 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
           <p className="text-xs text-white/60 mb-1">{user?.email}</p>
           <p className="text-xs text-white/40 mb-4 capitalize">{user?.role}</p>
           <button
-            onClick={async () => { await logout(); setSidebarOpen(false); navigate('/login'); }}
+            onClick={async () => { await signOut(); setSidebarOpen(false); navigate('/login'); }}
             className="w-full flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />

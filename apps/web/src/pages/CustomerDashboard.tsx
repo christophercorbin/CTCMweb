@@ -10,36 +10,22 @@ import { uploadData } from 'aws-amplify/storage'
 import toast from 'react-hot-toast'
 import { LoadingSkeleton, EmptyState } from '../components'
 import { useShipments } from '../hooks/useShipments'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
+import { SHIPMENT_STATUS_META } from '../constants/shipmentStatuses'
 
 const client = generateClient<Schema>()
 
 type StatusFilter = 'all' | 'PENDING' | 'MIAMI_WAREHOUSE' | 'IN_THE_AIR' | 'IN_BARBADOS' | 'CUSTOMS_HOLD' | 'AT_WAREHOUSE' | 'ON_THE_WATER' | 'IN_BARBADOS_SEA' | 'BARBADOS_CUSTOMS' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'DELAYED' | 'CANCELLED' | 'RETURNED'
 
-const STATUS_META: Record<string, { label: string; dot: string; badge: string }> = {
-  PENDING:          { label: 'Pending',            dot: 'bg-gray-400',   badge: 'bg-gray-50 text-gray-600 ring-gray-200' },
-  MIAMI_WAREHOUSE:  { label: 'Miami Warehouse',    dot: 'bg-slate-400',  badge: 'bg-slate-50 text-slate-700 ring-slate-200' },
-  IN_THE_AIR:       { label: 'In the Air',         dot: 'bg-sky-400',    badge: 'bg-sky-50 text-sky-700 ring-sky-200' },
-  IN_BARBADOS:      { label: 'In Barbados',        dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 ring-blue-200' },
-  CUSTOMS_HOLD:     { label: 'Customs Hold',       dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 ring-orange-200' },
-  AT_WAREHOUSE:     { label: 'At Warehouse',       dot: 'bg-gray-400',   badge: 'bg-gray-50 text-gray-700 ring-gray-200' },
-  ON_THE_WATER:     { label: 'On the Water',       dot: 'bg-cyan-400',   badge: 'bg-cyan-50 text-cyan-700 ring-cyan-200' },
-  IN_BARBADOS_SEA:  { label: 'In Barbados (Sea)',  dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 ring-blue-200' },
-  BARBADOS_CUSTOMS: { label: 'Barbados Customs',   dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 ring-orange-200' },
-  READY_FOR_PICKUP: { label: 'Ready for Pickup',   dot: 'bg-teal-500',   badge: 'bg-teal-50 text-teal-700 ring-teal-200' },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery',   dot: 'bg-indigo-500', badge: 'bg-indigo-50 text-indigo-700 ring-indigo-200' },
-  DELIVERED:        { label: 'Delivered',          dot: 'bg-green-500',  badge: 'bg-green-50 text-green-700 ring-green-200' },
-  DELAYED:          { label: 'Delayed',            dot: 'bg-red-400',    badge: 'bg-red-50 text-red-700 ring-red-200' },
-  CANCELLED:        { label: 'Cancelled',          dot: 'bg-gray-300',   badge: 'bg-gray-50 text-gray-500 ring-gray-200' },
-  RETURNED:         { label: 'Returned',           dot: 'bg-red-400',    badge: 'bg-red-50 text-red-700 ring-red-200' },
-}
-
 function StatusBadge({ status }: { status: string }) {
-  const meta = STATUS_META[status] ?? { label: status, dot: 'bg-gray-400', badge: 'bg-gray-50 text-gray-600 ring-gray-200' }
+  const meta = (SHIPMENT_STATUS_META as Record<string, { label: string; dot: string; badge: string }>)[status]
+  const label = meta?.label ?? status
+  const dot = meta?.dot ?? 'bg-gray-400'
+  const badge = meta?.badge ?? 'bg-gray-100 text-gray-700'
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${meta.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-      {meta.label}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+      {label}
     </span>
   )
 }
@@ -310,7 +296,11 @@ export const CustomerDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filtered.map((s) => (
-                      <tr key={s.id} className="hover:bg-blue-50/30 transition-colors group">
+                      <tr
+                        key={s.id}
+                        onClick={() => navigate(`/dashboard/shipments/${s.id}`)}
+                        className="hover:bg-blue-50/30 transition-colors cursor-pointer"
+                      >
                         <td className="px-5 py-3.5">
                           <span className="font-mono font-medium text-gray-900 text-xs">{s.trackingNumber}</span>
                         </td>
@@ -351,13 +341,10 @@ export const CustomerDashboard = () => {
                             : <span className="text-gray-300">TBD</span>}
                         </td>
                         <td className="px-5 py-3.5">
-                          <button
-                            onClick={() => navigate(`/dashboard/shipments/${s.id}`)}
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
+                          <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-xs">
                             <Eye className="w-3.5 h-3.5" />
                             View
-                          </button>
+                          </span>
                         </td>
                       </tr>
                     ))}
