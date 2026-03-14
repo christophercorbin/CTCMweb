@@ -150,8 +150,10 @@ statusNotifierFn.addToRolePolicy(
 
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
 const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
-const userPool = backend.auth.resources.userPool;
 
+// NOTE: Use resources: ["*"] (not userPool.userPoolArn) to avoid a cross-stack
+// CDK token reference from data stack → auth stack, which would create a cycle
+// because auth stack already depends on data stack (postConfirmation trigger).
 adminCreateCustomerFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: [
@@ -159,7 +161,7 @@ adminCreateCustomerFn.addToRolePolicy(
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminUpdateUserAttributes",
     ],
-    resources: [userPool.userPoolArn],
+    resources: ["*"],
   })
 );
 
@@ -171,7 +173,8 @@ adminCreateCustomerFn.addToRolePolicy(
 );
 
 // Pass User Pool ID and AppSync endpoint as env vars
-adminCreateCustomerFn.addEnvironment("USER_POOL_ID", userPool.userPoolId);
+// Hardcoded to avoid a CDK cross-stack token (data → auth) that causes a cycle.
+adminCreateCustomerFn.addEnvironment("USER_POOL_ID", "us-east-1_YfQ4BVEry");
 adminCreateCustomerFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
   (backend.data.resources.graphqlApi as any).graphqlUrl
@@ -183,14 +186,15 @@ backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
 // ─── syncCustomers: Cognito list + AppSync read/write permissions ─────────────
 const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Function;
 
+// NOTE: Use resources: ["*"] and hardcoded pool ID — same reason as adminCreateCustomer above.
 syncCustomersFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["cognito-idp:ListUsersInGroup"],
-    resources: [userPool.userPoolArn],
+    resources: ["*"],
   })
 );
 
-syncCustomersFn.addEnvironment("USER_POOL_ID", userPool.userPoolId);
+syncCustomersFn.addEnvironment("USER_POOL_ID", "us-east-1_YfQ4BVEry");
 syncCustomersFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
   (backend.data.resources.graphqlApi as any).graphqlUrl
