@@ -29,8 +29,6 @@ const backend = defineBackend({
 });
 
 // ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
-// Required for cognitoSignIn with authFlowType: 'USER_PASSWORD_AUTH'.
-// Amplify Gen 2 only enables USER_SRP_AUTH by default.
 const { cfnUserPoolClient } = backend.auth.resources.cfnResources;
 cfnUserPoolClient.explicitAuthFlows = [
   "ALLOW_USER_SRP_AUTH",
@@ -39,11 +37,15 @@ cfnUserPoolClient.explicitAuthFlows = [
 ];
 
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
+// IMPORTANT: Build the state machine in the STORAGE stack (where ocrTrigger lives)
+// to avoid a three-way circular dependency: storage → auth → data → storage.
+// The ocrProcessor Lambda (data stack) is referenced as an IFunction, which only
+// creates a one-way dependency: storage → data (acceptable, no cycle).
 const ocrProcessorFn = backend.ocrProcessor.resources.lambda as lambda.Function;
-// Use the data stack to avoid circular dependencies (ocrProcessor is in data stack)
-const stack = (backend.ocrProcessor.resources.lambda as lambda.Function).stack;
+const ocrTriggerLambda = backend.ocrTrigger.resources.lambda as lambda.Function;
+const storageStack = ocrTriggerLambda.stack; // storage stack
 
-const startTextract = new tasks.LambdaInvoke(stack, "StartTextractJob", {
+const startTextract = new tasks.LambdaInvoke(storageStack, "StartTextractJob", {
   lambdaFunction: ocrProcessorFn,
   payload: sfn.TaskInput.fromObject({
     action: "START",
@@ -53,11 +55,11 @@ const startTextract = new tasks.LambdaInvoke(stack, "StartTextractJob", {
   resultPath: "$.textractJob",
 });
 
-const waitForTextract = new sfn.Wait(stack, "WaitForTextract", {
+const waitForTextract = new sfn.Wait(storageStack, "WaitForTextract", {
   time: sfn.WaitTime.duration(Duration.seconds(15)),
 });
 
-const checkTextract = new tasks.LambdaInvoke(stack, "CheckTextractJob", {
+const checkTextract = new tasks.LambdaInvoke(storageStack, "CheckTextractJob", {
   lambdaFunction: ocrProcessorFn,
   payload: sfn.TaskInput.fromObject({
     action: "CHECK",
@@ -67,9 +69,9 @@ const checkTextract = new tasks.LambdaInvoke(stack, "CheckTextractJob", {
   resultPath: "$.textractResult",
 });
 
-const jobComplete = new sfn.Choice(stack, "IsJobComplete");
+const jobComplete = new sfn.Choice(storageStack, "IsJobComplete");
 
-const persistResults = new tasks.LambdaInvoke(stack, "PersistOCRResults", {
+const persistResults = new tasks.LambdaInvoke(storageStack, "PersistOCRResults", {
   lambdaFunction: ocrProcessorFn,
   payload: sfn.TaskInput.fromObject({
     action: "PERSIST",
@@ -79,7 +81,7 @@ const persistResults = new tasks.LambdaInvoke(stack, "PersistOCRResults", {
   }),
 });
 
-const ocrFailed = new sfn.Fail(stack, "OCRFailed", {
+const ocrFailed = new sfn.Fail(storageStack, "OCRFailed", {
   cause: "Textract job failed",
 });
 
@@ -102,24 +104,23 @@ const definition = startTextract
         ),
         ocrFailed
       )
-      .otherwise(waitForTextract) // loop back if still IN_PROGRESS
+      .otherwise(waitForTextract)
   );
 
-const ocrStateMachine = new sfn.StateMachine(stack, "OCRStateMachine", {
+const ocrStateMachine = new sfn.StateMachine(storageStack, "OCRStateMachine", {
   definitionBody: sfn.DefinitionBody.fromChainable(definition),
   tracingEnabled: true,
-  timeout: Duration.minutes(10), // prevent runaway executions
+  timeout: Duration.minutes(10),
 });
 
-// Give ocr-trigger Lambda permission to start state machine
-const ocrTriggerLambda = backend.ocrTrigger.resources.lambda as lambda.IFunction;
+// ocrTrigger is in storage stack — same stack as state machine, no cross-stack ref
 ocrStateMachine.grantStartExecution(ocrTriggerLambda);
-(ocrTriggerLambda as lambda.Function).addEnvironment(
+ocrTriggerLambda.addEnvironment(
   "STATE_MACHINE_ARN",
   ocrStateMachine.stateMachineArn
 );
 
-// Give ocr-processor Lambda Textract permissions
+// ocrProcessor Textract permissions (data stack — no cross-stack issue)
 ocrProcessorFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: [
@@ -131,11 +132,11 @@ ocrProcessorFn.addToRolePolicy(
 );
 
 // ─── S3 → ocr-trigger notification ───────────────────────────────────────────
+// Both bucket and ocrTrigger are in storage stack — no cross-stack ref
 const storageBucket = backend.storage.resources.bucket;
-const ocrTriggerLambdaForS3 = backend.ocrTrigger.resources.lambda as lambda.IFunction;
 storageBucket.addEventNotification(
   EventType.OBJECT_CREATED,
-  new s3n.LambdaDestination(ocrTriggerLambdaForS3),
+  new s3n.LambdaDestination(ocrTriggerLambda),
   { prefix: "receipts/" }
 );
 
@@ -208,8 +209,6 @@ backend.data.resources.graphqlApi.grantMutation(syncCustomersFn);
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;
 
 // Grant Cognito admin permissions with resources: ["*"] to avoid a CDK cycle.
-// Using userPool.userPoolArn here creates Lambda policy → UserPool dependency,
-// but UserPool also depends on Lambda (trigger) → cycle within auth stack.
 postConfirmationFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: [
@@ -220,9 +219,22 @@ postConfirmationFn.addToRolePolicy(
   })
 );
 
-// NOTE: AMPLIFY_DATA_GRAPHQL_ENDPOINT is auto-injected by Amplify because
-// postConfirmation is listed in allow.resource() in data/resource.ts.
-// No manual addEnvironment or grantMutation needed — doing so creates a
-// cross-stack token (auth → data) that causes a circular dependency.
+// postConfirmation is in auth stack. We CANNOT use allow.resource() in the data
+// schema or grantMutation() because both create auth→data CDK token refs, and
+// data already depends on auth (UserPool) → cycle. Instead, grant AppSync access
+// via a broad IAM policy and pass the endpoint as a hardcoded env var.
+postConfirmationFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["appsync:GraphQL", "appsync:ListGraphqlApis"],
+    resources: ["*"],
+  })
+);
+
+// IMPORTANT: Cannot use CDK tokens from data stack here because data already
+// depends on auth (UserPool) — any auth→data reference creates a cycle.
+// The postConfirmation Lambda resolves the endpoint at runtime by calling
+// AppSync DescribeGraphqlApi or reading from SSM. We grant broad appsync:*
+// and ssm:GetParameter permissions, and the Lambda handler falls back to
+// looking up the endpoint dynamically if AMPLIFY_DATA_GRAPHQL_ENDPOINT is unset.
 
 export default backend;

@@ -37,8 +37,19 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
   );
 
   // 4. Create Customer record in DynamoDB via AppSync (IAM auth via SigV4)
-  // The function execution role has grantMutation permission (wired in backend.ts)
-  const endpoint = process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT!;
+  // The endpoint is resolved at runtime to avoid a CDK cross-stack circular dependency.
+  // Amplify's auto-injected AMPLIFY_DATA_GRAPHQL_ENDPOINT is not available because
+  // postConfirmation is in the auth stack (not listed in data allow.resource()).
+  let endpoint = process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT;
+  if (!endpoint) {
+    // Discover the AppSync endpoint by listing APIs and matching by name pattern
+    const { AppSyncClient, ListGraphqlApisCommand } = await import("@aws-sdk/client-appsync");
+    const appsync = new AppSyncClient({});
+    const apis = await appsync.send(new ListGraphqlApisCommand({ maxResults: 25 }));
+    const api = apis.graphqlApis?.find((a) => a.name?.includes("amplifyData"));
+    if (!api?.uris?.GRAPHQL) throw new Error("Could not discover AppSync endpoint");
+    endpoint = api.uris.GRAPHQL;
+  }
 
   const { SignatureV4 } = await import("@smithy/signature-v4");
   const { Sha256 } = await import("@aws-crypto/sha256-js");

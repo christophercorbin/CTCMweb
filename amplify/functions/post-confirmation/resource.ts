@@ -6,5 +6,5 @@ export const postConfirmation = defineFunction({
   runtime: 20, // Node.js 20
   timeoutSeconds: 30,
   memoryMB: 256,
-  resourceGroupName: "data", // Assign to data stack (calls AppSync to create Customer)
+  resourceGroupName: "auth", // Must be in auth stack — it's a Cognito trigger
 });
