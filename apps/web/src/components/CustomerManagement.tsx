@@ -49,16 +49,13 @@ export const CustomerManagement = () => {
     try {
       setLoading(true);
       const allItems: Schema['Customer']['type'][] = [];
-      let nextToken: string | null | undefined = undefined;
+      let cursor: string | undefined;
       do {
-        const { data, errors, nextToken: token } = await client.models.Customer.list({
-          limit: 1000,
-          nextToken,
-        });
-        if (errors?.length) throw new Error(errors[0].message);
-        allItems.push(...data);
-        nextToken = token;
-      } while (nextToken);
+        const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor });
+        if (result.errors?.length) throw new Error(result.errors[0].message);
+        allItems.push(...result.data);
+        cursor = result.nextToken ?? undefined;
+      } while (cursor);
       setCustomers(allItems.map(mapCustomer));
     } catch (error) {
       toast.error('Failed to load customers');
@@ -130,7 +127,7 @@ export const CustomerManagement = () => {
           loading={syncing}
           icon={<RefreshCw className="w-4 h-4" />}
         >
-          Sync from Cognito
+          Refresh
         </Button>
         <Button
           onClick={() => {
