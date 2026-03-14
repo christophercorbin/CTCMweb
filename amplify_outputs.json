@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-east-1_oDzEzVcuB",
+    "user_pool_id": "us-east-1_YfQ4BVEry",
     "aws_region": "us-east-1",
-    "user_pool_client_id": "bvjo7g712p8q796s7nnf7gqd6",
-    "identity_pool_id": "us-east-1:af1e506a-8523-4767-bac8-1810d8ab6402",
+    "user_pool_client_id": "3kc1l1utbif4t3mrl49bbp9f1h",
+    "identity_pool_id": "us-east-1:ab5eacb9-abb1-4969-9498-95647bfcd40c",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -37,7 +37,7 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://rdcgbhhzl5ebbnr2r42pa77gc4.appsync-api.us-east-1.amazonaws.com/graphql",
+    "url": "https://hyyvvf6dojajha4obit7evev3e.appsync-api.us-east-1.amazonaws.com/graphql",
     "aws_region": "us-east-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -1419,11 +1419,11 @@
   },
   "storage": {
     "aws_region": "us-east-1",
-    "bucket_name": "amplify-ctcmmonorepo-chri-ctcmstoragebucketa7605e5-vf80tg4nkwal",
+    "bucket_name": "amplify-d1yo6c4008x99n-de-ctcmstoragebucketa7605e5-pc2cxf6mqhp2",
     "buckets": [
       {
         "name": "ctcm-storage",
-        "bucket_name": "amplify-ctcmmonorepo-chri-ctcmstoragebucketa7605e5-vf80tg4nkwal",
+        "bucket_name": "amplify-d1yo6c4008x99n-de-ctcmstoragebucketa7605e5-pc2cxf6mqhp2",
         "aws_region": "us-east-1",
         "paths": {
           "receipts/${cognito-identity.amazonaws.com:sub}/*": {
