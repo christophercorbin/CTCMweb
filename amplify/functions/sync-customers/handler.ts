@@ -48,7 +48,7 @@ async function appsyncRequest(
     headers: req.headers as Record<string, string>,
     body,
   });
-  return res.json();
+  return res.json() as Promise<{ data?: unknown; errors?: unknown[] }>;
 }
 
 // ── Step 1: List all Cognito users in the customer group ─────────────────────
