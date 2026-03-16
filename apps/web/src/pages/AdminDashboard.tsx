@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle } from 'lucide-react'
-import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle, Plus } from 'lucide-react'
+import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card, Button } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
+import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
 import { ShipmentStatus } from '../types'
+import { SHIPMENT_STATUS_OPTIONS } from '../constants/shipmentStatuses'
 import { useShipments } from '../hooks/useShipments'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
@@ -13,26 +15,13 @@ import type { Schema } from '../../../../amplify/data/resource'
 const client = generateClient<Schema>()
 
 type DynamoShipment = Schema['Shipment']['type']
+type AppCustomer = Schema['Customer']['type']
 type AdminTab = 'shipments' | 'customers' | 'receipts'
 
-// Status filter uses actual AppSync enum values (not display labels)
+// Prepend "All Statuses" to the constants-driven option list
 const statusOptions = [
   { value: '', label: 'All Statuses' },
-  { value: 'PENDING',          label: 'Pending' },
-  { value: 'MIAMI_WAREHOUSE',  label: 'Miami Warehouse' },
-  { value: 'IN_THE_AIR',       label: 'In the Air' },
-  { value: 'ON_THE_WATER',     label: 'On the Water' },
-  { value: 'IN_BARBADOS',      label: 'In Barbados (Air)' },
-  { value: 'IN_BARBADOS_SEA',  label: 'In Barbados (Sea)' },
-  { value: 'CUSTOMS_HOLD',     label: 'Customs Hold' },
-  { value: 'BARBADOS_CUSTOMS', label: 'Barbados Customs' },
-  { value: 'AT_WAREHOUSE',     label: 'At Warehouse' },
-  { value: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
-  { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
-  { value: 'DELIVERED',        label: 'Delivered' },
-  { value: 'DELAYED',          label: 'Delayed' },
-  { value: 'CANCELLED',        label: 'Cancelled' },
-  { value: 'RETURNED',         label: 'Returned' },
+  ...SHIPMENT_STATUS_OPTIONS,
 ]
 
 export const AdminDashboard = () => {
@@ -43,12 +32,17 @@ export const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState<'' | 'AIR' | 'SEA'>('')
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({})
+  const [customerList, setCustomerList] = useState<AppCustomer[]>([])
 
-  // Fetch all customers once to show names in the shipment table
+  // Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createForCustomerId, setCreateForCustomerId] = useState<string | null>(null)
+
+  // Fetch all customers once — builds both the name map (for table) and the full list (for create modal)
   useEffect(() => {
     const loadCustomers = async () => {
       try {
-        const allItems: Schema['Customer']['type'][] = []
+        const allItems: AppCustomer[] = []
         let cursor: string | undefined
         do {
           const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor })
@@ -58,10 +52,21 @@ export const AdminDashboard = () => {
         const map: Record<string, string> = {}
         allItems.forEach((c) => { map[c.id] = c.name })
         setCustomerMap(map)
+        setCustomerList(allItems)
       } catch { /* non-critical, table degrades gracefully */ }
     }
     loadCustomers()
   }, [])
+
+  const openCreateModal = (customerId?: string) => {
+    setCreateForCustomerId(customerId ?? null)
+    setShowCreateModal(true)
+  }
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false)
+    setCreateForCustomerId(null)
+  }
 
   if (error) {
     toast.error('Failed to load shipments')
@@ -71,6 +76,15 @@ export const AdminDashboard = () => {
   const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
   const delayedShipments = shipments.filter((s) => s.status === 'RETURNED')
   const heldShipments = shipments.filter((s) => s.customerInstruction === 'HOLD')
+
+  // Total shipment count per customerId — passed to CustomerManagement for card badges
+  const shipmentCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    shipments.forEach((s) => {
+      counts[s.customerId] = (counts[s.customerId] ?? 0) + 1
+    })
+    return counts
+  }, [shipments])
 
   const filteredShipments = useMemo(() => {
     const q = search.toLowerCase()
@@ -170,7 +184,10 @@ export const AdminDashboard = () => {
       {activeTab === 'receipts' ? (
         <WarehouseReceiptIntake onSuccess={() => setActiveTab('shipments')} />
       ) : activeTab === 'customers' ? (
-        <CustomerManagement />
+        <CustomerManagement
+          onCreateShipment={(c) => openCreateModal(c.id)}
+          shipmentCounts={shipmentCounts}
+        />
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -216,7 +233,17 @@ export const AdminDashboard = () => {
 
           <Card>
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">All Shipments</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">All Shipments</h2>
+                <Button
+                  onClick={() => openCreateModal()}
+                  variant="primary"
+                  icon={<Plus className="w-4 h-4" />}
+                  size="sm"
+                >
+                  New Shipment
+                </Button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   placeholder="Search by tracking # or customer name..."
@@ -293,8 +320,18 @@ export const AdminDashboard = () => {
                             {shipment.trackingNumber}
                           </p>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {customerMap[shipment.customerId] ?? <span className="text-gray-300">—</span>}
+                        <td className="px-4 py-3">
+                          {customerMap[shipment.customerId] ? (
+                            <button
+                              onClick={() => setSearch(customerMap[shipment.customerId])}
+                              className="text-gray-700 hover:text-blue-600 hover:underline text-left"
+                              title="Filter by this customer"
+                            >
+                              {customerMap[shipment.customerId]}
+                            </button>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-gray-600">{shipment.type}</td>
                         <td className="px-4 py-3 text-gray-600">
@@ -345,6 +382,14 @@ export const AdminDashboard = () => {
             )}
           </Card>
         </div>
+      )}
+
+      {showCreateModal && (
+        <AdminCreateShipmentModal
+          customers={customerList}
+          preselectedCustomerId={createForCustomerId}
+          onClose={closeCreateModal}
+        />
       )}
     </div>
   )

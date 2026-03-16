@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell, ScanLine, Receipt } from 'lucide-react';
+import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell, ScanLine, Receipt, Users } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import { useShipments } from '../hooks/useShipments';
 
@@ -182,6 +182,7 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const navigationItems = isAdmin
     ? [
         { label: 'Dashboard',       path: '/admin/dashboard',         icon: Home,     badge: 0 },
+        { label: 'Customers',       path: '/admin/customers',         icon: Users,    badge: 0 },
         { label: 'Process Receipt', path: '/admin/warehouse-receipt', icon: ScanLine, badge: 0 },
         { label: 'Invoices',        path: '/admin/invoices',          icon: Receipt,  badge: 0 },
       ]

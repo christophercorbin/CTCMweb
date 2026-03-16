@@ -13,6 +13,8 @@ import { ShipmentDetails } from './pages/ShipmentDetails'
 import { CustomerInfo } from './pages/CustomerInfo'
 import { Invoices } from './pages/Invoices'
 import { AdminDashboard } from './pages/AdminDashboard'
+import { AdminCustomers } from './pages/AdminCustomers'
+import { AdminCustomerDetail } from './pages/AdminCustomerDetail'
 import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
 import { AdminInvoices } from './pages/AdminInvoices'
 import { PendingPackages } from './pages/PendingPackages'
@@ -103,6 +105,28 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AuthenticatedLayout>
                 <AdminDashboard />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/customers"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <AdminCustomers />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/customers/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <AdminCustomerDetail />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

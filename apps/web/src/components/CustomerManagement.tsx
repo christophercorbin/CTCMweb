@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
-import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw, PackagePlus, ExternalLink } from 'lucide-react';
 import { Button, Input, Card, LoadingSkeleton, EmptyState, Modal } from './index';
 
 const client = generateClient<Schema>();
@@ -25,7 +26,15 @@ const formatPhone = (raw: string): string => {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
 }
 
-export const CustomerManagement = () => {
+interface CustomerManagementProps {
+  /** Called when admin clicks "New Shipment" on a customer card */
+  onCreateShipment?: (customer: AppCustomer) => void
+  /** Active shipment count per customerId — shows a badge on each card */
+  shipmentCounts?: Record<string, number>
+}
+
+export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: CustomerManagementProps) => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<AppCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -162,6 +171,11 @@ export const CustomerManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-bold text-gray-900">{customer.name}</h3>
+                      {shipmentCounts !== undefined && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                          {shipmentCounts[customer.id] ?? 0} shipment{(shipmentCounts[customer.id] ?? 0) !== 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -194,6 +208,22 @@ export const CustomerManagement = () => {
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="View customer detail"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                    {onCreateShipment && (
+                      <button
+                        onClick={() => onCreateShipment(customer)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Create shipment for this customer"
+                      >
+                        <PackagePlus className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setEditingCustomer(customer);
