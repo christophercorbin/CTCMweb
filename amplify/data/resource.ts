@@ -225,6 +225,7 @@ const schema = a
   .authorization((allow) => [
     allow.authenticated(),
     allow.resource(ocrProcessor),
+    allow.resource(syncCustomers),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
-import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw, PackagePlus, ExternalLink } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Package, Edit2, Trash2, RefreshCw, PackagePlus, ExternalLink, CloudLightning } from 'lucide-react';
 import { Button, Input, Card, LoadingSkeleton, EmptyState, Modal } from './index';
 
 const client = generateClient<Schema>();
@@ -40,6 +40,7 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<AppCustomer | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const fetchCustomers = async () => {
@@ -65,6 +66,27 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  /** Silently re-fetches from DynamoDB without triggering the full loading skeleton */
+  const refreshCustomers = async () => {
+    setRefreshing(true);
+    try {
+      const allItems: AppCustomer[] = [];
+      let cursor: string | undefined;
+      do {
+        const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor });
+        if (result.errors?.length) throw new Error(result.errors[0].message);
+        allItems.push(...result.data);
+        cursor = result.nextToken ?? undefined;
+      } while (cursor);
+      setCustomers(allItems);
+    } catch (error) {
+      toast.error('Failed to refresh customers');
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleSyncFromCognito = async () => {
     setSyncing(true);
@@ -118,24 +140,36 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
           <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
           <p className="text-gray-600 mt-1">Manage customer information and skybox addresses</p>
         </div>
-        <Button
-          onClick={handleSyncFromCognito}
-          variant="secondary"
-          loading={syncing}
-          icon={<RefreshCw className="w-4 h-4" />}
-        >
-          Refresh
-        </Button>
-        <Button
-          onClick={() => {
-            setEditingCustomer(null);
-            setIsAddModalOpen(true);
-          }}
-          variant="primary"
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Add Customer
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={refreshCustomers}
+            variant="secondary"
+            loading={refreshing}
+            icon={<RefreshCw className="w-4 h-4" />}
+            title="Re-fetch customers from database"
+          >
+            Refresh
+          </Button>
+          <Button
+            onClick={handleSyncFromCognito}
+            variant="secondary"
+            loading={syncing}
+            icon={<CloudLightning className="w-4 h-4" />}
+            title="Sync new Cognito accounts into the database"
+          >
+            Sync Cognito
+          </Button>
+          <Button
+            onClick={() => {
+              setEditingCustomer(null);
+              setIsAddModalOpen(true);
+            }}
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add Customer
+          </Button>
+        </div>
       </div>
 
       <Card>
