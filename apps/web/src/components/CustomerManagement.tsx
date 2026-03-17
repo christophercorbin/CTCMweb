@@ -92,7 +92,11 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
     setSyncing(true);
     try {
       const { data: result, errors } = await client.mutations.syncCustomersFromCognito({});
-      if (errors?.length) throw new Error(errors[0].message);
+      if (errors?.length) {
+        const msg = errors[0].message ?? 'Unknown error';
+        console.error('[Sync] AppSync errors:', errors);
+        throw new Error(msg);
+      }
       const { synced, skipped, errors: syncErrors } = result ?? {};
       if ((syncErrors ?? 0) > 0) {
         toast.error(`Sync finished with ${syncErrors} error(s). Check CloudWatch logs.`);
@@ -105,8 +109,9 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
       }
       await fetchCustomers();
     } catch (error) {
-      toast.error('Failed to sync customers from Cognito');
-      console.error(error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[Sync] Failed:', error);
+      toast.error(`Sync failed: ${msg}`);
     } finally {
       setSyncing(false);
     }

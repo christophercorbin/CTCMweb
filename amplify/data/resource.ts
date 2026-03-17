@@ -57,6 +57,9 @@ const schema = a
         allow.ownerDefinedIn("cognitoSub"),                          // post-confirmation Lambda records
         allow.ownerDefinedIn("email").identityClaim("email"),        // admin-created accounts (no cognitoSub)
         allow.group("admin"),
+        // syncCustomers Lambda creates/lists Customer records via IAM SigV4.
+        // MUST be model-level (not schema-level) because model-level auth overrides schema-level auth.
+        allow.resource(syncCustomers),
       ]),
 
     // ─── Shipment ────────────────────────────────────────────────────

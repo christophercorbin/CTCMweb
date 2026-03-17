@@ -6,6 +6,13 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { randomUUID } from "crypto";
 
+// Mirror the address templates from CustomerManagement.tsx / sync-customers/handler.ts
+const buildAirAddress = (name: string) =>
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`;
+
+const buildSeaAddress = (name: string) =>
+  `${name}\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`;
+
 const cognitoClient = new CognitoIdentityProviderClient({});
 
 export const handler: PostConfirmationTriggerHandler = async (event) => {
@@ -75,6 +82,8 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
         name: name ?? email,
         email,
         cognitoSub: sub, // Cognito sub UUID — matches allow.owner() identity claim
+        airSkyboxAddress: buildAirAddress(name ?? email),
+        seaSkyboxAddress: buildSeaAddress(name ?? email),
       },
     },
   });
