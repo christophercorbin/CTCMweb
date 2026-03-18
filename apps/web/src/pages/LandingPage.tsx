@@ -58,19 +58,19 @@ export function LandingPage() {
       {/* ── NAVBAR ── */}
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-24">
+          <div className="flex items-center justify-between h-32">
 
             {/* Logo — large, shows full stacked mark + tagline */}
             <a href="#hero" className="shrink-0">
               <img
                 src="/logos/logo-color-stacked.png"
                 alt="CargoLink Barbados — The Smarter way to ship"
-                className="h-20 w-auto"
+                className="h-28 w-auto"
               />
             </a>
 
             {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-700">
+            <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-gray-700">
               <a href="#hero" className="hover:text-brand-navy transition-colors border-b-2 border-brand-navy pb-0.5">
                 Home
               </a>
@@ -109,7 +109,7 @@ export function LandingPage() {
             </nav>
 
             {/* Right: Login + Sign Up */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-4">
               <Link
                 to="/login"
                 className="text-[15px] font-medium text-gray-700 hover:text-brand-navy transition-colors"
@@ -127,7 +127,7 @@ export function LandingPage() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg bg-brand-navy text-white"
+              className="lg:hidden p-2 rounded-lg bg-brand-navy text-white"
               aria-label="Menu"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -137,7 +137,7 @@ export function LandingPage() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1">
+          <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1">
             <a href="#hero"     onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50">Home</a>
             <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Express Air Freight</a>
             <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Ocean Freight</a>
