@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   MapPin,
@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ArrowRight,
+  ChevronDown,
 } from 'lucide-react'
 
 // All images sourced from model site (same images user uploaded)
@@ -36,49 +37,115 @@ const IMG = {
 }
 
 export function LandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen]     = useState(false)
+  const [servicesOpen, setServicesOpen] = useState(false)
+  const servicesRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
+        setServicesOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
 
       {/* ── NAVBAR ── */}
       <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <a href="#hero">
-              <img src="/logos/logo-color-stacked.png" alt="CargoLink Barbados" className="h-14 w-auto" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-24">
+
+            {/* Logo — large, shows full stacked mark + tagline */}
+            <a href="#hero" className="shrink-0">
+              <img
+                src="/logos/logo-color-stacked.png"
+                alt="CargoLink Barbados — The Smarter way to ship"
+                className="h-20 w-auto"
+              />
             </a>
 
             {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
-              <a href="#services"     className="hover:text-brand-navy transition-colors">Services</a>
-              <a href="#about"        className="hover:text-brand-navy transition-colors">About Us</a>
-              <a href="#how-it-works" className="hover:text-brand-navy transition-colors">How It Works</a>
-              <a href="#rates"        className="hover:text-brand-navy transition-colors">Rates</a>
-              <a href="#contact"      className="hover:text-brand-navy transition-colors">Contact Us</a>
+            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-700">
+              <a href="#hero" className="hover:text-brand-navy transition-colors border-b-2 border-brand-navy pb-0.5">
+                Home
+              </a>
+
+              {/* Our Services dropdown */}
+              <div ref={servicesRef} className="relative">
+                <button
+                  onClick={() => setServicesOpen(!servicesOpen)}
+                  className="flex items-center gap-1 hover:text-brand-navy transition-colors focus:outline-none"
+                >
+                  Our Services
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {servicesOpen && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-brand-navy rounded-xl shadow-xl overflow-hidden z-50">
+                    <a
+                      href="#services"
+                      onClick={() => setServicesOpen(false)}
+                      className="block px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                    >
+                      CargoLink Barbados Express Air Freight
+                    </a>
+                    <a
+                      href="#services"
+                      onClick={() => setServicesOpen(false)}
+                      className="block px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors"
+                    >
+                      CargoLink Barbados Ocean Freight
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <a href="#rates"   className="hover:text-brand-navy transition-colors">Rates</a>
+              <a href="#contact" className="hover:text-brand-navy transition-colors">Contact Us</a>
             </nav>
 
-            <div className="flex items-center gap-3">
-              <Link to="/login"    className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-brand-navy border border-brand-navy rounded-lg hover:bg-brand-navy hover:text-white transition-colors">Log In</Link>
-              <Link to="/register" className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-brand-navy bg-brand-gold rounded-lg hover:bg-brand-gold-dark transition-colors">Get Started</Link>
-              <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 rounded-lg bg-brand-navy text-white">
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
+            {/* Right: Login + Sign Up */}
+            <div className="hidden md:flex items-center gap-4">
+              <Link
+                to="/login"
+                className="text-[15px] font-medium text-gray-700 hover:text-brand-navy transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-colors shadow"
+              >
+                Sign Up
+              </Link>
             </div>
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden p-2 rounded-lg bg-brand-navy text-white"
+              aria-label="Menu"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3">
-            {['#services', '#about', '#how-it-works', '#rates', '#contact'].map((href, i) => (
-              <a key={href} href={href} onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700 hover:text-brand-navy">
-                {['Services', 'About Us', 'How It Works', 'Rates', 'Contact Us'][i]}
-              </a>
-            ))}
-            <div className="flex gap-3 pt-2 border-t border-gray-100">
-              <Link to="/login"    className="flex-1 text-center py-2 text-sm font-medium text-brand-navy border border-brand-navy rounded-lg">Log In</Link>
-              <Link to="/register" className="flex-1 text-center py-2 text-sm font-semibold text-brand-navy bg-brand-gold rounded-lg">Get Started</Link>
+          <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1">
+            <a href="#hero"     onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50">Home</a>
+            <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Express Air Freight</a>
+            <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Ocean Freight</a>
+            <a href="#rates"    onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50">Rates</a>
+            <a href="#contact"  onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy">Contact Us</a>
+            <div className="flex gap-3 pt-3 border-t border-gray-100">
+              <Link to="/login"    className="flex-1 text-center py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg">Login</Link>
+              <Link to="/register" className="flex-1 text-center py-2.5 text-sm font-semibold text-white bg-brand-navy rounded-lg">Sign Up</Link>
             </div>
           </div>
         )}
