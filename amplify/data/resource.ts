@@ -57,10 +57,8 @@ const schema = a
         allow.ownerDefinedIn("cognitoSub"),                          // post-confirmation Lambda records
         allow.ownerDefinedIn("email").identityClaim("email"),        // admin-created accounts (no cognitoSub)
         allow.group("admin"),
-        // syncCustomers Lambda creates/lists Customer records via IAM SigV4.
-        // MUST be model-level (not schema-level) because model-level auth overrides schema-level auth.
-        // allow.resource() is valid at runtime; cast needed because @aws-amplify/data-schema 1.24 types model-level allow as BaseAllowModifier (schema-level only)
-        (allow as any).resource(syncCustomers),
+        // syncCustomers Lambda accesses Customer via IAM SigV4 — granted at schema level
+        // via allow.resource(syncCustomers) below + grantQuery/grantMutation in backend.ts
       ]),
 
     // ─── Shipment ────────────────────────────────────────────────────
