@@ -20,6 +20,7 @@ import { AdminInvoices } from './pages/AdminInvoices'
 import { PendingPackages } from './pages/PendingPackages'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
 import { ForgotPassword } from './pages/ForgotPassword'
+import { LandingPage } from './pages/LandingPage'
 
 function App() {
   return (
@@ -165,8 +166,8 @@ function App() {
           }
         />
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   </AuthProvider>
