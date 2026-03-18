@@ -39,6 +39,17 @@ jobs:
           role-to-assume: arn:aws:iam::404875533723:role/GitHubActionsDeployRole
           aws-region: us-east-1
 
+      # Diagnose secrets + AWS state before deploying
+      - name: Pre-deploy diagnostics
+        run: |
+          echo "AMPLIFY_APP_ID is set: ${{ secrets.AMPLIFY_APP_ID != '' }}"
+          echo "AWS identity:"
+          aws sts get-caller-identity
+          echo "Amplify app info:"
+          aws amplify get-app --app-id ${{ secrets.AMPLIFY_APP_ID }} --query 'app.{name:name,defaultDomain:defaultDomain}' 2>&1 || echo "get-app failed"
+          echo "Amplify branch info:"
+          aws amplify get-branch --app-id ${{ secrets.AMPLIFY_APP_ID }} --branch-name develop 2>&1 || echo "get-branch failed"
+
       # Amplify backend deploy (ampx handles CDK synth + deploy internally)
       - name: Deploy Amplify backend
         run: npx ampx pipeline-deploy --branch develop --app-id ${{ secrets.AMPLIFY_APP_ID }}
