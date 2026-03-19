@@ -19,27 +19,28 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
-const BASE = 'https://shinebarbados.maktechinstitute.com/wp-content/uploads/2026/03'
+// All images served locally from /public/images/
+// Remote fallbacks point to shinebarbados.maktechinstitute.com (may be unavailable)
 const IMG = {
   // Backgrounds
-  heroBg:       `${BASE}/Rectangle-4761-1.jpg`,
-  bandBg:       `${BASE}/Hero-Image-1.jpg`,
-  oceanBg:      `${BASE}/industrial-port-container-yard_1112-1200.jpg`,
+  heroBg:        '/images/hero-bg.jpg',
+  bandBg:        '/images/band-bg.jpg',
+  oceanBg:       '/images/ocean-bg.jpg',
   // Content photos
-  containers:   `${BASE}/shipping-cargo-containers-businesses-services-import-export-international-transportation_44353-4871.jpg`,
-  airFreightBig:`${BASE}/large-white-airplane-is-being-loaded-with-cargo_1353625-3484.jpg`,
-  airFreightPlan:`${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_44-PM.png`,
-  packages:     `${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_41-PM.png`,
-  hero:         `${BASE}/cargo-plane-sunset_23-2151989556.jpg`,
+  containers:    '/images/containers.jpg',
+  airFreightBig: '/images/air-freight-loading.jpg',
+  airFreightPlan:'/images/air-freight-plane.png',
+  packages:      '/images/packages-collage.webp',
+  hero:          '/images/cargo-plane-sunset.jpg',
   // Icons
-  iconPlane:    `${BASE}/Airplane_x2C__plane_x2C__flight.png`,
-  iconCargo:    `${BASE}/Boxes_x2C__cargo_x2C__delivery_x2C__handcart_x2C__logistics.png`,
-  iconWarehouse:`${BASE}/Boxes_x2C__hangar_x2C__warehouse.png`,
-  iconWarehouse2:`${BASE}/Boxes_x2C__hangar_x2C__warehouse-2.png`,
-  iconShip:     `${BASE}/cargo_x2C__ship_x2C__cargo_ship_x2C__maritime_transport_x2C__freight.png`,
-  iconTruck:    `${BASE}/XMLID_3237_-1.png`,
-  iconMoney:    `${BASE}/Bank_x2C__car_x2C__encashment_x2C__service_x2C__transportation_x2C__money.png`,
-  iconCourier:  `${BASE}/motorbike_x2C__motorcycle_x2C__scooter_x2C__delivery_x2C__shipping_x2C__courier.png`,
+  iconPlane:     '/images/icon-plane.png',
+  iconCargo:     '/images/icon-cargo.png',
+  iconWarehouse: '/images/icon-warehouse.png',
+  iconWarehouse2:'/images/icon-warehouse2.png',
+  iconShip:      '/images/icon-ship.png',
+  iconTruck:     '/images/icon-truck.png',
+  iconMoney:     '/images/icon-money.png',
+  iconCourier:   '/images/icon-courier.png',
 }
 
 export function LandingPage() {
