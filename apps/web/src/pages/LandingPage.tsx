@@ -69,7 +69,7 @@ export function LandingPage() {
               {/* Logo */}
               <a href="#hero" className="shrink-0 py-2">
                 <img
-                  src="/logos/logo-color-stacked.png"
+                  src="/logos/logo-cropped.png"
                   alt="CargoLink Barbados — The Smarter way to ship"
                   className="h-32 w-auto drop-shadow-sm"
                 />
@@ -497,7 +497,7 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
             <div>
-              <img src="/logos/logo-color-stacked.png" alt="CargoLink Barbados" className="h-20 w-auto mb-3" />
+              <img src="/logos/logo-cropped.png" alt="CargoLink Barbados" className="h-16 w-auto mb-3" />
               <p className="text-sm text-gray-500">Caribbean Trading and Cargo Management Inc.</p>
               <div className="flex gap-3 mt-4">
                 {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
