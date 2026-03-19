@@ -78,19 +78,10 @@ export function LandingPage() {
 
               {/* Desktop nav */}
               <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
-                {[
-                  { label: 'Home',       href: '#hero'    },
-                  { label: 'Contact Us', href: '#contact' },
-                ].map(({ label, href }) => (
-                  <a key={label} href={href} className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                    {label}
-                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                  </a>
-                ))}
-                <Link to="/rates" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                  Rates
+                <a href="#hero" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Home
                   <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </Link>
+                </a>
 
                 {/* Our Services dropdown */}
                 <div ref={servicesRef} className="relative">
@@ -115,6 +106,15 @@ export function LandingPage() {
                     </div>
                   )}
                 </div>
+
+                <Link to="/rates" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Rates
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </Link>
+                <a href="#contact" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Contact Us
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </a>
               </nav>
 
               {/* Right: Login + Sign Up */}

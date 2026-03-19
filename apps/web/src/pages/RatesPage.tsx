@@ -69,23 +69,11 @@ export function RatesPage() {
               </Link>
 
               <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
-                {[
-                  { label: 'Home',       to: '/'       },
-                  { label: 'Rates',      to: '/rates'  },
-                  { label: 'Contact Us', href: '/#contact' },
-                ].map(({ label, to, href }) => (
-                  to ? (
-                    <Link key={label} to={to} className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                      {label}
-                      <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                    </Link>
-                  ) : (
-                    <a key={label} href={href!} className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                      {label}
-                      <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                    </a>
-                  )
-                ))}
+                <Link to="/" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Home
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </Link>
+
                 <div ref={servicesRef} className="relative">
                   <button onClick={() => setServicesOpen(!servicesOpen)} className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none">
                     Our Services
@@ -99,6 +87,15 @@ export function RatesPage() {
                     </div>
                   )}
                 </div>
+
+                <Link to="/rates" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Rates
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </Link>
+                <a href="/#contact" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Contact Us
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </a>
               </nav>
 
               <div className="hidden lg:flex items-center gap-3">
@@ -115,13 +112,20 @@ export function RatesPage() {
           </div>
         </div>
         {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg px-4 py-3 space-y-1">
-            <Link to="/"       onClick={() => setMobileOpen(false)} className="block py-3 text-sm font-semibold text-gray-800 border-b border-gray-100 uppercase tracking-wide">Home</Link>
-            <Link to="/rates"  onClick={() => setMobileOpen(false)} className="block py-3 text-sm font-semibold text-gray-800 border-b border-gray-100 uppercase tracking-wide">Rates</Link>
-            <a href="/#contact" onClick={() => setMobileOpen(false)} className="block py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Contact Us</a>
-            <div className="flex gap-3 pt-3">
-              <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase">Login</Link>
-              <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase">Sign Up</Link>
+          <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
+            <div className="px-4 py-3 space-y-0.5">
+              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
+              <div className="border-b border-gray-100">
+                <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
+                <Link to="/#air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy">Express Air Freight</Link>
+                <Link to="/#ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy">Ocean Freight</Link>
+              </div>
+              <Link to="/rates"   onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
+              <a href="/#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+            </div>
+            <div className="flex gap-3 px-4 pb-4">
+              <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy-dark transition-colors">Sign Up</Link>
             </div>
           </div>
         )}
