@@ -58,26 +58,6 @@ export function LandingPage() {
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-50">
 
-        {/* ── TOP BAR ── navy strip with contact info */}
-        <div className="bg-brand-navy-dark text-white text-xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
-            <div className="flex items-center gap-5">
-              <a href="tel:+12465551234" className="flex items-center gap-1.5 text-white/80 hover:text-brand-gold transition-colors">
-                <Phone className="w-3 h-3" /> +1 (246) 555-1234
-              </a>
-              <a href="mailto:info@cargolink.bb" className="hidden sm:flex items-center gap-1.5 text-white/80 hover:text-brand-gold transition-colors">
-                <Mail className="w-3 h-3" /> info@cargolink.bb
-              </a>
-            </div>
-            <div className="flex items-center gap-3">
-              <a href="#" aria-label="Facebook"  className="text-white/60 hover:text-brand-gold transition-colors"><Facebook  className="w-3.5 h-3.5" /></a>
-              <a href="#" aria-label="Instagram" className="text-white/60 hover:text-brand-gold transition-colors"><Instagram className="w-3.5 h-3.5" /></a>
-              <a href="#" aria-label="Twitter"   className="text-white/60 hover:text-brand-gold transition-colors"><Twitter   className="w-3.5 h-3.5" /></a>
-              <a href="#" aria-label="LinkedIn"  className="text-white/60 hover:text-brand-gold transition-colors"><Linkedin  className="w-3.5 h-3.5" /></a>
-            </div>
-          </div>
-        </div>
-
         {/* ── MAIN NAV ── white bar with logo + links */}
         <div className="bg-white shadow-md border-b-4 border-brand-gold">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -173,12 +153,7 @@ export function LandingPage() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
-            {/* Mobile top info */}
-            <div className="bg-brand-navy-dark px-4 py-2 flex items-center gap-4">
-              <a href="tel:+12465551234" className="flex items-center gap-1.5 text-xs text-white/80">
-                <Phone className="w-3 h-3" /> +1 (246) 555-1234
-              </a>
-            </div>
+
             <div className="px-4 py-3 space-y-0.5">
               <a href="#hero"     onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></a>
               <div className="border-b border-gray-100">
