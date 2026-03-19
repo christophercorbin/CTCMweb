@@ -19,21 +19,27 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
-// All images sourced from model site (same images user uploaded)
 const BASE = 'https://shinebarbados.maktechinstitute.com/wp-content/uploads/2026/03'
 const IMG = {
-  hero:           `${BASE}/cargo-plane-sunset_23-2151989556.jpg`,
-  containers:     `${BASE}/shipping-cargo-containers-businesses-services-import-export-international-transportation_44353-4871.jpg`,
-  airFreightBig:  `${BASE}/large-white-airplane-is-being-loaded-with-cargo_1353625-3484.jpg`,
-  airFreightPlan: `${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_44-PM.png`,
-  packages:       `${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_41-PM.png`,
-  iconPlane:      `${BASE}/Airplane_x2C__plane_x2C__flight.png`,
-  iconCargo:      `${BASE}/Boxes_x2C__cargo_x2C__delivery_x2C__handcart_x2C__logistics.png`,
-  iconWarehouse:  `${BASE}/Boxes_x2C__hangar_x2C__warehouse.png`,
-  iconShip:       `${BASE}/cargo_x2C__ship_x2C__cargo_ship_x2C__maritime_transport_x2C__freight.png`,
-  iconTruck:      `${BASE}/XMLID_3237_-1.png`,
-  iconMoney:      `${BASE}/Bank_x2C__car_x2C__encashment_x2C__service_x2C__transportation_x2C__money.png`,
-  iconCourier:    `${BASE}/motorbike_x2C__motorcycle_x2C__scooter_x2C__delivery_x2C__shipping_x2C__courier.png`,
+  // Backgrounds
+  heroBg:       `${BASE}/Rectangle-4761-1.jpg`,
+  bandBg:       `${BASE}/Hero-Image-1.jpg`,
+  oceanBg:      `${BASE}/industrial-port-container-yard_1112-1200.jpg`,
+  // Content photos
+  containers:   `${BASE}/shipping-cargo-containers-businesses-services-import-export-international-transportation_44353-4871.jpg`,
+  airFreightBig:`${BASE}/large-white-airplane-is-being-loaded-with-cargo_1353625-3484.jpg`,
+  airFreightPlan:`${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_44-PM.png`,
+  packages:     `${BASE}/ChatGPT-Image-Mar-8_-2026_-10_45_41-PM.png`,
+  hero:         `${BASE}/cargo-plane-sunset_23-2151989556.jpg`,
+  // Icons
+  iconPlane:    `${BASE}/Airplane_x2C__plane_x2C__flight.png`,
+  iconCargo:    `${BASE}/Boxes_x2C__cargo_x2C__delivery_x2C__handcart_x2C__logistics.png`,
+  iconWarehouse:`${BASE}/Boxes_x2C__hangar_x2C__warehouse.png`,
+  iconWarehouse2:`${BASE}/Boxes_x2C__hangar_x2C__warehouse-2.png`,
+  iconShip:     `${BASE}/cargo_x2C__ship_x2C__cargo_ship_x2C__maritime_transport_x2C__freight.png`,
+  iconTruck:    `${BASE}/XMLID_3237_-1.png`,
+  iconMoney:    `${BASE}/Bank_x2C__car_x2C__encashment_x2C__service_x2C__transportation_x2C__money.png`,
+  iconCourier:  `${BASE}/motorbike_x2C__motorcycle_x2C__scooter_x2C__delivery_x2C__shipping_x2C__courier.png`,
 }
 
 export function LandingPage() {
@@ -41,7 +47,6 @@ export function LandingPage() {
   const [servicesOpen, setServicesOpen] = useState(false)
   const servicesRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
@@ -57,8 +62,6 @@ export function LandingPage() {
 
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-50">
-
-        {/* ── MAIN NAV ── white bar with logo + links */}
         <div className="bg-white shadow-md border-b-4 border-brand-gold">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-36">
@@ -72,18 +75,14 @@ export function LandingPage() {
                 />
               </a>
 
-              {/* Desktop nav links */}
+              {/* Desktop nav */}
               <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
                 {[
                   { label: 'Home',       href: '#hero' },
                   { label: 'Rates',      href: '#rates' },
                   { label: 'Contact Us', href: '#contact' },
                 ].map(({ label, href }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    className="relative px-4 py-2 group transition-colors hover:text-brand-navy"
-                  >
+                  <a key={label} href={href} className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
                     {label}
                     <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                   </a>
@@ -101,21 +100,13 @@ export function LandingPage() {
                   </button>
                   {servicesOpen && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-72 bg-brand-navy rounded-b-xl shadow-2xl overflow-hidden z-50 border-t-4 border-brand-gold">
-                      <a
-                        href="#services"
-                        onClick={() => setServicesOpen(false)}
-                        className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
-                      >
+                      <a href="#air-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">
                         <img src={IMG.iconPlane} className="w-6 h-6 object-contain invert" alt="" />
-                        Express Air Freight
+                        CargoLink Barbados Express Air Freight
                       </a>
-                      <a
-                        href="#services"
-                        onClick={() => setServicesOpen(false)}
-                        className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors"
-                      >
+                      <a href="#ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">
                         <img src={IMG.iconShip} className="w-6 h-6 object-contain invert" alt="" />
-                        Ocean Freight
+                        CargoLink Barbados Ocean Freight
                       </a>
                     </div>
                   )}
@@ -124,26 +115,16 @@ export function LandingPage() {
 
               {/* Right: Login + Sign Up */}
               <div className="hidden lg:flex items-center gap-3">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide"
-                >
+                <Link to="/login" className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide">
                   Login
                 </Link>
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide"
-                >
+                <Link to="/register" className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide">
                   Sign Up <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
 
               {/* Mobile hamburger */}
-              <button
-                onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2.5 rounded-lg bg-brand-navy text-white hover:bg-brand-navy-dark transition-colors"
-                aria-label="Menu"
-              >
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2.5 rounded-lg bg-brand-navy text-white hover:bg-brand-navy-dark transition-colors" aria-label="Menu">
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
@@ -153,20 +134,15 @@ export function LandingPage() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
-
             <div className="px-4 py-3 space-y-0.5">
               <a href="#hero"     onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></a>
               <div className="border-b border-gray-100">
                 <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
-                <a href="#services" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy">
-                  <img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight
-                </a>
-                <a href="#services" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3 text-sm text-gray-600 hover:text-brand-navy">
-                  <img src={IMG.iconShip} className="w-5 h-5 object-contain" alt="" /> Ocean Freight
-                </a>
+                <a href="#air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight</a>
+                <a href="#ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconShip}  className="w-5 h-5 object-contain" alt="" /> Ocean Freight</a>
               </div>
-              <a href="#rates"    onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></a>
-              <a href="#contact"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+              <a href="#rates"   onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+              <a href="#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
             </div>
             <div className="flex gap-3 px-4 pb-4">
               <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
@@ -177,43 +153,38 @@ export function LandingPage() {
       </header>
 
       {/* ── HERO ── */}
-      <section id="hero" className="relative min-h-[580px] flex items-center justify-center text-center overflow-hidden">
+      <section id="hero" className="relative min-h-[600px] flex items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMG.hero} alt="Cargo plane at sunset" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-brand-navy/65" />
+          <img src={IMG.heroBg} alt="CargoLink Barbados hero" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-brand-navy/60" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-4 py-28">
-          <p className="text-brand-gold font-semibold text-lg mb-3 tracking-wide">Smart Shipping To The Caribbean</p>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-            Welcome To <span className="text-brand-gold">CargoLink</span> Barbados
+          <p className="text-brand-gold font-semibold text-xl mb-4 tracking-wide">Smart Shipping To The Caribbean</p>
+          <h1 className="text-4xl sm:text-5xl lg:text-[65px] font-bold text-white leading-tight mb-6">
+            Welcome To CargoLink Barbados
           </h1>
-          <p className="text-white/80 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
+          <p className="text-white/80 text-base leading-relaxed mb-10 max-w-xl mx-auto">
             CargoLink Barbados provides a complete logistics solution including freight forwarding,
             customs clearance, package consolidation, and door-to-door delivery.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#contact" className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border-2 border-white/20">
-              Contact Us
-            </a>
-            <Link to="/register" className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-brand-navy bg-brand-gold rounded-lg hover:bg-brand-gold-dark transition-all shadow-lg">
-              Create Free Account <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+          <a href="#contact" className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20">
+            Contact Us
+          </a>
         </div>
       </section>
 
       {/* ── THREE SERVICE CARDS ── */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-14 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { img: IMG.iconPlane,     title: 'Global Freight Solutions',  desc: 'We provide reliable international freight solutions to move your cargo safely and efficiently across global routes and Caribbean destinations.' },
-              { img: IMG.iconTruck,     title: 'Cargo Transportation',      desc: 'Our transportation services ensure secure and timely movement of goods, handling everything from small packages to large shipments.' },
-              { img: IMG.iconWarehouse, title: 'Warehouse & Storage',        desc: 'Over 33,000 sq ft of warehouse space in Medley, Florida. We handle dry goods, heavy equipment, vehicles, and temperature-controlled cargo.' },
+              { img: IMG.iconTruck,     title: 'Global Freight Solutions',  desc: 'We provide reliable international freight solutions to move your cargo safely and efficiently across global routes and Caribbean destinations.' },
+              { img: IMG.iconCargo,     title: 'Cargo Transportation',      desc: 'Our transportation services ensure secure and timely movement of goods, handling everything from small packages to large shipments.' },
+              { img: IMG.iconWarehouse, title: 'Secure Storage Services',   desc: 'Safe and organized warehouse storage designed to protect your cargo before shipment or delivery to its final destination.' },
             ].map(({ img, title, desc }) => (
-              <div key={title} className="bg-white border border-gray-200 rounded-xl p-8">
-                <img src={img} alt={title} className="w-16 h-16 object-contain mb-5" />
-                <h3 className="text-lg font-bold text-gray-900 mb-3">{title}</h3>
+              <div key={title} className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
+                <img src={img} alt={title} className="w-14 h-14 object-contain mb-5" />
+                <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -221,206 +192,188 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── ABOUT ── */}
-      <section id="about" className="py-20 bg-white">
+      {/* ── WHO WE ARE ── */}
+      <section id="about" className="py-20" style={{ backgroundColor: '#f7f8ff' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-            {/* Photo */}
-            <div className="rounded-2xl overflow-hidden shadow-lg">
-              <img src={IMG.packages} alt="CargoLink Barbados packages and operations" className="w-full h-[460px] object-cover" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+
+            {/* Left: 2-column image grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
+                <img src={IMG.containers}    alt="Cargo containers" className="w-full rounded-xl object-cover h-44" />
+                <img src={IMG.packages}      alt="CargoLink packages" className="w-full rounded-xl object-cover" />
+              </div>
+              <div>
+                <img src={IMG.airFreightPlan} alt="CargoLink Barbados aircraft" className="w-full rounded-xl object-cover h-full" style={{ minHeight: '380px' }} />
+              </div>
             </div>
-            {/* Text */}
+
+            {/* Right: text */}
             <div>
-              <p className="text-brand-navy font-semibold text-sm uppercase tracking-widest mb-2">Who We Are</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-                Your Trusted <span className="text-brand-navy">Caribbean Shipping Partner</span>
+              <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Who We Are</p>
+              <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 leading-tight mb-6">
+                Your Trusted Caribbean Shipping Partner
               </h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                CargoLink Barbados is owned by <strong>Caribbean Trading and Cargo Management Inc.</strong>,
-                a Barbadian company established in 2017.
+                CargoLink Barbados is owned by Caribbean Trading and Cargo Management Inc. is a Barbadian company established in 2017.
               </p>
-              <p className="text-gray-600 leading-relaxed mb-8">
-                Our management has over 25 years of experience in international shipping specialising in
-                Air freight and Ocean freight logistics into the Caribbean.
+              <p className="text-gray-600 leading-relaxed mb-10">
+                Our management has over 25 years of experience in international shipping specialising in Air freight and Ocean freight logistics into the Caribbean.
               </p>
 
-              {/* Feature list with icon images */}
-              <div className="space-y-4 mb-8">
+              {/* Two feature items */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
-                  { img: IMG.iconMoney,    title: 'Affordable Cost',       desc: 'Competitive rates calculated by actual or volumetric weight — no hidden fees.' },
-                  { img: IMG.iconCourier,  title: 'Short Time Delivery',   desc: 'Weekly sailings and flights from Miami on a reliable, predictable schedule.' },
-                  { img: IMG.iconCargo,    title: 'Package Consolidation', desc: 'Bundle multiple purchases into one shipment to reduce costs.' },
-                  { img: IMG.iconShip,     title: 'Full Customs Clearance', desc: 'We handle all customs documentation, brokerage, and duties on your behalf.' },
+                  { img: IMG.iconMoney,   title: 'Affordable Cost',    desc: 'Competitive rates with no hidden fees. Charges calculated by actual or volumetric weight.' },
+                  { img: IMG.iconCourier, title: 'Short Time Delivery', desc: 'Weekly flights and sailings from Miami on a reliable, predictable schedule.' },
                 ].map(({ img, title, desc }) => (
                   <div key={title} className="flex items-start gap-4">
-                    <img src={img} alt={title} className="w-10 h-10 object-contain shrink-0 mt-0.5" />
+                    <img src={img} alt={title} className="w-14 h-14 object-contain shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-0.5">{title}</h4>
-                      <p className="text-sm text-gray-500">{desc}</p>
+                      <h4 className="font-bold text-gray-800 text-base mb-1">{title}</h4>
+                      <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
-
-              <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-brand-navy bg-brand-gold rounded-lg hover:bg-brand-gold-dark transition-colors shadow">
-                Open Your Account <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── SERVICES ── */}
-      <section id="services" className="py-20 bg-gray-50">
+      {/* ── MID-PAGE BAND ── */}
+      <section className="relative py-20 overflow-hidden text-center">
+        <div className="absolute inset-0">
+          <img src={IMG.bandBg} alt="" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-brand-navy/70" />
+        </div>
+        <div className="relative z-10 max-w-3xl mx-auto px-4">
+          <p className="text-brand-gold font-semibold text-xl mb-4 tracking-wide">The Smarter Way To Ship</p>
+          <h2 className="text-2xl sm:text-[30px] font-bold text-white leading-snug">
+            Air Freight And Ocean Freight Logistics Into The Caribbean<br className="hidden sm:block" />
+            Shop, Consolidate, Then Leave The Rest To Us!
+          </h2>
+        </div>
+      </section>
+
+      {/* ── OUR SHIPPING SERVICES ── */}
+      <section id="services" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-brand-navy font-semibold text-sm uppercase tracking-widest mb-2">What We Do</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Our Shipping Services</h2>
-            <p className="mt-4 text-gray-500 max-w-xl mx-auto text-sm">
+            <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">What We Do</p>
+            <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-4">Our Shipping Services</h2>
+            <p className="text-gray-500 text-base max-w-2xl mx-auto">
               Reliable air and ocean freight solutions designed to move your cargo safely and efficiently to the Caribbean.
             </p>
           </div>
-
-          {/* Air Freight panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-2xl overflow-hidden shadow-lg mb-8">
-            <div className="relative">
-              <img src={IMG.airFreightPlan} alt="CargoLink Barbados air freight" className="w-full h-72 lg:h-full object-cover" />
-              <div className="absolute inset-0 bg-brand-navy/20" />
-            </div>
-            <div className="bg-[#fdf9ee] p-10 flex flex-col justify-center">
-              <img src={IMG.iconPlane} alt="Air Freight" className="w-16 h-16 object-contain mb-5" />
-              <h3 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">Air Freight</h3>
-              <p className="text-gray-600 leading-relaxed mb-4">
-                Weekly service from Miami. A complete door to door service that includes freight,
-                brokerage, customs clearance and delivery.
-              </p>
-              <div className="bg-brand-navy/10 rounded-lg px-4 py-3 text-sm text-brand-navy font-medium inline-block w-fit">
-                📅 Cargo must arrive by <strong>noon Thursday</strong> for Friday shipment
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { img: IMG.iconPlane,      title: 'Air Freight',               desc: 'Fast and reliable weekly air freight service from Miami to Barbados.' },
+              { img: IMG.iconShip,       title: 'Ocean Freight',             desc: 'Cost-effective LCL and FCL ocean freight shipping from the U.S., Canada, Europe, the UK, and the Far East to the Caribbean.' },
+              { img: IMG.iconWarehouse2, title: 'Warehouse & Cargo Handling', desc: 'Our warehouse in Medley, Florida offers over 33,000 sq ft of storage space and can handle dry goods, heavy equipment, vehicles, and temperature-controlled cargo.' },
+            ].map(({ img, title, desc }) => (
+              <div key={title} className="border border-gray-200 rounded-xl p-8 hover:shadow-md transition-shadow">
+                <img src={img} alt={title} className="w-12 h-12 object-contain mb-5" />
+                <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Ocean Freight panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-2xl overflow-hidden shadow-lg">
-            <div className="bg-brand-navy p-10 flex flex-col justify-center order-2 lg:order-1">
-              <img src={IMG.iconShip} alt="Ocean Freight" className="w-16 h-16 object-contain mb-5 invert brightness-0 invert" />
-              <h3 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">Ocean Freight</h3>
-              <p className="text-white/70 leading-relaxed mb-6">
-                CARGOLINK BARBADOS offers LCL &amp; FCL services from the U.S, Canada, Europe,
-                the UK, and the Far East to the Caribbean.
-              </p>
-              <ul className="space-y-2 text-sm text-white/70">
-                {['Containers, boxes & barrels', 'Vehicles, tyres & heavy equipment', 'Dry goods, home goods & building materials', 'Temperature-controlled cargo (frozen & chilled)'].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-brand-gold shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="relative order-1 lg:order-2">
-              <img src={IMG.containers} alt="Ocean freight containers" className="w-full h-72 lg:h-full object-cover" />
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── OCEAN FREIGHT FULL-WIDTH ── */}
-      <section className="relative py-0 overflow-hidden">
-        <div className="relative">
-          <img src={IMG.containers} alt="Container port" className="w-full h-56 sm:h-72 object-cover object-center" />
-          <div className="absolute inset-0 bg-brand-navy/70 flex flex-col items-center justify-center text-center px-4">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">OCEAN FREIGHT</h2>
-            <p className="text-white/70 text-sm sm:text-base max-w-2xl">
-              CARGOLINK BARBADOS offers LCL &amp; FCL services from the U.S, Canada, Europe, the UK, and the Far East to the Caribbean.
-            </p>
-          </div>
-        </div>
+      {/* ── AIR FREIGHT ── */}
+      <section id="air-freight" className="py-20 bg-white border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-12">AIR FREIGHT</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
-        {/* Sub-section: Shipping To Barbados */}
-        <div className="relative">
-          <img src={IMG.containers} alt="Cargo" className="w-full h-auto min-h-[300px] object-cover object-top" style={{ maxHeight: '400px' }} />
-          <div className="absolute inset-0 bg-brand-navy/80 flex flex-col items-center justify-center text-center px-4 py-12">
-            <img src={IMG.iconShip} alt="Ship" className="w-16 h-16 object-contain mb-4 invert" />
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Shipping To Barbados…That's Easy!</h2>
-            <p className="text-white/70 text-sm max-w-2xl mb-2">CargoLink Barbados offers a one stop solution.</p>
-            <p className="text-white/60 text-sm max-w-2xl">
-              We ship containers, boxes, barrels, dry goods, heavy equipment, vehicles, tires, chemicals, home goods and building materials to Barbados.
-            </p>
-            <div className="mt-4 pt-4 border-t border-white/20 text-white/50 text-sm max-w-2xl">
-              Our warehouse is conveniently located in Medley, Florida. The facility boasts over 33,000 square feet of warehouse space, with 11 overhead doors and a loading ramp.
+            {/* Left: two photos side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <img src={IMG.airFreightBig} alt="Cargo being loaded onto aircraft" className="w-full rounded-xl object-cover" style={{ height: '500px' }} />
+              <img src={IMG.hero}          alt="Cargo plane at sunset"            className="w-full rounded-xl object-cover" style={{ height: '500px' }} />
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── WEEKLY SAILING CTA ── */}
-      <section className="relative py-20 text-center overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={IMG.containers} alt="Port" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-brand-navy/75" />
-        </div>
-        <div className="relative z-10 max-w-2xl mx-auto px-4">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">Weekly Sailing From Miami To Barbados.</h2>
-          <p className="text-white/70 mb-8">Our Sales Team is here to help</p>
-          <a href="#contact" className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold text-brand-navy bg-brand-gold rounded-lg hover:bg-brand-gold-dark transition-all shadow-lg">
-            Request A Quote
-          </a>
-        </div>
-      </section>
-
-      {/* ── AIR FREIGHT FEATURE ── */}
-      <section className="py-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2">
-          <div className="relative">
-            <img src={IMG.airFreightBig} alt="Cargo plane loading" className="w-full h-80 lg:h-full object-cover" />
-            <div className="absolute inset-0 bg-brand-navy/30" />
-          </div>
-          <div className="bg-[#fdf9ee] p-12 lg:p-16 flex flex-col justify-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 uppercase tracking-wide mb-4">AIR FREIGHT</h2>
-            <p className="text-gray-600 leading-relaxed mb-6">
-              Weekly service from Miami. This is a complete door to door service that includes freight,
-              brokerage, customs clearance and delivery.
-            </p>
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            {/* Right: 3 steps */}
+            <div className="space-y-10 pt-4">
               {[
-                { label: 'Years Experience', value: '25+' },
-                { label: 'Warehouse Space', value: '33K+ sq ft' },
-                { label: 'Shipping Routes', value: 'US, CA, EU, UK' },
-                { label: 'Weekly Flights', value: 'Miami → BGI' },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="text-2xl font-bold text-brand-navy">{value}</div>
-                  <div className="text-xs text-gray-500 mt-1">{label}</div>
+                { num: '01', title: 'Purchase Online',     desc: 'Buy online. Ship to your U.S mailing address.' },
+                { num: '02', title: 'Bundle Your Packages', desc: 'You shop. We take care of everything else.' },
+                { num: '03', title: 'One Time Pick Up',    desc: 'Visit a CargoLink Barbados location and pick up your cargo.' },
+              ].map(({ num, title, desc }) => (
+                <div key={num} className="flex gap-6 items-start">
+                  <div className="shrink-0 w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-sm">{num}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                    <p className="text-gray-500 leading-relaxed">{desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-brand-navy bg-brand-gold rounded-lg hover:bg-brand-gold-dark transition-colors shadow w-fit">
-              Start Shipping <ArrowRight className="w-4 h-4" />
-            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── OCEAN FREIGHT ── */}
+      <section id="ocean-freight" className="relative py-24 overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={IMG.oceanBg} alt="Container port" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-brand-navy/75" />
+        </div>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl sm:text-[45px] font-bold text-white mb-6">OCEAN FREIGHT</h2>
+          <h3 className="text-2xl sm:text-[35px] font-bold text-white mb-6">Shipping To Barbados...That's Easy!</h3>
+          <p className="text-white/80 text-base leading-relaxed mb-4">
+            CargoLink Barbados offers a one stop solution.
+          </p>
+          <p className="text-white/80 text-base leading-relaxed mb-4">
+            We ship containers, boxes, barrels, dry goods, heavy equipment, vehicles, tires, chemicals, home goods and building materials to Barbados.
+          </p>
+          <p className="text-white/80 text-base leading-relaxed mb-8">
+            Our warehouse is conveniently located in Medley, Florida. The facility boasts over 33,000 square feet of warehouse space, with 11 overhead doors and a loading ramp. We have the ability to receive temperature-controlled cargo (frozen and chilled) at the facility.
+          </p>
+          <h3 className="text-2xl sm:text-[30px] font-bold text-white">Weekly Sailing From Miami To Barbados.</h3>
+        </div>
+      </section>
+
+      {/* ── SALES TEAM CTA ── */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our Sales Team Is Here To Help</h2>
+          <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-8">
+            Request A Quote
+          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600 mt-2">
+            <a href="mailto:info@cariblinkbarbados.com" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
+              <Mail className="w-4 h-4 text-brand-navy" /> info@cariblinkbarbados.com
+            </a>
+            <a href="tel:+12465372826" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
+              <Phone className="w-4 h-4 text-brand-navy" /> +1246-537-2826
+            </a>
           </div>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-20 bg-white">
+      <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-brand-navy font-semibold text-sm uppercase tracking-widest mb-2">Simple Process</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">How It Works</h2>
+            <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
+            <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">How It Works</h2>
             <p className="mt-4 text-gray-500 max-w-xl mx-auto text-sm">
               Air &amp; Ocean freight logistics into the Caribbean — shop online, then leave the rest to us.
             </p>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { step: '01', icon: ClipboardList, title: 'Sign Up',            desc: 'Create your free CargoLink Barbados account online in minutes.' },
-              { step: '02', icon: MapPin,        title: 'Get Your US Address', desc: 'Once registered you will immediately receive your new US shipping address.' },
-              { step: '03', icon: ShoppingCart,  title: 'Shop Online',         desc: 'Shop on Amazon, eBay, AliExpress and more. Ship to your new US address.' },
-              { step: '04', icon: Package,        title: 'We Receive & Track',  desc: 'Once your cargo arrives at our Miami warehouse you can track every step.' },
-              { step: '05', icon: ClipboardList,  title: 'Clear & Invoice',     desc: 'We process and clear your cargo and advise you of all freight, duties, and fees.' },
-              { step: '06', icon: Truck,          title: 'Collect Your Packages', desc: 'Collect your packages from our offices at #1 Ficus Court, Brighton, St. Michael.' },
+              { step: '01', icon: ClipboardList, title: 'Sign Up',              desc: 'Create your free CargoLink Barbados account online in minutes.' },
+              { step: '02', icon: MapPin,         title: 'Get Your US Address',  desc: 'Once registered you will immediately receive your new US shipping address.' },
+              { step: '03', icon: ShoppingCart,   title: 'Shop Online',          desc: 'Shop on Amazon, eBay, AliExpress and more. Ship to your new US address.' },
+              { step: '04', icon: Package,         title: 'We Receive & Track',   desc: 'Once your cargo arrives at our Miami warehouse you can track every step.' },
+              { step: '05', icon: ClipboardList,   title: 'Clear & Invoice',      desc: 'We process and clear your cargo and advise you of all freight, duties, and fees.' },
+              { step: '06', icon: Truck,           title: 'Collect Your Packages', desc: 'Collect your packages from our offices at #1 Ficus Court, Brighton, St. Michael.' },
             ].map(({ step, icon: Icon, title, desc }) => (
               <div key={step} className="relative bg-white border border-gray-200 rounded-xl p-8">
                 <div className="absolute top-5 right-5 text-4xl font-black text-gray-50 select-none leading-none">{step}</div>
@@ -432,7 +385,6 @@ export function LandingPage() {
               </div>
             ))}
           </div>
-
           <div className="mt-10 bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 text-center max-w-2xl mx-auto">
             <p className="text-amber-800 text-sm font-medium">
               ⚠️ Cargo must reach our Miami warehouse by <strong>noon Thursday</strong> for Friday shipment to Barbados.
@@ -442,11 +394,11 @@ export function LandingPage() {
       </section>
 
       {/* ── RATES ── */}
-      <section id="rates" className="py-20 bg-gray-50">
+      <section id="rates" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-brand-navy font-semibold text-sm uppercase tracking-widest mb-2">Transparent Pricing</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Air Freight Rates</h2>
+            <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Transparent Pricing</p>
+            <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">Air Freight Rates</h2>
             <p className="mt-4 text-gray-500 text-sm max-w-xl mx-auto">
               Charges are calculated by the higher of actual or volumetric weight. All rates are per pound.
             </p>
@@ -489,12 +441,12 @@ export function LandingPage() {
                 { label: 'Brokerage Fee (Commercial)', value: 'BBD $35.00 + VAT' },
                 { label: 'Foreign Exchange Surcharge', value: '2% on freight charges' },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between">
+                <div key={label} className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between shadow-sm">
                   <span className="text-gray-600 text-sm">{label}</span>
                   <span className="text-brand-navy font-semibold text-sm">{value}</span>
                 </div>
               ))}
-              <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
+              <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 shadow-sm">
                 <h4 className="text-gray-900 font-semibold mb-2">Duties &amp; Taxes</h4>
                 <p className="text-gray-500 text-sm leading-relaxed">
                   If your purchases total <strong className="text-gray-800">USD $30.00 or less</strong>, customs duties do not apply.
@@ -513,26 +465,27 @@ export function LandingPage() {
       </section>
 
       {/* ── CONTACT ── */}
-      <section id="contact" className="py-20 bg-white">
+      <section id="contact" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-brand-navy font-semibold text-sm uppercase tracking-widest mb-2">Get In Touch</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Contact Us</h2>
+            <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Get In Touch</p>
+            <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">Contact Us</h2>
             <p className="mt-4 text-gray-500 text-sm">We're here to help you ship smarter.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { icon: MapPin, label: 'Address',       detail: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados', href: undefined },
-              { icon: Phone,  label: 'Phone Number',  detail: '+1246-537-2826',              href: 'tel:+12465372826' },
-              { icon: Mail,   label: 'Email Address', detail: 'info@cargolinkbarbados.com',  href: 'mailto:info@cargolinkbarbados.com' },
+              { icon: Phone,  label: 'Phone Number',  detail: '+1246-537-2826',             href: 'tel:+12465372826' },
+              { icon: Mail,   label: 'Email Address', detail: 'info@cargolinkbarbados.com', href: 'mailto:info@cargolinkbarbados.com' },
             ].map(({ icon: Icon, label, detail, href }) => (
               <div key={label} className="flex flex-col items-center text-center">
                 <div className="w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center mb-4 shadow">
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2">{label}</h4>
-                {href ? <a href={href} className="text-sm text-brand-navy hover:underline whitespace-pre-line">{detail}</a>
-                      : <p className="text-sm text-gray-500 whitespace-pre-line">{detail}</p>}
+                {href
+                  ? <a href={href} className="text-sm text-brand-navy hover:underline whitespace-pre-line">{detail}</a>
+                  : <p className="text-sm text-gray-500 whitespace-pre-line">{detail}</p>}
               </div>
             ))}
           </div>
@@ -558,12 +511,12 @@ export function LandingPage() {
               <h5 className="text-gray-900 font-bold text-base mb-4">Quick Links</h5>
               <ul className="space-y-2 text-sm text-gray-500">
                 {[
-                  { label: 'Home',       href: '#hero',        to: undefined },
-                  { label: 'About Us',   href: '#about',       to: undefined },
-                  { label: 'Rates',      href: '#rates',       to: undefined },
-                  { label: 'Contact Us', href: '#contact',     to: undefined },
-                  { label: 'Register',   href: undefined,      to: '/register' },
-                  { label: 'Log In',     href: undefined,      to: '/login' },
+                  { label: 'Home',              href: '#hero',    to: undefined },
+                  { label: 'About Us',          href: '#about',   to: undefined },
+                  { label: 'Rates',             href: '#rates',   to: undefined },
+                  { label: 'Contact Us',        href: '#contact', to: undefined },
+                  { label: 'Legal',             href: '#',        to: undefined },
+                  { label: 'Terms & Condition', href: '#',        to: undefined },
                 ].map(({ label, href, to }) => (
                   <li key={label}>
                     {to ? (
@@ -584,8 +537,8 @@ export function LandingPage() {
               <div className="space-y-4">
                 {[
                   { Icon: MapPin, text: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados' },
-                  { Icon: Phone,  text: '+1246-537-2826' },
                   { Icon: Mail,   text: 'info@cargolinkbarbados.com' },
+                  { Icon: Phone,  text: '+1246-537-2826' },
                 ].map(({ Icon, text }, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center shrink-0">
@@ -598,7 +551,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            <p>Copyright © {new Date().getFullYear()} Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
+            <p>Copyright © 2026 Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
           </div>
         </div>
       </footer>
