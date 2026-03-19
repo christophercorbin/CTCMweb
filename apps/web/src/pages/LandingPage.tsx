@@ -397,77 +397,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── RATES ── */}
-      <section id="rates" className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Transparent Pricing</p>
-            <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">Air Freight Rates</h2>
-            <p className="mt-4 text-gray-500 text-sm max-w-xl mx-auto">
-              Charges are calculated by the higher of actual or volumetric weight. All rates are per pound.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-            <div className="bg-white rounded-2xl overflow-hidden shadow border border-gray-200">
-              <div className="px-6 py-4 bg-brand-navy">
-                <h3 className="text-white font-semibold text-sm uppercase tracking-wide">Miami Shipping Rate — Cost Per Lb</h3>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left px-6 py-3 text-gray-500 font-medium">Weight (lb)</th>
-                    <th className="text-right px-6 py-3 text-gray-500 font-medium">USD / lb</th>
-                    <th className="text-right px-6 py-3 text-gray-500 font-medium">BBD / lb</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {[
-                    ['1','8.45','17.33'],['2','7.31','14.82'],['3','7.07','14.35'],['4','6.01','12.81'],
-                    ['5','5.80','11.76'],['6–11','5.58','11.31'],['12–20','5.42','10.99'],['21–30','5.18','10.50'],
-                    ['31–40','4.65','9.43'],['41–70','4.40','8.92'],['71–100','3.90','7.91'],
-                    ['101–500','3.49','7.08'],['501–1000','2.50','5.07'],['1001+','2.25','4.56'],
-                  ].map(([w, u, b]) => (
-                    <tr key={w} className="hover:bg-brand-navy/5 transition-colors">
-                      <td className="px-6 py-3 text-gray-700 font-medium">{w}</td>
-                      <td className="px-6 py-3 text-right text-gray-700">$ {u}</td>
-                      <td className="px-6 py-3 text-right text-brand-navy font-semibold">$ {b}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-4">
-              {[
-                { label: 'Handling Charge',            value: 'BBD $10.00' },
-                { label: 'Brokerage Fee (Personal)',   value: 'BBD $35.00 + VAT' },
-                { label: 'Brokerage Fee (Commercial)', value: 'BBD $35.00 + VAT' },
-                { label: 'Foreign Exchange Surcharge', value: '2% on freight charges' },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between shadow-sm">
-                  <span className="text-gray-600 text-sm">{label}</span>
-                  <span className="text-brand-navy font-semibold text-sm">{value}</span>
-                </div>
-              ))}
-              <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 shadow-sm">
-                <h4 className="text-gray-900 font-semibold mb-2">Duties &amp; Taxes</h4>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  If your purchases total <strong className="text-gray-800">USD $30.00 or less</strong>, customs duties do not apply.
-                  Above USD $30.00, duties are determined by the Barbados Customs Authority based on item type.
-                </p>
-              </div>
-              <div className="bg-brand-gold rounded-xl px-6 py-5 text-center">
-                <p className="text-brand-navy text-sm font-medium mb-3">Ready to start shipping?</p>
-                <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-brand-gold bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-colors">
-                  Open Your Account <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── CONTACT ── */}
       <section id="contact" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -517,7 +446,7 @@ export function LandingPage() {
                 {[
                   { label: 'Home',              href: '#hero',    to: undefined },
                   { label: 'About Us',          href: '#about',   to: undefined },
-                  { label: 'Rates',             href: '#rates',   to: undefined },
+                  { label: 'Rates',             href: undefined,  to: '/rates'  },
                   { label: 'Contact Us',        href: '#contact', to: undefined },
                   { label: 'Legal',             href: '#',        to: undefined },
                   { label: 'Terms & Condition', href: '#',        to: undefined },
