@@ -79,8 +79,7 @@ export function LandingPage() {
               {/* Desktop nav */}
               <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
                 {[
-                  { label: 'Home',       href: '#hero' },
-                  { label: 'Rates',      href: '#rates' },
+                  { label: 'Home',       href: '#hero'    },
                   { label: 'Contact Us', href: '#contact' },
                 ].map(({ label, href }) => (
                   <a key={label} href={href} className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
@@ -88,6 +87,10 @@ export function LandingPage() {
                     <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                   </a>
                 ))}
+                <Link to="/rates" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
+                  Rates
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                </Link>
 
                 {/* Our Services dropdown */}
                 <div ref={servicesRef} className="relative">
@@ -142,7 +145,7 @@ export function LandingPage() {
                 <a href="#air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight</a>
                 <a href="#ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconShip}  className="w-5 h-5 object-contain" alt="" /> Ocean Freight</a>
               </div>
-              <a href="#rates"   onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+              <Link to="/rates"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
               <a href="#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
             </div>
             <div className="flex gap-3 px-4 pb-4">

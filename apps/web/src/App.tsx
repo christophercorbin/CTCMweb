@@ -21,6 +21,7 @@ import { PendingPackages } from './pages/PendingPackages'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { LandingPage } from './pages/LandingPage'
+import { RatesPage } from './pages/RatesPage'
 
 function App() {
   return (
@@ -167,6 +168,7 @@ function App() {
         />
 
         <Route path="/" element={<LandingPage />} />
+        <Route path="/rates" element={<RatesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
