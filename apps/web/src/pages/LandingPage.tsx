@@ -64,14 +64,14 @@ export function LandingPage() {
       <header className="sticky top-0 z-50">
         <div className="bg-white shadow-md border-b-4 border-brand-gold">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-36">
+            <div className="flex items-center justify-between h-28">
 
               {/* Logo */}
               <a href="#hero" className="shrink-0 py-2">
                 <img
                   src="/logos/logo-cropped.png"
                   alt="CargoLink Barbados — The Smarter way to ship"
-                  className="h-32 w-auto drop-shadow-sm"
+                  className="h-24 w-auto drop-shadow-sm"
                 />
               </a>
 
