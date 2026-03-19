@@ -39,29 +39,6 @@ const IMG = {
   iconCourier:   '/images/icon-courier.png',
 }
 
-/* ── CountUp component ── */
-function CountUp({ to, suffix = '', prefix = '' }: { to: number; suffix?: string; prefix?: string }) {
-  const [val, setVal] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      obs.disconnect()
-      const duration = 1600
-      const step = 16
-      const increment = to / (duration / step)
-      let current = 0
-      const timer = setInterval(() => {
-        current += increment
-        if (current >= to) { setVal(to); clearInterval(timer) }
-        else setVal(Math.floor(current))
-      }, step)
-    }, { threshold: 0.4 })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [to])
-  return <span ref={ref}>{prefix}{val}{suffix}</span>
-}
 
 export function LandingPage() {
   const [mobileOpen, setMobileOpen]     = useState(false)
@@ -137,14 +114,7 @@ export function LandingPage() {
         }
         .pulse-gold { animation:pulseGold 2.2s ease-in-out infinite; }
 
-        /* Shimmer on stats numbers */
-        @keyframes shimmer {
-          from { opacity:.6; }
-          to   { opacity:1; }
-        }
-        .stat-num { animation:shimmer .9s ease both; }
-
-        /* Card hover lift */
+/* Card hover lift */
         .card-lift { transition:transform .25s ease, box-shadow .25s ease; }
         .card-lift:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(27,45,120,.12); }
 
@@ -269,27 +239,6 @@ export function LandingPage() {
           <a href="#contact" className="hero-4 inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20 pulse-gold">
             Contact Us
           </a>
-        </div>
-      </section>
-
-      {/* ── STATS BAND ── */}
-      <section className="bg-brand-navy py-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {([
-              { val: 25,    suffix: '+',   label: 'Years Experience'      },
-              { val: 33,    suffix: 'K+',  label: 'Sq Ft Warehouse'       },
-              { val: 52,    suffix: '+',   label: 'Sailings Per Year'      },
-              { val: 14,    suffix: '+',   label: 'Freight Weight Tiers'   },
-            ] as const).map(({ val, suffix, label }, i) => (
-              <div key={label} data-animate data-delay={String(i * 120)}>
-                <p className="stat-num text-4xl font-black text-brand-gold leading-none">
-                  <CountUp to={val} suffix={suffix} />
-                </p>
-                <p className="text-white/60 text-xs mt-2 uppercase tracking-widest">{label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
