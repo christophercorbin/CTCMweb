@@ -55,97 +55,147 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
 
-      {/* ── NAVBAR ── */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-32">
+      {/* ── HEADER ── */}
+      <header className="sticky top-0 z-50">
 
-            {/* Logo — large, shows full stacked mark + tagline */}
-            <a href="#hero" className="shrink-0">
-              <img
-                src="/logos/logo-color-stacked.png"
-                alt="CargoLink Barbados — The Smarter way to ship"
-                className="h-28 w-auto"
-              />
-            </a>
+        {/* ── TOP BAR ── navy strip with contact info */}
+        <div className="bg-brand-navy-dark text-white text-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
+            <div className="flex items-center gap-5">
+              <a href="tel:+12465551234" className="flex items-center gap-1.5 text-white/80 hover:text-brand-gold transition-colors">
+                <Phone className="w-3 h-3" /> +1 (246) 555-1234
+              </a>
+              <a href="mailto:info@cargolink.bb" className="hidden sm:flex items-center gap-1.5 text-white/80 hover:text-brand-gold transition-colors">
+                <Mail className="w-3 h-3" /> info@cargolink.bb
+              </a>
+            </div>
+            <div className="flex items-center gap-3">
+              <a href="#" aria-label="Facebook"  className="text-white/60 hover:text-brand-gold transition-colors"><Facebook  className="w-3.5 h-3.5" /></a>
+              <a href="#" aria-label="Instagram" className="text-white/60 hover:text-brand-gold transition-colors"><Instagram className="w-3.5 h-3.5" /></a>
+              <a href="#" aria-label="Twitter"   className="text-white/60 hover:text-brand-gold transition-colors"><Twitter   className="w-3.5 h-3.5" /></a>
+              <a href="#" aria-label="LinkedIn"  className="text-white/60 hover:text-brand-gold transition-colors"><Linkedin  className="w-3.5 h-3.5" /></a>
+            </div>
+          </div>
+        </div>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-gray-700">
-              <a href="#hero" className="hover:text-brand-navy transition-colors border-b-2 border-brand-navy pb-0.5">
-                Home
+        {/* ── MAIN NAV ── white bar with logo + links */}
+        <div className="bg-white shadow-md border-b-4 border-brand-gold">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-36">
+
+              {/* Logo */}
+              <a href="#hero" className="shrink-0 py-2">
+                <img
+                  src="/logos/logo-color-stacked.png"
+                  alt="CargoLink Barbados — The Smarter way to ship"
+                  className="h-32 w-auto drop-shadow-sm"
+                />
               </a>
 
-              {/* Our Services dropdown */}
-              <div ref={servicesRef} className="relative">
-                <button
-                  onClick={() => setServicesOpen(!servicesOpen)}
-                  className="flex items-center gap-1 hover:text-brand-navy transition-colors focus:outline-none"
+              {/* Desktop nav links */}
+              <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
+                {[
+                  { label: 'Home',       href: '#hero' },
+                  { label: 'Rates',      href: '#rates' },
+                  { label: 'Contact Us', href: '#contact' },
+                ].map(({ label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    className="relative px-4 py-2 group transition-colors hover:text-brand-navy"
+                  >
+                    {label}
+                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                  </a>
+                ))}
+
+                {/* Our Services dropdown */}
+                <div ref={servicesRef} className="relative">
+                  <button
+                    onClick={() => setServicesOpen(!servicesOpen)}
+                    className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none"
+                  >
+                    Our Services
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
+                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                  </button>
+                  {servicesOpen && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-72 bg-brand-navy rounded-b-xl shadow-2xl overflow-hidden z-50 border-t-4 border-brand-gold">
+                      <a
+                        href="#services"
+                        onClick={() => setServicesOpen(false)}
+                        className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                      >
+                        <img src={IMG.iconPlane} className="w-6 h-6 object-contain invert" alt="" />
+                        Express Air Freight
+                      </a>
+                      <a
+                        href="#services"
+                        onClick={() => setServicesOpen(false)}
+                        className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors"
+                      >
+                        <img src={IMG.iconShip} className="w-6 h-6 object-contain invert" alt="" />
+                        Ocean Freight
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </nav>
+
+              {/* Right: Login + Sign Up */}
+              <div className="hidden lg:flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide"
                 >
-                  Our Services
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {servicesOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-brand-navy rounded-xl shadow-xl overflow-hidden z-50">
-                    <a
-                      href="#services"
-                      onClick={() => setServicesOpen(false)}
-                      className="block px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
-                    >
-                      CargoLink Barbados Express Air Freight
-                    </a>
-                    <a
-                      href="#services"
-                      onClick={() => setServicesOpen(false)}
-                      className="block px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors"
-                    >
-                      CargoLink Barbados Ocean Freight
-                    </a>
-                  </div>
-                )}
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide"
+                >
+                  Sign Up <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
 
-              <a href="#rates"   className="hover:text-brand-navy transition-colors">Rates</a>
-              <a href="#contact" className="hover:text-brand-navy transition-colors">Contact Us</a>
-            </nav>
-
-            {/* Right: Login + Sign Up */}
-            <div className="hidden lg:flex items-center gap-4">
-              <Link
-                to="/login"
-                className="text-[15px] font-medium text-gray-700 hover:text-brand-navy transition-colors"
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="lg:hidden p-2.5 rounded-lg bg-brand-navy text-white hover:bg-brand-navy-dark transition-colors"
+                aria-label="Menu"
               >
-                Login
-              </Link>
-              <Link
-                to="/register"
-                className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-colors shadow"
-              >
-                Sign Up
-              </Link>
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
-
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 rounded-lg bg-brand-navy text-white"
-              aria-label="Menu"
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1">
-            <a href="#hero"     onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50">Home</a>
-            <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Express Air Freight</a>
-            <a href="#services" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50 pl-2">↳ Ocean Freight</a>
-            <a href="#rates"    onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy border-b border-gray-50">Rates</a>
-            <a href="#contact"  onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-gray-700 hover:text-brand-navy">Contact Us</a>
-            <div className="flex gap-3 pt-3 border-t border-gray-100">
-              <Link to="/login"    className="flex-1 text-center py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg">Login</Link>
-              <Link to="/register" className="flex-1 text-center py-2.5 text-sm font-semibold text-white bg-brand-navy rounded-lg">Sign Up</Link>
+          <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
+            {/* Mobile top info */}
+            <div className="bg-brand-navy-dark px-4 py-2 flex items-center gap-4">
+              <a href="tel:+12465551234" className="flex items-center gap-1.5 text-xs text-white/80">
+                <Phone className="w-3 h-3" /> +1 (246) 555-1234
+              </a>
+            </div>
+            <div className="px-4 py-3 space-y-0.5">
+              <a href="#hero"     onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+              <div className="border-b border-gray-100">
+                <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
+                <a href="#services" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy">
+                  <img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight
+                </a>
+                <a href="#services" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3 text-sm text-gray-600 hover:text-brand-navy">
+                  <img src={IMG.iconShip} className="w-5 h-5 object-contain" alt="" /> Ocean Freight
+                </a>
+              </div>
+              <a href="#rates"    onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+              <a href="#contact"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
+            </div>
+            <div className="flex gap-3 px-4 pb-4">
+              <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy-dark transition-colors">Sign Up</Link>
             </div>
           </div>
         )}
