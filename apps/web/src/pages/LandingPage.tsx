@@ -20,19 +20,15 @@ import {
 } from 'lucide-react'
 
 // All images served locally from /public/images/
-// Remote fallbacks point to shinebarbados.maktechinstitute.com (may be unavailable)
 const IMG = {
-  // Backgrounds
   heroBg:        '/images/hero-bg.jpg',
   bandBg:        '/images/band-bg.jpg',
   oceanBg:       '/images/ocean-bg.jpg',
-  // Content photos
   containers:    '/images/containers.jpg',
   airFreightBig: '/images/air-freight-loading.jpg',
   airFreightPlan:'/images/air-freight-plane.png',
   packages:      '/images/packages-collage.webp',
   hero:          '/images/cargo-plane-sunset.jpg',
-  // Icons
   iconPlane:     '/images/icon-plane.png',
   iconCargo:     '/images/icon-cargo.png',
   iconWarehouse: '/images/icon-warehouse.png',
@@ -43,11 +39,36 @@ const IMG = {
   iconCourier:   '/images/icon-courier.png',
 }
 
+/* ── CountUp component ── */
+function CountUp({ to, suffix = '', prefix = '' }: { to: number; suffix?: string; prefix?: string }) {
+  const [val, setVal] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      obs.disconnect()
+      const duration = 1600
+      const step = 16
+      const increment = to / (duration / step)
+      let current = 0
+      const timer = setInterval(() => {
+        current += increment
+        if (current >= to) { setVal(to); clearInterval(timer) }
+        else setVal(Math.floor(current))
+      }, step)
+    }, { threshold: 0.4 })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [to])
+  return <span ref={ref}>{prefix}{val}{suffix}</span>
+}
+
 export function LandingPage() {
   const [mobileOpen, setMobileOpen]     = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
   const servicesRef = useRef<HTMLDivElement>(null)
 
+  /* Close services dropdown on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
@@ -58,8 +79,82 @@ export function LandingPage() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  /* Scroll-reveal — watches every [data-animate] element */
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-animate]')
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          const el = e.target as HTMLElement
+          const delay = parseInt(el.dataset.delay || '0')
+          setTimeout(() => el.classList.add('cl-visible'), delay)
+          obs.unobserve(el)
+        }
+      })
+    }, { threshold: 0.12 })
+    els.forEach((el) => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
+
+      {/* ── Global animation styles ── */}
+      <style>{`
+        /* Scroll-reveal base states */
+        [data-animate]           { opacity:0; transform:translateY(32px); transition:opacity .65s ease, transform .65s ease; }
+        [data-animate="left"]    { transform:translateX(-40px); }
+        [data-animate="right"]   { transform:translateX(40px); }
+        [data-animate="scale"]   { transform:scale(0.88); }
+        [data-animate="fade"]    { transform:none; }
+        [data-animate].cl-visible,
+        [data-animate="left"].cl-visible,
+        [data-animate="right"].cl-visible,
+        [data-animate="scale"].cl-visible,
+        [data-animate="fade"].cl-visible { opacity:1; transform:none; }
+
+        /* Hero staggered entrance */
+        @keyframes heroUp {
+          from { opacity:0; transform:translateY(28px); }
+          to   { opacity:1; transform:none; }
+        }
+        .hero-1 { animation:heroUp .75s ease .05s both; }
+        .hero-2 { animation:heroUp .75s ease .25s both; }
+        .hero-3 { animation:heroUp .75s ease .45s both; }
+        .hero-4 { animation:heroUp .75s ease .65s both; }
+
+        /* Floating icon */
+        @keyframes floatY {
+          0%,100% { transform:translateY(0); }
+          50%      { transform:translateY(-9px); }
+        }
+        .float-anim { animation:floatY 3.2s ease-in-out infinite; }
+
+        /* Gold pulse on CTA button */
+        @keyframes pulseGold {
+          0%,100% { box-shadow:0 0 0 0 rgba(245,197,24,.55); }
+          60%      { box-shadow:0 0 0 14px rgba(245,197,24,0); }
+        }
+        .pulse-gold { animation:pulseGold 2.2s ease-in-out infinite; }
+
+        /* Shimmer on stats numbers */
+        @keyframes shimmer {
+          from { opacity:.6; }
+          to   { opacity:1; }
+        }
+        .stat-num { animation:shimmer .9s ease both; }
+
+        /* Card hover lift */
+        .card-lift { transition:transform .25s ease, box-shadow .25s ease; }
+        .card-lift:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(27,45,120,.12); }
+
+        /* Step number watermark */
+        .step-num { transition:color .3s, transform .3s; }
+        .step-card:hover .step-num { color:rgba(27,45,120,.12); transform:scale(1.15); }
+
+        /* Underline draw on nav links (landing) */
+        /* already handled inline via Tailwind */
+      `}</style>
 
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-50">
@@ -157,38 +252,62 @@ export function LandingPage() {
       </header>
 
       {/* ── HERO ── */}
-      <section id="hero" className="relative min-h-[600px] flex items-center justify-center text-center overflow-hidden">
+      <section id="hero" className="relative min-h-[640px] flex items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMG.heroBg} alt="CargoLink Barbados hero" className="w-full h-full object-cover object-center" />
+          <img src={IMG.heroBg} alt="CargoLink Barbados hero" className="w-full h-full object-cover object-center scale-105" style={{ animation: 'none' }} />
           <div className="absolute inset-0 bg-brand-navy/60" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-4 py-28">
-          <p className="text-brand-gold font-semibold text-xl mb-4 tracking-wide">Smart Shipping To The Caribbean</p>
-          <h1 className="text-4xl sm:text-5xl lg:text-[65px] font-bold text-white leading-tight mb-6">
+          <p className="hero-1 text-brand-gold font-semibold text-xl mb-4 tracking-wide">Smart Shipping To The Caribbean</p>
+          <h1 className="hero-2 text-4xl sm:text-5xl lg:text-[65px] font-bold text-white leading-tight mb-6">
             Welcome To CargoLink Barbados
           </h1>
-          <p className="text-white/80 text-base leading-relaxed mb-10 max-w-xl mx-auto">
+          <p className="hero-3 text-white/80 text-base leading-relaxed mb-10 max-w-xl mx-auto">
             CargoLink Barbados provides a complete logistics solution including freight forwarding,
             customs clearance, package consolidation, and door-to-door delivery.
           </p>
-          <a href="#contact" className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20">
+          <a href="#contact" className="hero-4 inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20 pulse-gold">
             Contact Us
           </a>
         </div>
       </section>
 
+      {/* ── STATS BAND ── */}
+      <section className="bg-brand-navy py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {([
+              { val: 25,    suffix: '+',   label: 'Years Experience'      },
+              { val: 33,    suffix: 'K+',  label: 'Sq Ft Warehouse'       },
+              { val: 52,    suffix: '+',   label: 'Sailings Per Year'      },
+              { val: 14,    suffix: '+',   label: 'Freight Weight Tiers'   },
+            ] as const).map(({ val, suffix, label }, i) => (
+              <div key={label} data-animate data-delay={String(i * 120)}>
+                <p className="stat-num text-4xl font-black text-brand-gold leading-none">
+                  <CountUp to={val} suffix={suffix} />
+                </p>
+                <p className="text-white/60 text-xs mt-2 uppercase tracking-widest">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── THREE SERVICE CARDS ── */}
-      <section className="py-14 bg-white">
+      <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { img: IMG.iconTruck,     title: 'Global Freight Solutions',  desc: 'We provide reliable international freight solutions to move your cargo safely and efficiently across global routes and Caribbean destinations.' },
               { img: IMG.iconCargo,     title: 'Cargo Transportation',      desc: 'Our transportation services ensure secure and timely movement of goods, handling everything from small packages to large shipments.' },
               { img: IMG.iconWarehouse, title: 'Secure Storage Services',   desc: 'Safe and organized warehouse storage designed to protect your cargo before shipment or delivery to its final destination.' },
-            ].map(({ img, title, desc }) => (
-              <div key={title} className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
-                <img src={img} alt={title} className="w-14 h-14 object-contain mb-5" />
-                <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
+            ].map(({ img, title, desc }, i) => (
+              <div key={title} data-animate data-delay={String(i * 130)}
+                className="card-lift bg-white border border-gray-200 rounded-xl p-8 shadow-sm group cursor-default">
+                <div className="float-anim inline-block mb-5">
+                  <img src={img} alt={title} className="w-14 h-14 object-contain" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-3 group-hover:text-brand-navy transition-colors">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -202,18 +321,18 @@ export function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
 
             {/* Left: 2-column image grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div data-animate="left" className="grid grid-cols-2 gap-3">
               <div className="space-y-3">
-                <img src={IMG.containers}    alt="Cargo containers" className="w-full rounded-xl object-cover h-44" />
-                <img src={IMG.packages}      alt="CargoLink packages" className="w-full rounded-xl object-cover" />
+                <img src={IMG.containers}    alt="Cargo containers" className="w-full rounded-xl object-cover h-44 hover:scale-105 transition-transform duration-500" />
+                <img src={IMG.packages}      alt="CargoLink packages" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" />
               </div>
               <div>
-                <img src={IMG.airFreightPlan} alt="CargoLink Barbados aircraft" className="w-full rounded-xl object-cover h-full" style={{ minHeight: '380px' }} />
+                <img src={IMG.airFreightPlan} alt="CargoLink Barbados aircraft" className="w-full rounded-xl object-cover h-full hover:scale-105 transition-transform duration-500" style={{ minHeight: '380px' }} />
               </div>
             </div>
 
             {/* Right: text */}
-            <div>
+            <div data-animate="right">
               <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Who We Are</p>
               <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 leading-tight mb-6">
                 Your Trusted Caribbean Shipping Partner
@@ -225,14 +344,13 @@ export function LandingPage() {
                 Our management has over 25 years of experience in international shipping specialising in Air freight and Ocean freight logistics into the Caribbean.
               </p>
 
-              {/* Two feature items */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
                   { img: IMG.iconMoney,   title: 'Affordable Cost',    desc: 'Competitive rates with no hidden fees. Charges calculated by actual or volumetric weight.' },
                   { img: IMG.iconCourier, title: 'Short Time Delivery', desc: 'Weekly flights and sailings from Miami on a reliable, predictable schedule.' },
-                ].map(({ img, title, desc }) => (
-                  <div key={title} className="flex items-start gap-4">
-                    <img src={img} alt={title} className="w-14 h-14 object-contain shrink-0" />
+                ].map(({ img, title, desc }, i) => (
+                  <div key={title} data-animate data-delay={String(200 + i * 150)} className="flex items-start gap-4">
+                    <img src={img} alt={title} className="w-14 h-14 object-contain shrink-0 float-anim" />
                     <div>
                       <h4 className="font-bold text-gray-800 text-base mb-1">{title}</h4>
                       <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
@@ -246,12 +364,12 @@ export function LandingPage() {
       </section>
 
       {/* ── MID-PAGE BAND ── */}
-      <section className="relative py-20 overflow-hidden text-center">
+      <section className="relative py-24 overflow-hidden text-center">
         <div className="absolute inset-0">
-          <img src={IMG.bandBg} alt="" className="w-full h-full object-cover object-center" />
+          <img src={IMG.bandBg} alt="" className="w-full h-full object-cover object-center scale-110" style={{ animation: 'floatY 8s ease-in-out infinite' }} />
           <div className="absolute inset-0 bg-brand-navy/70" />
         </div>
-        <div className="relative z-10 max-w-3xl mx-auto px-4">
+        <div data-animate="scale" className="relative z-10 max-w-3xl mx-auto px-4">
           <p className="text-brand-gold font-semibold text-xl mb-4 tracking-wide">The Smarter Way To Ship</p>
           <h2 className="text-2xl sm:text-[30px] font-bold text-white leading-snug">
             Air Freight And Ocean Freight Logistics Into The Caribbean<br className="hidden sm:block" />
@@ -263,7 +381,7 @@ export function LandingPage() {
       {/* ── OUR SHIPPING SERVICES ── */}
       <section id="services" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
+          <div data-animate className="text-center mb-14">
             <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">What We Do</p>
             <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-4">Our Shipping Services</h2>
             <p className="text-gray-500 text-base max-w-2xl mx-auto">
@@ -275,10 +393,13 @@ export function LandingPage() {
               { img: IMG.iconPlane,      title: 'Air Freight',               desc: 'Fast and reliable weekly air freight service from Miami to Barbados.' },
               { img: IMG.iconShip,       title: 'Ocean Freight',             desc: 'Cost-effective LCL and FCL ocean freight shipping from the U.S., Canada, Europe, the UK, and the Far East to the Caribbean.' },
               { img: IMG.iconWarehouse2, title: 'Warehouse & Cargo Handling', desc: 'Our warehouse in Medley, Florida offers over 33,000 sq ft of storage space and can handle dry goods, heavy equipment, vehicles, and temperature-controlled cargo.' },
-            ].map(({ img, title, desc }) => (
-              <div key={title} className="border border-gray-200 rounded-xl p-8 hover:shadow-md transition-shadow">
-                <img src={img} alt={title} className="w-12 h-12 object-contain mb-5" />
-                <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
+            ].map(({ img, title, desc }, i) => (
+              <div key={title} data-animate data-delay={String(i * 130)}
+                className="card-lift border border-gray-200 rounded-xl p-8 group cursor-default">
+                <div className="float-anim inline-block mb-5">
+                  <img src={img} alt={title} className="w-12 h-12 object-contain" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-3 group-hover:text-brand-navy transition-colors">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -289,13 +410,13 @@ export function LandingPage() {
       {/* ── AIR FREIGHT ── */}
       <section id="air-freight" className="py-20 bg-white border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-12">AIR FREIGHT</h2>
+          <h2 data-animate className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-12">AIR FREIGHT</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
-            {/* Left: two photos side by side */}
-            <div className="grid grid-cols-2 gap-3">
-              <img src={IMG.airFreightBig} alt="Cargo being loaded onto aircraft" className="w-full rounded-xl object-cover" style={{ height: '500px' }} />
-              <img src={IMG.hero}          alt="Cargo plane at sunset"            className="w-full rounded-xl object-cover" style={{ height: '500px' }} />
+            {/* Left: two photos */}
+            <div data-animate="left" className="grid grid-cols-2 gap-3">
+              <img src={IMG.airFreightBig} alt="Cargo being loaded onto aircraft" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
+              <img src={IMG.hero}          alt="Cargo plane at sunset"            className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
             </div>
 
             {/* Right: 3 steps */}
@@ -304,9 +425,9 @@ export function LandingPage() {
                 { num: '01', title: 'Purchase Online',     desc: 'Buy online. Ship to your U.S mailing address.' },
                 { num: '02', title: 'Bundle Your Packages', desc: 'You shop. We take care of everything else.' },
                 { num: '03', title: 'One Time Pick Up',    desc: 'Visit a CargoLink Barbados location and pick up your cargo.' },
-              ].map(({ num, title, desc }) => (
-                <div key={num} className="flex gap-6 items-start">
-                  <div className="shrink-0 w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center shadow-md">
+              ].map(({ num, title, desc }, i) => (
+                <div key={num} data-animate="right" data-delay={String(i * 150)} className="flex gap-6 items-start">
+                  <div className="shrink-0 w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center shadow-md hover:scale-110 transition-transform duration-300">
                     <span className="text-white font-bold text-sm">{num}</span>
                   </div>
                   <div>
@@ -323,10 +444,10 @@ export function LandingPage() {
       {/* ── OCEAN FREIGHT ── */}
       <section id="ocean-freight" className="relative py-24 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMG.oceanBg} alt="Container port" className="w-full h-full object-cover object-center" />
+          <img src={IMG.oceanBg} alt="Container port" className="w-full h-full object-cover object-center scale-105" style={{ transition: 'transform 8s ease' }} />
           <div className="absolute inset-0 bg-brand-navy/75" />
         </div>
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div data-animate="right" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl sm:text-[45px] font-bold text-white mb-6">OCEAN FREIGHT</h2>
           <h3 className="text-2xl sm:text-[35px] font-bold text-white mb-6">Shipping To Barbados...That's Easy!</h3>
           <p className="text-white/80 text-base leading-relaxed mb-4">
@@ -344,14 +465,14 @@ export function LandingPage() {
 
       {/* ── SALES TEAM CTA ── */}
       <section className="py-16 bg-white text-center">
-        <div className="max-w-2xl mx-auto px-4">
+        <div data-animate className="max-w-2xl mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our Sales Team Is Here To Help</h2>
-          <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-8">
+          <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-8 pulse-gold">
             Request A Quote
           </a>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600 mt-2">
-            <a href="mailto:info@cariblinkbarbados.com" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-              <Mail className="w-4 h-4 text-brand-navy" /> info@cariblinkbarbados.com
+            <a href="mailto:info@cargolinkbarbados.com" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
+              <Mail className="w-4 h-4 text-brand-navy" /> info@cargolinkbarbados.com
             </a>
             <a href="tel:+12465372826" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
               <Phone className="w-4 h-4 text-brand-navy" /> +1246-537-2826
@@ -363,7 +484,7 @@ export function LandingPage() {
       {/* ── HOW IT WORKS ── */}
       <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
+          <div data-animate className="text-center mb-14">
             <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
             <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">How It Works</h2>
             <p className="mt-4 text-gray-500 max-w-xl mx-auto text-sm">
@@ -378,18 +499,19 @@ export function LandingPage() {
               { step: '04', icon: Package,         title: 'We Receive & Track',   desc: 'Once your cargo arrives at our Miami warehouse you can track every step.' },
               { step: '05', icon: ClipboardList,   title: 'Clear & Invoice',      desc: 'We process and clear your cargo and advise you of all freight, duties, and fees.' },
               { step: '06', icon: Truck,           title: 'Collect Your Packages', desc: 'Collect your packages from our offices at #1 Ficus Court, Brighton, St. Michael.' },
-            ].map(({ step, icon: Icon, title, desc }) => (
-              <div key={step} className="relative bg-white border border-gray-200 rounded-xl p-8">
-                <div className="absolute top-5 right-5 text-4xl font-black text-gray-50 select-none leading-none">{step}</div>
-                <div className="w-12 h-12 bg-brand-navy rounded-xl flex items-center justify-center mb-5 shadow">
+            ].map(({ step, icon: Icon, title, desc }, i) => (
+              <div key={step} data-animate data-delay={String(i * 100)}
+                className="step-card card-lift relative bg-white border border-gray-200 rounded-xl p-8 group">
+                <div className="step-num absolute top-5 right-5 text-4xl font-black text-gray-50 select-none leading-none">{step}</div>
+                <div className="w-12 h-12 bg-brand-navy rounded-xl flex items-center justify-center mb-5 shadow group-hover:scale-110 transition-transform duration-300">
                   <Icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2">{title}</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-brand-navy transition-colors">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
-          <div className="mt-10 bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 text-center max-w-2xl mx-auto">
+          <div data-animate data-delay="200" className="mt-10 bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 text-center max-w-2xl mx-auto">
             <p className="text-amber-800 text-sm font-medium">
               ⚠️ Cargo must reach our Miami warehouse by <strong>noon Thursday</strong> for Friday shipment to Barbados.
             </p>
@@ -400,7 +522,7 @@ export function LandingPage() {
       {/* ── CONTACT ── */}
       <section id="contact" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
+          <div data-animate className="text-center mb-14">
             <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Get In Touch</p>
             <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">Contact Us</h2>
             <p className="mt-4 text-gray-500 text-sm">We're here to help you ship smarter.</p>
@@ -410,9 +532,9 @@ export function LandingPage() {
               { icon: MapPin, label: 'Address',       detail: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados', href: undefined },
               { icon: Phone,  label: 'Phone Number',  detail: '+1246-537-2826',             href: 'tel:+12465372826' },
               { icon: Mail,   label: 'Email Address', detail: 'info@cargolinkbarbados.com', href: 'mailto:info@cargolinkbarbados.com' },
-            ].map(({ icon: Icon, label, detail, href }) => (
-              <div key={label} className="flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center mb-4 shadow">
+            ].map(({ icon: Icon, label, detail, href }, i) => (
+              <div key={label} data-animate data-delay={String(i * 120)} className="flex flex-col items-center text-center group">
+                <div className="w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center mb-4 shadow group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2">{label}</h4>
@@ -434,7 +556,7 @@ export function LandingPage() {
               <p className="text-sm text-gray-500">Caribbean Trading and Cargo Management Inc.</p>
               <div className="flex gap-3 mt-4">
                 {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
-                  <a key={i} href="#" className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center hover:bg-brand-navy-dark transition-colors">
+                  <a key={i} href="#" className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center hover:bg-brand-navy-dark hover:scale-110 transition-all duration-200">
                     <Icon className="w-4 h-4 text-white" />
                   </a>
                 ))}
