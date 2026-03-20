@@ -160,14 +160,14 @@ export function LandingPage() {
                   </button>
                   {servicesOpen && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-72 bg-brand-navy rounded-b-xl shadow-2xl overflow-hidden z-50 border-t-4 border-brand-gold">
-                      <a href="#air-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">
+                      <Link to="/air-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">
                         <img src={IMG.iconPlane} className="w-6 h-6 object-contain invert" alt="" />
                         CargoLink Barbados Express Air Freight
-                      </a>
-                      <a href="#ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">
+                      </Link>
+                      <Link to="/ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">
                         <img src={IMG.iconShip} className="w-6 h-6 object-contain invert" alt="" />
                         CargoLink Barbados Ocean Freight
-                      </a>
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -207,8 +207,8 @@ export function LandingPage() {
               <a href="#hero"     onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></a>
               <div className="border-b border-gray-100">
                 <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
-                <a href="#air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight</a>
-                <a href="#ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconShip}  className="w-5 h-5 object-contain" alt="" /> Ocean Freight</a>
+                <Link to="/air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight</Link>
+                <Link to="/ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconShip}  className="w-5 h-5 object-contain" alt="" /> Ocean Freight</Link>
               </div>
               <Link to="/rates"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
               <a href="#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>

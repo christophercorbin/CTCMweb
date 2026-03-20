@@ -11,6 +11,8 @@ const registerSchema = z
   .object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
+    phone: z.string().min(7, 'Please enter a valid phone number'),
+    address: z.string().min(5, 'Please enter your address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
   })
@@ -36,7 +38,11 @@ export const Register = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true)
     try {
-      await signUp(data.email, data.password, data.name)
+      // Normalise phone to E.164: strip spaces/dashes, prepend + if missing
+      let phone = data.phone.replace(/[\s\-().]/g, '')
+      if (!phone.startsWith('+')) phone = `+${phone}`
+
+      await signUp(data.email, data.password, data.name, phone, data.address)
       toast.success('Account created! Check your email for a verification code.')
       navigate(`/confirm?email=${encodeURIComponent(data.email)}`)
     } catch (err: unknown) {
@@ -76,11 +82,25 @@ export const Register = () => {
             {...register('name')}
           />
           <Input
-            label="Email"
+            label="Email Address"
             type="email"
             placeholder="your@email.com"
             error={errors.email?.message}
             {...register('email')}
+          />
+          <Input
+            label="Phone Number"
+            type="tel"
+            placeholder="+1 (246) 555-0100"
+            error={errors.phone?.message}
+            {...register('phone')}
+          />
+          <Input
+            label="Address"
+            type="text"
+            placeholder="Street, City, Parish, Barbados"
+            error={errors.address?.message}
+            {...register('address')}
           />
           <Input
             label="Password"

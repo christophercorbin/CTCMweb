@@ -49,15 +49,14 @@ export async function cognitoSignIn(
 export async function cognitoSignUp(
   email: string,
   password: string,
-  name: string
+  name: string,
+  phone?: string,
+  address?: string
 ): Promise<SignUpOutput> {
-  return signUp({
-    username: email,
-    password,
-    options: {
-      userAttributes: { email, name },
-    },
-  })
+  const userAttributes: Record<string, string> = { email, name }
+  if (phone)   userAttributes['phone_number'] = phone
+  if (address) userAttributes['address']      = address
+  return signUp({ username: email, password, options: { userAttributes } })
 }
 
 export async function cognitoConfirmSignUp(

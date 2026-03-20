@@ -82,8 +82,8 @@ export function RatesPage() {
                   </button>
                   {servicesOpen && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-72 bg-brand-navy rounded-b-xl shadow-2xl overflow-hidden z-50 border-t-4 border-brand-gold">
-                      <Link to="/#air-freight"   onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">Express Air Freight</Link>
-                      <Link to="/#ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">Ocean Freight</Link>
+                      <Link to="/air-freight"   onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">CargoLink Barbados Express Air Freight</Link>
+                      <Link to="/ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">CargoLink Barbados Ocean Freight</Link>
                     </div>
                   )}
                 </div>
@@ -117,8 +117,8 @@ export function RatesPage() {
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
               <div className="border-b border-gray-100">
                 <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
-                <Link to="/#air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy">Express Air Freight</Link>
-                <Link to="/#ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy">Ocean Freight</Link>
+                <Link to="/air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy">Express Air Freight</Link>
+                <Link to="/ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy">Ocean Freight</Link>
               </div>
               <Link to="/rates"   onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
               <a href="/#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
@@ -244,6 +244,22 @@ export function RatesPage() {
               and this is determined by the Barbados Customs Authority. Our Duty Calculator gives you a guide for the duties for most
               common items. Please note that this is a guide only.
             </p>
+          </div>
+
+          {/* Duty Calculator CTA */}
+          <div className="bg-brand-navy rounded-xl px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h4 className="font-bold text-white text-base mb-1">Barbados Customs Duty Calculator</h4>
+              <p className="text-white/70 text-sm">Estimate the duties and taxes on your items before you ship.</p>
+            </div>
+            <a
+              href="https://asycuda.customs.gov.bb/portal/services/dutyCalculator/calculateDuties.jsf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-brand-navy bg-brand-gold rounded-lg hover:opacity-90 transition-all shadow whitespace-nowrap"
+            >
+              Open Calculator →
+            </a>
           </div>
         </div>
       </section>
