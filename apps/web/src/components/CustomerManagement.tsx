@@ -10,6 +10,15 @@ const client = generateClient<Schema>();
 
 type AppCustomer = Schema['Customer']['type']
 
+// ── "New" customer threshold: 7 days ─────────────────────────────
+const NEW_CUSTOMER_DAYS = 7
+const isNewCustomer = (customer: AppCustomer): boolean => {
+  if (!customer.createdAt) return false
+  const created = new Date(customer.createdAt).getTime()
+  const cutoff  = Date.now() - NEW_CUSTOMER_DAYS * 24 * 60 * 60 * 1000
+  return created >= cutoff
+}
+
 // ── Skybox address templates ──────────────────────────────────────
 const buildAirAddress = (name: string) =>
   `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`
@@ -201,15 +210,26 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
           />
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {filteredCustomers.map((customer) => (
+            {filteredCustomers.map((customer) => {
+              const isNew = isNewCustomer(customer)
+              return (
               <div
                 key={customer.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                className={`rounded-lg p-4 transition-colors ${
+                  isNew
+                    ? 'border-2 border-amber-400 bg-amber-50 hover:border-amber-500'
+                    : 'border border-gray-200 hover:border-blue-300'
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-bold text-gray-900">{customer.name}</h3>
+                      {isNew && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-amber-900 uppercase tracking-wide">
+                          ✦ New
+                        </span>
+                      )}
                       {shipmentCounts !== undefined && (
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                           {shipmentCounts[customer.id] ?? 0} shipment{(shipmentCounts[customer.id] ?? 0) !== 1 ? 's' : ''}
@@ -283,7 +303,7 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </Card>
