@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   MapPin, Phone, Mail, CheckCircle,
   Facebook, Instagram, Twitter, Linkedin,
-  ArrowRight,
 } from 'lucide-react'
 import { SiteNav } from '../components/SiteNav'
 
