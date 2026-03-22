@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   MapPin,
   Phone,
@@ -17,7 +17,18 @@ import {
   X,
   ArrowRight,
   ChevronDown,
+  LayoutDashboard,
+  User,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '../contexts/useAuth'
+
+function getInitials(email: string): string {
+  const local = email.split('@')[0]
+  const parts  = local.split(/[._\-+]/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return local.slice(0, 2).toUpperCase()
+}
 
 // All images served locally from /public/images/
 const IMG = {
@@ -41,16 +52,31 @@ const IMG = {
 
 
 export function LandingPage() {
-  const [mobileOpen, setMobileOpen]     = useState(false)
-  const [servicesOpen, setServicesOpen] = useState(false)
-  const servicesRef = useRef<HTMLDivElement>(null)
+  const { isAuthenticated, user, signOut } = useAuth()
+  const navigate = useNavigate()
 
-  /* Close services dropdown on outside click */
+  const [mobileOpen,   setMobileOpen]   = useState(false)
+  const [servicesOpen, setServicesOpen] = useState(false)
+  const [profileOpen,  setProfileOpen]  = useState(false)
+
+  const servicesRef = useRef<HTMLDivElement>(null)
+  const profileRef  = useRef<HTMLDivElement>(null)
+
+  const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
+  const initials      = user ? getInitials(user.email || user.username) : ''
+
+  const handleSignOut = async () => {
+    setProfileOpen(false)
+    setMobileOpen(false)
+    await signOut()
+    navigate('/')
+  }
+
+  /* Close dropdowns on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
-        setServicesOpen(false)
-      }
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) setServicesOpen(false)
+      if (profileRef.current  && !profileRef.current.contains(e.target as Node))  setProfileOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -132,14 +158,14 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-28">
 
-              {/* Logo */}
-              <a href="#hero" className="shrink-0 py-2">
+              {/* Logo → always back to landing page */}
+              <Link to="/" className="shrink-0 py-2">
                 <img
                   src="/logos/logo-cropped.png"
                   alt="CargoLink Barbados — The Smarter way to ship"
                   className="h-24 w-auto drop-shadow-sm"
                 />
-              </a>
+              </Link>
 
               {/* Desktop nav */}
               <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
@@ -182,14 +208,51 @@ export function LandingPage() {
                 </a>
               </nav>
 
-              {/* Right: Login + Sign Up */}
+              {/* Right: auth-aware */}
               <div className="hidden lg:flex items-center gap-3">
-                <Link to="/login" className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide">
-                  Login
-                </Link>
-                <Link to="/register" className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide">
-                  Sign Up <ArrowRight className="w-4 h-4" />
-                </Link>
+                {isAuthenticated && user ? (
+                  <div ref={profileRef} className="relative">
+                    <button
+                      onClick={() => setProfileOpen(!profileOpen)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm shrink-0">
+                        {initials}
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700 max-w-[120px] truncate">{user.email?.split('@')[0]}</span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {profileOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Signed in as</p>
+                          <p className="text-sm font-semibold text-gray-800 truncate">{user.email}</p>
+                        </div>
+                        <Link to={dashboardPath} onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                          <LayoutDashboard className="w-4 h-4 text-brand-navy" /> Dashboard
+                        </Link>
+                        <Link to="/customer-info" onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                          <User className="w-4 h-4 text-brand-navy" /> My Account
+                        </Link>
+                        <button onClick={handleSignOut}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100">
+                          <LogOut className="w-4 h-4" /> Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Link to="/login" className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide">
+                      Login
+                    </Link>
+                    <Link to="/register" className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide">
+                      Sign Up <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </>
+                )}
               </div>
 
               {/* Mobile hamburger */}
@@ -213,10 +276,27 @@ export function LandingPage() {
               <Link to="/rates"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
               <a href="#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
             </div>
-            <div className="flex gap-3 px-4 pb-4">
-              <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
-              <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy-dark transition-colors">Sign Up</Link>
-            </div>
+            {isAuthenticated && user ? (
+              <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-2">
+                <div className="flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm shrink-0">{initials}</div>
+                  <p className="text-sm font-semibold text-gray-800 truncate max-w-[180px]">{user.email}</p>
+                </div>
+                <Link to={dashboardPath} onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 w-full py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg justify-center uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <button onClick={handleSignOut}
+                  className="w-full py-3 text-sm font-bold text-red-600 border-2 border-red-200 rounded-lg uppercase tracking-wide hover:bg-red-50 transition-colors">
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-3 px-4 pb-4">
+                <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
+                <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy-dark transition-colors">Sign Up</Link>
+              </div>
+            )}
           </div>
         )}
       </header>
