@@ -152,7 +152,7 @@ export function AirFreightPage() {
               {
                 img: IMG.iconCourier,
                 title: 'Experience',
-                desc: 'CTCM specialises in international package forwarding. Consumers and business owners worldwide benefit from establishing a U.S. address with CargoLink Barbados.',
+                desc: 'CargoLink Barbados specialises in international package forwarding. Consumers and business owners worldwide benefit from establishing a U.S. address with us for package and mail forwarding services.',
               },
             ].map(({ img, title, desc }, i) => (
               <div key={title} data-animate data-delay={String(i * 130)}
