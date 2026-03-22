@@ -16,7 +16,7 @@ interface AuthContextType {
   loading: boolean
   isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, phone?: string, address?: string) => Promise<void>
+  signUp: (email: string, password: string, firstName: string, lastName: string, phone?: string, address?: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   confirmResetPassword: (email: string, code: string, newPassword: string) => Promise<void>
@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadUser()
   }
 
-  async function signUp(email: string, password: string, name: string, phone?: string, address?: string) {
-    await cognitoSignUp(email, password, name, phone, address)
+  async function signUp(email: string, password: string, firstName: string, lastName: string, phone?: string, address?: string) {
+    await cognitoSignUp(email, password, firstName, lastName, phone, address)
   }
 
   async function signOut() {

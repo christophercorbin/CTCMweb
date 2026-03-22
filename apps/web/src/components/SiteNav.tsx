@@ -10,8 +10,10 @@ import { useAuth } from '../contexts/useAuth'
 const IMG_PLANE = '/images/icon-plane.png'
 const IMG_SHIP  = '/images/icon-ship.png'
 
-function getInitials(email: string): string {
-  const local = email.split('@')[0]
+function getInitials(firstName?: string, lastName?: string, email?: string): string {
+  if (firstName && lastName) return (firstName[0] + lastName[0]).toUpperCase()
+  if (firstName) return firstName.slice(0, 2).toUpperCase()
+  const local = (email ?? '').split('@')[0]
   const parts  = local.split(/[._\-+]/).filter(Boolean)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return local.slice(0, 2).toUpperCase()
@@ -46,8 +48,8 @@ export function SiteNav() {
   }
 
   const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
-  const initials      = user ? getInitials(user.email || user.username) : ''
-  const displayName   = user?.email?.split('@')[0] ?? 'Account'
+  const initials      = user ? getInitials(user.firstName, user.lastName, user.email) : ''
+  const displayName   = user?.firstName || user?.email?.split('@')[0] || 'Account'
 
   const linkCls = 'relative px-4 py-2 group transition-colors hover:text-brand-navy'
   const underline = <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />

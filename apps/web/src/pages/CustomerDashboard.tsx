@@ -140,7 +140,7 @@ export const CustomerDashboard = () => {
     }
   }
 
-  const displayName = user?.email?.split('@')[0] ?? 'there'
+  const displayName = user?.firstName || user?.email?.split('@')[0] || 'there'
 
   return (
     <div className="space-y-6">

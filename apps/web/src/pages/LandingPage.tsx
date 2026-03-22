@@ -23,8 +23,10 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/useAuth'
 
-function getInitials(email: string): string {
-  const local = email.split('@')[0]
+function getInitials(firstName?: string, lastName?: string, email?: string): string {
+  if (firstName && lastName) return (firstName[0] + lastName[0]).toUpperCase()
+  if (firstName) return firstName.slice(0, 2).toUpperCase()
+  const local = (email ?? '').split('@')[0]
   const parts  = local.split(/[._\-+]/).filter(Boolean)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return local.slice(0, 2).toUpperCase()
@@ -63,7 +65,8 @@ export function LandingPage() {
   const profileRef  = useRef<HTMLDivElement>(null)
 
   const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
-  const initials      = user ? getInitials(user.email || user.username) : ''
+  const initials      = user ? getInitials(user.firstName, user.lastName, user.email) : ''
+  const displayName   = user?.firstName || user?.email?.split('@')[0] || 'Account'
 
   const handleSignOut = async () => {
     setProfileOpen(false)
@@ -219,7 +222,7 @@ export function LandingPage() {
                       <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm shrink-0">
                         {initials}
                       </div>
-                      <span className="text-sm font-semibold text-gray-700 max-w-[120px] truncate">{user.email?.split('@')[0]}</span>
+                      <span className="text-sm font-semibold text-gray-700 max-w-[120px] truncate">{displayName}</span>
                       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {profileOpen && (

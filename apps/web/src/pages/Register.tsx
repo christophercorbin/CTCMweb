@@ -9,11 +9,12 @@ import { useAuth } from '../contexts/useAuth'
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email('Invalid email address'),
-    phone: z.string().min(7, 'Please enter a valid phone number'),
-    address: z.string().min(5, 'Please enter your address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName:  z.string().min(2, 'Last name must be at least 2 characters'),
+    email:     z.string().email('Invalid email address'),
+    phone:     z.string().min(7, 'Please enter a valid phone number'),
+    address:   z.string().min(5, 'Please enter your address'),
+    password:  z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -38,11 +39,11 @@ export const Register = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true)
     try {
-      // Normalise phone to E.164: strip spaces/dashes, prepend + if missing
+      // Normalise phone to E.164
       let phone = data.phone.replace(/[\s\-().]/g, '')
       if (!phone.startsWith('+')) phone = `+${phone}`
 
-      await signUp(data.email, data.password, data.name, phone, data.address)
+      await signUp(data.email, data.password, data.firstName, data.lastName, phone, data.address)
       toast.success('Account created! Check your email for a verification code.')
       navigate(`/confirm?email=${encodeURIComponent(data.email)}`)
     } catch (err: unknown) {
@@ -74,13 +75,23 @@ export const Register = () => {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mb-6">
-          <Input
-            label="Full Name"
-            type="text"
-            placeholder="Your full name"
-            error={errors.name?.message}
-            {...register('name')}
-          />
+          {/* Name row */}
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="First Name"
+              type="text"
+              placeholder="Christopher"
+              error={errors.firstName?.message}
+              {...register('firstName')}
+            />
+            <Input
+              label="Last Name"
+              type="text"
+              placeholder="Corbin"
+              error={errors.lastName?.message}
+              {...register('lastName')}
+            />
+          </div>
           <Input
             label="Email Address"
             type="email"
@@ -117,7 +128,7 @@ export const Register = () => {
             {...register('confirmPassword')}
           />
           <Button type="submit" loading={loading} className="w-full">
-            Register
+            Create Account
           </Button>
         </form>
 

@@ -25,6 +25,8 @@ export interface CognitoUser {
   userId: string
   username: string
   email: string
+  firstName?: string
+  lastName?: string
   role?: 'admin' | 'customer'
   groups?: string[]
 }
@@ -49,11 +51,17 @@ export async function cognitoSignIn(
 export async function cognitoSignUp(
   email: string,
   password: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   phone?: string,
   address?: string
 ): Promise<SignUpOutput> {
-  const userAttributes: Record<string, string> = { email, name }
+  const userAttributes: Record<string, string> = {
+    email,
+    given_name:  firstName,
+    family_name: lastName,
+    name:        `${firstName} ${lastName}`,
+  }
   if (phone)   userAttributes['phone_number'] = phone
   if (address) userAttributes['address']      = address
   return signUp({ username: email, password, options: { userAttributes } })
@@ -104,9 +112,11 @@ export async function cognitoGetCurrentUser(): Promise<CognitoUser | null> {
 
     const groups = (payload?.['cognito:groups'] as string[]) ?? []
     return {
-      userId: user.userId,
-      username: user.username,
-      email: (payload?.email as string) ?? '',
+      userId:    user.userId,
+      username:  user.username,
+      email:     (payload?.email       as string) ?? '',
+      firstName: (payload?.given_name  as string) ?? '',
+      lastName:  (payload?.family_name as string) ?? '',
       role: groups.includes('admin') ? 'admin' : 'customer',
       groups,
     }
