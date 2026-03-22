@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut, Home, User, FileText, Warehouse, Bell, ScanLine, Receipt, Users } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import { useShipments } from '../hooks/useShipments';
@@ -208,13 +208,13 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
         }`}
       >
         <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
-          <div className="bg-white rounded-lg px-3 py-1.5">
+          <Link to="/" className="bg-white rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity" title="Back to home">
             <img
               src="/logos/logo-color-horizontal.png"
               alt="CargoLink Barbados"
               className="h-9 w-auto"
             />
-          </div>
+          </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-white/60 hover:text-white"
@@ -285,7 +285,9 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
           )}
 
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+            <p className="text-sm font-medium text-gray-900">
+              {user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : user?.email}
+            </p>
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>
         </header>
