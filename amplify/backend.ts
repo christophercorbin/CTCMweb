@@ -205,7 +205,7 @@ syncCustomersFn.addEnvironment(
 backend.data.resources.graphqlApi.grantQuery(syncCustomersFn);
 backend.data.resources.graphqlApi.grantMutation(syncCustomersFn);
 
-// ─── postConfirmation: Cognito + AppSync permissions ─────────────────────────
+// ─── postConfirmation: Cognito + AppSync + SES permissions ───────────────────
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;
 
 // Grant Cognito admin permissions with resources: ["*"] to avoid a CDK cycle.
@@ -229,6 +229,18 @@ postConfirmationFn.addToRolePolicy(
     resources: ["*"],
   })
 );
+
+// SES permission so postConfirmation can email admins on new sign-ups
+postConfirmationFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: ["*"],
+  })
+);
+
+// Admin notification email — change ADMIN_NOTIFY_EMAIL to your preferred inbox
+postConfirmationFn.addEnvironment("SENDER_EMAIL",       "notifications@ctcm.bb");
+postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "christophercorbin24@gmail.com");
 
 // IMPORTANT: Cannot use CDK tokens from data stack here because data already
 // depends on auth (UserPool) — any auth→data reference creates a cycle.

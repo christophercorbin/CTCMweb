@@ -13,6 +13,8 @@ const client = generateClient<Schema>();
 interface CustomerData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
@@ -24,6 +26,8 @@ interface CustomerData {
 const EMPTY: CustomerData = {
   id: '',
   name: '',
+  firstName: '',
+  lastName: '',
   email: '',
   phone: '',
   address: '',
@@ -109,9 +113,16 @@ export const CustomerInfo = () => {
         return;
       }
 
+      const fullName = record.name ?? ''
+      const spaceIdx = fullName.indexOf(' ')
+      const firstName = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName
+      const lastName  = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : ''
+
       const loaded: CustomerData = {
         id: record.id,
-        name: record.name ?? '',
+        name: fullName,
+        firstName,
+        lastName,
         email: record.email ?? '',
         phone: record.phone ?? '',
         address: record.address ?? '',
@@ -139,9 +150,11 @@ export const CustomerInfo = () => {
     try {
       setSaving(true);
 
+      const combinedName = [customerData.firstName.trim(), customerData.lastName.trim()].filter(Boolean).join(' ')
+
       const { errors } = await client.models.Customer.update({
         id: customerData.id,
-        name: customerData.name,
+        name: combinedName || customerData.name,
         phone: customerData.phone || undefined,
         address: customerData.address || undefined,
         company: customerData.company || undefined,
@@ -208,14 +221,29 @@ export const CustomerInfo = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Full Name
+                  First Name
                 </div>
               </label>
               <Input
-                value={customerData.name}
-                onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
+                value={customerData.firstName}
+                onChange={(e) => setCustomerData({ ...customerData, firstName: e.target.value })}
                 disabled={!editing}
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Last Name
+                </div>
+              </label>
+              <Input
+                value={customerData.lastName}
+                onChange={(e) => setCustomerData({ ...customerData, lastName: e.target.value })}
+                disabled={!editing}
+                placeholder="Enter your last name"
               />
             </div>
 

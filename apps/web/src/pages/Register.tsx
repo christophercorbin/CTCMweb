@@ -80,14 +80,14 @@ export const Register = () => {
             <Input
               label="First Name"
               type="text"
-              placeholder="Christopher"
+              placeholder="Jane"
               error={errors.firstName?.message}
               {...register('firstName')}
             />
             <Input
               label="Last Name"
               type="text"
-              placeholder="Corbin"
+              placeholder="Smith"
               error={errors.lastName?.message}
               {...register('lastName')}
             />
