@@ -25,6 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
+      # amplify_outputs.json is gitignored (generated per-branch by pipeline-deploy).
+      # Create a minimal stub so the static import in src/lib/amplify.ts resolves.
+      - run: echo '{"version":"1"}' > amplify_outputs.json
       # Checks both apps/web AND amplify Lambda functions (amplify workspace
       # now has a typecheck script so Lambda TS errors surface here, not in
       # the expensive ampx pipeline-deploy step)
@@ -68,6 +71,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
+      - run: echo '{"version":"1"}' > amplify_outputs.json
       - run: npm run build --workspace=apps/web
       - uses: actions/upload-artifact@v4
         with:
