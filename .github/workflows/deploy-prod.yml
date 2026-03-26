@@ -24,6 +24,9 @@ jobs:
 
       - run: npm ci
 
+      # amplify_outputs.json is gitignored — generate a stub so typecheck resolves the import
+      - run: echo '{"version":"1"}' > amplify_outputs.json
+
       # Typecheck covers both apps/web AND amplify Lambda functions
       - name: Lint + Typecheck + Test
         run: |
@@ -31,23 +34,5 @@ jobs:
           npm run typecheck --workspaces --if-present
           npm run test --workspaces --if-present
 
-      - name: Manual approval required
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: christophercorbin
-          minimum-approvals: 1
-          issue-title: "Deploy to Production"
-          issue-body: "Please approve or deny the production deployment"
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::404875533723:role/GitHubActionsDeployRole
-          aws-region: us-east-1
-
-      - name: Deploy Amplify backend
-        run: npx ampx pipeline-deploy --branch main --app-id ${{ secrets.AMPLIFY_APP_ID }}
-
-      - name: Build frontend
-        run: npm run build --workspace=apps/web
+      # Backend deploy and frontend build are handled by Amplify Hosting
+      # via the backend phase in amplify.yml — no need to run pipeline-deploy here.

@@ -8,8 +8,8 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { randomUUID } from "crypto";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
-const SENDER       = process.env.SENDER_EMAIL       ?? "notifications@ctcm.bb";
-const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "notifications@ctcm.bb";
+const SENDER       = process.env.SENDER_EMAIL       ?? "info@cargolinkbarbados.com";
+const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "info@cargolinkbarbados.com";
 
 // Mirror the address templates from CustomerManagement.tsx / sync-customers/handler.ts
 const buildAirAddress = (name: string) =>

@@ -7,7 +7,7 @@ on:
 
 permissions:
   id-token: write
-  contents: write
+  contents: read
 
 jobs:
   deploy:
@@ -16,51 +16,23 @@ jobs:
     environment: development
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
 
       - run: npm ci
 
+      # amplify_outputs.json is gitignored — generate a stub so typecheck resolves the import
+      - run: echo '{"version":"1"}' > amplify_outputs.json
+
       # Typecheck both the web app AND the Amplify Lambda functions.
       # The amplify workspace now has a "typecheck" script so this catches
-      # Lambda TypeScript errors *before* ampx pipeline-deploy does.
+      # Lambda TypeScript errors *before* Amplify Hosting runs pipeline-deploy.
       - name: Lint + Typecheck + Test
         run: |
           npm run lint --workspaces --if-present
           npm run typecheck --workspaces --if-present
           npm run test --workspaces --if-present
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::404875533723:role/GitHubActionsDeployRole
-          aws-region: us-east-1
-
-      # Diagnose secrets + AWS state before deploying
-      - name: Pre-deploy diagnostics
-        run: |
-          echo "AMPLIFY_APP_ID is set: ${{ secrets.AMPLIFY_APP_ID != '' }}"
-          echo "AWS identity:"
-          aws sts get-caller-identity
-          echo "Amplify app info:"
-          aws amplify get-app --app-id ${{ secrets.AMPLIFY_APP_ID }} --query 'app.{name:name,defaultDomain:defaultDomain}' 2>&1 || echo "get-app failed"
-          echo "Amplify branch info:"
-          aws amplify get-branch --app-id ${{ secrets.AMPLIFY_APP_ID }} --branch-name develop 2>&1 || echo "get-branch failed"
-
-      # Amplify backend deploy (ampx handles CDK synth + deploy internally)
-      - name: Deploy Amplify backend
-        run: npx ampx pipeline-deploy --branch develop --app-id ${{ secrets.AMPLIFY_APP_ID }}
-
-      # Regenerate amplify_outputs.json and commit so Amplify Hosting always
-      # bundles the correct backend config into the frontend build.
-      - name: Update amplify_outputs.json
-        run: |
-          npx ampx generate outputs --branch develop --app-id ${{ secrets.AMPLIFY_APP_ID }} --format json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add amplify_outputs.json
-          git diff --staged --quiet || git commit -m "chore: update amplify_outputs.json [skip ci]"
-          git push
+      # Backend deploy and frontend build are handled by Amplify Hosting
+      # via the backend phase in amplify.yml — no need to run pipeline-deploy here.

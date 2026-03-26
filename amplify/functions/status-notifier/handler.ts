@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
-const SENDER = process.env.SENDER_EMAIL ?? "notifications@ctcm.bb";
+const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 
 // Statuses that trigger a customer notification by default
 export const NOTIFY_STATUSES = new Set([

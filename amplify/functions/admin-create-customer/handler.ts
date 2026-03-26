@@ -12,7 +12,7 @@ const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 
 const USER_POOL_ID = process.env.USER_POOL_ID!;
 const GRAPHQL_ENDPOINT = process.env.GRAPHQL_API_ENDPOINT!;
-const SENDER = process.env.SENDER_EMAIL ?? "notifications@ctcm.bb";
+const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 const APP_URL = process.env.APP_URL ?? "https://www.cargolink.bb";
 
 // ── Temp password generator ───────────────────────────────────────────────────

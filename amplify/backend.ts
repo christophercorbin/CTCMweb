@@ -156,6 +156,7 @@ statusNotifierFn.addToRolePolicy(
     resources: ["*"],
   })
 );
+statusNotifierFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
 
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
 const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
@@ -185,6 +186,7 @@ adminCreateCustomerFn.addToRolePolicy(
 // Instead, set USER_POOL_ID as a branch-specific environment variable in the
 // Amplify Console (App settings → Environment variables). Each branch (develop,
 // main) must have its own value pointing to its own Cognito User Pool.
+adminCreateCustomerFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
 adminCreateCustomerFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
   (backend.data.resources.graphqlApi as any).graphqlUrl
@@ -248,7 +250,7 @@ postConfirmationFn.addToRolePolicy(
 );
 
 // Admin notification email — change ADMIN_NOTIFY_EMAIL to your preferred inbox
-postConfirmationFn.addEnvironment("SENDER_EMAIL",       "notifications@ctcm.bb");
+postConfirmationFn.addEnvironment("SENDER_EMAIL",       "info@cargolinkbarbados.com");
 postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "christophercorbin24@gmail.com");
 
 // IMPORTANT: Cannot use CDK tokens from data stack here because data already
