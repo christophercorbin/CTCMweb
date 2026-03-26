@@ -173,9 +173,10 @@ adminCreateCustomerFn.addToRolePolicy(
   })
 );
 
-// Pass User Pool ID and AppSync endpoint as env vars
-// Hardcoded to avoid a CDK cross-stack token (data → auth) that causes a cycle.
-adminCreateCustomerFn.addEnvironment("USER_POOL_ID", "us-east-1_YfQ4BVEry");
+// USER_POOL_ID is NOT set here to avoid a CDK cross-stack cycle (data → auth).
+// Instead, set USER_POOL_ID as a branch-specific environment variable in the
+// Amplify Console (App settings → Environment variables). Each branch (develop,
+// main) must have its own value pointing to its own Cognito User Pool.
 adminCreateCustomerFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
   (backend.data.resources.graphqlApi as any).graphqlUrl
@@ -187,7 +188,8 @@ backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
 // ─── syncCustomers: Cognito list + AppSync read/write permissions ─────────────
 const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Function;
 
-// NOTE: Use resources: ["*"] and hardcoded pool ID — same reason as adminCreateCustomer above.
+// NOTE: Use resources: ["*"] to avoid a CDK cross-stack cycle (data → auth).
+// USER_POOL_ID is set as a branch-specific env var in the Amplify Console — not here.
 syncCustomersFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["cognito-idp:ListUsersInGroup"],
@@ -195,7 +197,6 @@ syncCustomersFn.addToRolePolicy(
   })
 );
 
-syncCustomersFn.addEnvironment("USER_POOL_ID", "us-east-1_YfQ4BVEry");
 syncCustomersFn.addEnvironment(
   "GRAPHQL_API_ENDPOINT",
   (backend.data.resources.graphqlApi as any).graphqlUrl

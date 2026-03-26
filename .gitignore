@@ -50,6 +50,9 @@ infra/cdk.context.json
 .aws-sam/
 samconfig.toml
 
+# Amplify — generated per-branch by pipeline-deploy, never commit
+amplify_outputs.json
+
 # Temporary files
 *.tmp
 *.temp
