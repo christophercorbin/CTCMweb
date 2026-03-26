@@ -29,12 +29,20 @@ const backend = defineBackend({
 });
 
 // ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
-const { cfnUserPoolClient } = backend.auth.resources.cfnResources;
+const { cfnUserPoolClient, cfnUserPool } = backend.auth.resources.cfnResources;
 cfnUserPoolClient.explicitAuthFlows = [
   "ALLOW_USER_SRP_AUTH",
   "ALLOW_USER_PASSWORD_AUTH",
   "ALLOW_REFRESH_TOKEN_AUTH",
 ];
+
+// ─── Cognito: use SES for branded verification emails ────────────────────────
+// Requires info@cargolinkbarbados.com (or domain) to be verified in SES us-east-1
+cfnUserPool.emailConfiguration = {
+  emailSendingAccount: "DEVELOPER",
+  from: "CargoLink Barbados <info@cargolinkbarbados.com>",
+  sourceArn: `arn:aws:ses:us-east-1:404875533723:identity/cargolinkbarbados.com`,
+};
 
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
 // IMPORTANT: Build the state machine in the STORAGE stack (where ocrTrigger lives)

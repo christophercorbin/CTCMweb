@@ -14,7 +14,12 @@ import { postConfirmation } from "../functions/post-confirmation/resource";
  */
 export const auth = defineAuth({
   loginWith: {
-    email: true,
+    email: {
+      verificationEmailStyle: "CODE",
+      verificationEmailSubject: "Your CargoLink Barbados verification code",
+      verificationEmailBody: (createCode) =>
+        `Welcome to CargoLink Barbados!\n\nYour verification code is: ${createCode()}\n\nThis code expires in 24 hours.\n\n— The CargoLink Team`,
+    },
   },
   userAttributes: {
     email: {
