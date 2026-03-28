@@ -124,9 +124,9 @@ export const ShipmentDetails = () => {
       })
       if (newInvoice) setInvoices((prev) => [...prev, newInvoice])
 
-      toast.success('Order receipt uploaded successfully')
+      toast.success('Invoice uploaded successfully')
     } catch {
-      toast.error('Failed to upload order receipt')
+      toast.error('Failed to upload invoice')
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -351,7 +351,7 @@ export const ShipmentDetails = () => {
                         </p>
                         <p className="text-xs text-gray-500">
                           {inv.notes === 'Order receipt'
-                            ? 'Your receipt'
+                            ? 'Your invoice'
                             : inv.totalAmount
                               ? `$${inv.totalAmount.toFixed(2)}`
                               : 'Document'}{' '}
@@ -372,7 +372,7 @@ export const ShipmentDetails = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No receipts uploaded yet.</p>
+              <p className="text-sm text-gray-500">No invoices uploaded yet.</p>
             )}
           </Card>
         </div>  {/* end right column */}

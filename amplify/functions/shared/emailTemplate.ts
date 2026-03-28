@@ -6,7 +6,7 @@
  */
 
 const APP_URL = process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com";
-const LOGO_URL = `${APP_URL}/logos/logo-color-horizontal.png`;
+const LOGO_URL = `${APP_URL}/logos/logo-transparent.png`;
 
 export function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
@@ -24,9 +24,9 @@ export function emailWrapper(content: string): string {
 
           <!-- Header -->
           <tr>
-            <td style="background:#1B2D78;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-              <img src="${LOGO_URL}" alt="CargoLink Barbados" height="56"
-                style="display:block;margin:0 auto;max-width:260px;height:auto;" />
+            <td style="background:#1B2D78;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+              <img src="${LOGO_URL}" alt="CargoLink Barbados" height="70"
+                style="display:block;margin:0 auto;max-width:300px;height:auto;" />
             </td>
           </tr>
 
