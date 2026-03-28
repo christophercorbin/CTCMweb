@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { randomUUID } from "crypto";
+import { emailWrapper, card, button } from "../shared/emailTemplate";
 
 const cognito = new CognitoIdentityProviderClient({});
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
@@ -106,65 +107,56 @@ async function sendWelcomeEmail(opts: {
 
   const formatAddress = (addr?: string) =>
     addr
-      ? addr
-          .split("\n")
-          .map((l) => `<p style="margin:2px 0;font-family:monospace;font-size:13px;">${l}</p>`)
-          .join("")
+      ? addr.split("\n").map((l) => `<p style="margin:2px 0;font-family:monospace;font-size:13px;color:#374151;">${l}</p>`).join("")
       : "<p style='color:#9ca3af;font-size:13px;'>Not set</p>";
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;padding:20px;color:#1f2937;">
-  <div style="background:#1B2D78;padding:24px;border-radius:8px 8px 0 0;">
-    <h1 style="color:white;margin:0;font-size:22px;">CargoLink Barbados</h1>
-    <p style="color:#F5C518;margin:4px 0 0;font-size:13px;">The Smarter way to ship</p>
-  </div>
-  <div style="border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 8px 8px;">
-    <p style="font-size:16px;margin-top:0;">Hi <strong>${name}</strong>, welcome to CargoLink Barbados!</p>
-    <p style="font-size:15px;line-height:1.6;">
-      Your customer account has been created. You can now log in to the CargoLink portal to track your shipments and manage your account.
+  const html = emailWrapper(`
+    <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Welcome</p>
+    <h1 style="margin:0 0 16px;font-size:24px;color:#1B2D78;font-weight:800;">Your account is ready, ${name.split(" ")[0]}!</h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">
+      Welcome to <strong>CargoLink Barbados</strong>. Your account has been set up and you're ready to start shipping.
+      Log in below to access your dashboard and track your shipments.
     </p>
 
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:16px;margin:20px 0;">
-      <p style="margin:0 0 4px;font-size:13px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Your Login</p>
-      <p style="margin:0;font-size:15px;"><strong>Email:</strong> ${email}</p>
-      <p style="margin:6px 0 0;font-size:15px;"><strong>Temporary Password:</strong> <span style="font-family:monospace;background:#dbeafe;padding:2px 6px;border-radius:4px;">${tempPassword}</span></p>
-      <p style="margin:8px 0 0;font-size:13px;color:#6b7280;">You will be prompted to set a new password on your first login.</p>
-    </div>
+    ${card(`
+      <p style="margin:0 0 12px;font-size:12px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Your Login Details</p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr><td style="padding:6px 0;border-bottom:1px solid #f3f4f6;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Email</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${email}</p>
+        </td></tr>
+        <tr><td style="padding:10px 0 0;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Temporary Password</p>
+          <p style="margin:6px 0 0;display:inline-block;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;background:#eff6ff;padding:8px 16px;border-radius:6px;letter-spacing:0.1em;">${tempPassword}</p>
+          <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;">You will be asked to set a new password on your first login.</p>
+        </td></tr>
+      </table>
+    `)}
 
-    <div style="text-align:center;margin:20px 0;">
-      <a href="${APP_URL}/login" style="display:inline-block;background:#1B2D78;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">
-        Log In to CargoLink →
-      </a>
-    </div>
+    ${button("Log In to CargoLink", `${APP_URL}/login`)}
 
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
 
-    <p style="font-size:15px;font-weight:700;margin-bottom:12px;">Your Shipping Addresses</p>
-    <p style="font-size:14px;color:#4b5563;margin-bottom:16px;">
-      Use the addresses below when placing online orders that you'd like forwarded to Barbados.
+    <p style="margin:0 0 6px;font-size:16px;font-weight:800;color:#1B2D78;">Your Shipping Addresses</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7280;line-height:1.6;">
+      Use these addresses when shopping online in the US — we'll forward your packages to Barbados.
     </p>
 
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:16px;margin-bottom:12px;">
-      <p style="margin:0 0 8px;font-size:12px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">✈ Air Freight Address</p>
+    ${card(`
+      <p style="margin:0 0 10px;font-size:12px;color:#1B2D78;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;">✈ Air Freight &nbsp;<span style="font-weight:400;color:#9ca3af;">(3–5 days)</span></p>
       ${formatAddress(airSkyboxAddress)}
-    </div>
+    `, "#1B2D78")}
 
-    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:6px;padding:16px;margin-bottom:20px;">
-      <p style="margin:0 0 8px;font-size:12px;color:#0f766e;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">🚢 Sea Freight Address</p>
+    ${card(`
+      <p style="margin:0 0 10px;font-size:12px;color:#0f766e;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;">🚢 Sea Freight &nbsp;<span style="font-weight:400;color:#9ca3af;">(3–6 weeks · best for heavy items)</span></p>
       ${formatAddress(seaSkyboxAddress)}
-    </div>
+    `, "#0f766e")}
 
-    <p style="font-size:13px;color:#6b7280;">
-      Air freight is faster (3–5 days). Sea freight takes longer (3–6 weeks) but is more economical for heavier items.
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;line-height:1.6;">
+      Questions? Contact us at
+      <a href="mailto:info@cargolinkbarbados.com" style="color:#1B2D78;text-decoration:none;font-weight:600;">info@cargolinkbarbados.com</a>
     </p>
-
-    <p style="font-size:14px;margin-bottom:0;">Best regards,<br><strong>The CargoLink Barbados Team</strong></p>
-  </div>
-  <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:16px;">CargoLink Barbados &mdash; The Smarter way to ship</p>
-</body>
-</html>`;
+  `);
 
   const text = `Welcome to CargoLink Barbados, ${name}!
 

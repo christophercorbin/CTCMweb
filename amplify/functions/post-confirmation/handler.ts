@@ -5,6 +5,7 @@ import {
   AdminUpdateUserAttributesCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { emailWrapper, card } from "../shared/emailTemplate";
 import { randomUUID } from "crypto";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
@@ -134,29 +135,32 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
 
   // ── Notify admin of new sign-up ──────────────────────────────────────────
   try {
-    const adminHtml = `
-<!DOCTYPE html>
-<html>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
-  <div style="background: #1B2D78; padding: 24px; border-radius: 8px 8px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 22px;">CargoLink Barbados</h1>
-    <p style="color: #F5C518; margin: 4px 0 0; font-size: 13px;">Admin Notification</p>
-  </div>
-  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 28px; border-radius: 0 0 8px 8px;">
-    <p style="font-size: 16px; margin-top: 0;">A new customer has registered on CargoLink Barbados.</p>
-    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
-      <p style="margin: 0 0 6px; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Name</p>
-      <p style="margin: 0 0 14px; font-size: 15px; font-weight: 700; color: #111827;">${displayName}</p>
-      <p style="margin: 0 0 6px; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Email</p>
-      <p style="margin: 0 0 14px; font-size: 15px; color: #111827;">${email}</p>
-      ${phone_number ? `<p style="margin: 0 0 6px; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Phone</p>
-      <p style="margin: 0; font-size: 15px; color: #111827;">${phone_number}</p>` : ""}
-    </div>
-    <p style="font-size: 14px; color: #6b7280;">Log in to the admin dashboard to view and manage this customer.</p>
-  </div>
-  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px;">CargoLink Barbados &mdash; The Smarter way to ship</p>
-</body>
-</html>`;
+    const adminHtml = emailWrapper(`
+    <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Admin Notification</p>
+    <h1 style="margin:0 0 16px;font-size:22px;color:#1B2D78;font-weight:800;">New customer registered</h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">
+      A new customer has just created an account on CargoLink Barbados.
+    </p>
+
+    ${card(`
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr><td style="padding:0 0 12px;border-bottom:1px solid #f3f4f6;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Name</p>
+          <p style="margin:3px 0 0;font-size:16px;color:#111827;font-weight:700;">${displayName}</p>
+        </td></tr>
+        <tr><td style="padding:12px 0 ${phone_number ? "12px" : "0"};${phone_number ? "border-bottom:1px solid #f3f4f6;" : ""}">
+          <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Email</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${email}</p>
+        </td></tr>
+        ${phone_number ? `<tr><td style="padding:12px 0 0;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Phone</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${phone_number}</p>
+        </td></tr>` : ""}
+      </table>
+    `)}
+
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">Log in to the admin dashboard to view and manage this customer.</p>
+  `);
 
     await ses.send(
       new SendEmailCommand({

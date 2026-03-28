@@ -1,4 +1,5 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { emailWrapper, card, button } from "../shared/emailTemplate";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
@@ -98,29 +99,40 @@ export const handler = async (event: AppSyncEvent) => {
   const defaultBody = DEFAULT_BODIES[status] ?? `Your shipment status has been updated to: ${statusLabel}.`;
   const body = customMessage?.trim() || defaultBody;
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
-  <div style="background: #1B2D78; padding: 24px; border-radius: 8px 8px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 22px;">CargoLink Barbados</h1>
-    <p style="color: #F5C518; margin: 4px 0 0; font-size: 13px;">The Smarter way to ship</p>
-  </div>
-  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 28px; border-radius: 0 0 8px 8px;">
-    <p style="font-size: 16px; margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p style="font-size: 15px; line-height: 1.6;">${body.replace(/\n/g, "<br>")}</p>
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin: 20px 0;">
-      <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Tracking Number</p>
-      <p style="margin: 4px 0 0; font-family: monospace; font-size: 16px; font-weight: 700; color: #1B2D78;">${trackingNumber}</p>
-      <p style="margin: 8px 0 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</p>
-      <p style="margin: 4px 0 0; font-size: 15px; font-weight: 600; color: #111827;">${statusLabel}</p>
-    </div>
-    <p style="font-size: 14px; color: #6b7280;">If you have any questions, please don't hesitate to contact us.</p>
-    <p style="font-size: 14px; margin-bottom: 0;">Best regards,<br><strong>The CargoLink Barbados Team</strong></p>
-  </div>
-  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px;">CargoLink Barbados &mdash; The Smarter way to ship</p>
-</body>
-</html>`;
+  const APP_URL = process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com";
+
+  const html = emailWrapper(`
+    <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Shipment Update</p>
+    <h1 style="margin:0 0 20px;font-size:22px;color:#1B2D78;font-weight:800;">${subject}</h1>
+    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Hi <strong>${name}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">${body.replace(/\n/g, "<br>")}</p>
+
+    ${card(`
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td style="padding:0 0 14px;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Tracking Number</p>
+            <p style="margin:4px 0 0;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;letter-spacing:0.04em;">${trackingNumber}</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Current Status</p>
+            <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#111827;">
+              <span style="display:inline-block;background:#F5C518;color:#1B2D78;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:800;">${statusLabel}</span>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `)}
+
+    ${button("View Shipment Details", `${APP_URL}/dashboard`)}
+
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;line-height:1.6;">
+      Questions? Reply to this email or contact us at
+      <a href="mailto:info@cargolinkbarbados.com" style="color:#1B2D78;text-decoration:none;font-weight:600;">info@cargolinkbarbados.com</a>
+    </p>
+  `);
 
   try {
     await ses.send(
