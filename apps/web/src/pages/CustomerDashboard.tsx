@@ -90,7 +90,8 @@ export const CustomerDashboard = () => {
     }).catch(() => {})
   }, [])
 
-  const IN_TRANSIT_STATUSES = new Set(['MIAMI_WAREHOUSE', 'IN_THE_AIR', 'ON_THE_WATER', 'IN_BARBADOS', 'IN_BARBADOS_SEA', 'AT_WAREHOUSE', 'OUT_FOR_DELIVERY'])
+  // MIAMI_WAREHOUSE and AT_WAREHOUSE are excluded — package hasn't started moving yet
+  const IN_TRANSIT_STATUSES = new Set(['IN_THE_AIR', 'ON_THE_WATER', 'IN_BARBADOS', 'IN_BARBADOS_SEA', 'OUT_FOR_DELIVERY'])
   const CUSTOMS_STATUSES = new Set(['CUSTOMS_HOLD', 'BARBADOS_CUSTOMS'])
 
   const stats = useMemo(() => ({
@@ -130,11 +131,11 @@ export const CustomerDashboard = () => {
         data: uploadFile,
         options: { contentType: uploadFile.type || 'application/pdf' },
       }).result
-      toast.success('Order receipt uploaded successfully')
+      toast.success('Invoice uploaded successfully')
       setShowUploadModal(false)
       setUploadFile(null)
     } catch {
-      toast.error('Receipt upload failed — please try again')
+      toast.error('Invoice upload failed — please try again')
     } finally {
       setUploading(false)
     }
@@ -321,7 +322,7 @@ export const CustomerDashboard = () => {
                             )}
                             {!shipmentIdsWithInvoices.has(s.id) && !TERMINAL_STATUSES.has(s.status) && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">
-                                <Upload className="w-3 h-3" /> Upload receipt
+                                <Upload className="w-3 h-3" /> Upload invoice
                               </span>
                             )}
                           </div>
@@ -407,7 +408,7 @@ export const CustomerDashboard = () => {
               },
               {
                 icon: <Upload className="w-4 h-4 text-blue-500" />,
-                label: 'Upload Order Receipt',
+                label: 'Upload Invoice',
                 sub: 'Required for customs processing',
                 onClick: () => setShowUploadModal(true),
               },
@@ -437,7 +438,7 @@ export const CustomerDashboard = () => {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 text-white">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-4 h-4 text-blue-200" />
-              <h3 className="text-sm font-semibold">My Skybox Addresses</h3>
+              <h3 className="text-sm font-semibold">My Addresses</h3>
             </div>
             {skybox === null ? (
               <p className="text-blue-200 text-xs">Loading addresses...</p>
@@ -494,8 +495,8 @@ export const CustomerDashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Upload Order Receipt</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Store receipt needed for customs (Amazon, Shopify, etc.)</p>
+                <h2 className="text-lg font-bold text-gray-900">Upload Invoice</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Store invoice needed for customs (Amazon, Shopify, etc.)</p>
               </div>
               <button
                 onClick={() => { setShowUploadModal(false); setUploadFile(null) }}

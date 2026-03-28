@@ -200,10 +200,10 @@ export const CreateShipment = () => {
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Order Receipt(s)
+                Invoice(s)
               </label>
               <p className="text-xs text-gray-400 mt-0.5">
-                Upload your store receipt (Amazon, Shopify, etc.) for customs processing. PDF only.
+                Upload your store invoice (Amazon, Shopify, etc.) for customs processing. PDF only.
               </p>
             </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
@@ -217,7 +217,7 @@ export const CreateShipment = () => {
               />
               <label htmlFor="invoice-upload" className="cursor-pointer flex flex-col items-center">
                 <Upload className="w-10 h-10 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600">Click to upload order receipt(s)</span>
+                <span className="text-sm text-gray-600">Click to upload invoice(s)</span>
                 <span className="text-xs text-gray-500 mt-1">PDF files only</span>
               </label>
             </div>

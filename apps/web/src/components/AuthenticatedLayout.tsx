@@ -208,11 +208,11 @@ export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
         }`}
       >
         <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
-          <Link to="/" className="bg-white rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity" title="Back to home">
+          <Link to="/" className="bg-white rounded-lg px-3 py-2 hover:opacity-90 transition-opacity" title="Back to home">
             <img
               src="/logos/logo-color-horizontal.png"
               alt="CargoLink Barbados"
-              className="h-9 w-auto"
+              className="h-12 w-auto"
             />
           </Link>
           <button

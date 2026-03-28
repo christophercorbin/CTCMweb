@@ -914,14 +914,14 @@ export const AdminShipmentDetails = () => {
             )}
           </Card>
 
-          {/* ── Order Receipts card ── */}
+          {/* ── Invoices card ── */}
           {(() => {
             const receipts = invoices.filter(inv => inv.notes === 'Order receipt')
             return (
               <Card>
                 <div className="mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Order Receipts</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Store receipts uploaded by the customer for customs processing</p>
+                  <h2 className="text-lg font-bold text-gray-900">Invoices</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Invoices uploaded by the customer for customs processing</p>
                 </div>
                 {receipts.length > 0 ? (
                   <div className="space-y-2">
@@ -931,7 +931,7 @@ export const AdminShipmentDetails = () => {
                           <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-gray-900">
-                              Order Receipt {receipts.length > 1 ? `#${i + 1}` : ''}
+                              Invoice {receipts.length > 1 ? `#${i + 1}` : ''}
                             </p>
                             <p className="text-xs text-gray-500">
                               Uploaded {new Date(rcpt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -952,7 +952,7 @@ export const AdminShipmentDetails = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 text-center py-5">No order receipts uploaded yet</p>
+                  <p className="text-sm text-gray-400 text-center py-5">No invoices uploaded yet</p>
                 )}
               </Card>
             )

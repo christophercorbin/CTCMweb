@@ -16,7 +16,7 @@ const buildAirAddress = (name: string) =>
   `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`;
 
 const buildSeaAddress = (name: string) =>
-  `${name}\nIntegrity Logistics-CargoLink Barbados\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`;
+  `${name}\nIntegrity Logistics - CTCM\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`;
 
 const cognitoClient = new CognitoIdentityProviderClient({});
 

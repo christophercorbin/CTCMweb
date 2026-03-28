@@ -315,7 +315,7 @@ export const ShipmentDetails = () => {
           )}
 
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Order Receipts</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Invoices</h2>
             <p className="text-xs text-gray-500 mb-4">
               Upload the store receipt for this shipment (e.g. Amazon, Shopify order confirmation). This is required for customs processing.
             </p>
@@ -335,7 +335,7 @@ export const ShipmentDetails = () => {
               >
                 {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Order Receipt (PDF)
+                Upload Invoice (PDF)
               </span>
             </label>
 
@@ -347,7 +347,7 @@ export const ShipmentDetails = () => {
                       <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {inv.notes === 'Order receipt' ? 'Order Receipt' : inv.invoiceNumber}
+                          {inv.notes === 'Order receipt' ? 'Invoice' : inv.invoiceNumber}
                         </p>
                         <p className="text-xs text-gray-500">
                           {inv.notes === 'Order receipt'
