@@ -6,7 +6,7 @@
  */
 
 const APP_URL = process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com";
-const LOGO_URL = `${APP_URL}/logos/logo-transparent.png`;
+const LOGO_URL = `${APP_URL}/logos/logo-color-stacked.png`;
 
 export function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
@@ -22,12 +22,20 @@ export function emailWrapper(content: string): string {
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;">
 
-          <!-- Header -->
+          <!-- Header accent stripe -->
           <tr>
-            <td style="background:#1B2D78;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-              <img src="${LOGO_URL}" alt="CargoLink Barbados" height="70"
-                style="display:block;margin:0 auto;max-width:300px;height:auto;" />
+            <td style="background:#1B2D78;border-radius:12px 12px 0 0;height:8px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <!-- Header logo -->
+          <tr>
+            <td style="background:#ffffff;padding:28px 40px 20px;text-align:center;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+              <img src="${LOGO_URL}" alt="CargoLink Barbados" height="90"
+                style="display:block;margin:0 auto;max-width:220px;height:auto;" />
             </td>
+          </tr>
+          <!-- Header divider -->
+          <tr>
+            <td style="background:#F5C518;height:3px;font-size:0;line-height:0;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">&nbsp;</td>
           </tr>
 
           <!-- Body -->
