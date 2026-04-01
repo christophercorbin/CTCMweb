@@ -157,7 +157,10 @@ statusNotifierFn.addToRolePolicy(
   })
 );
 statusNotifierFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
-statusNotifierFn.addEnvironment("APP_URL", "https://develop.d1yo6c4008x99n.amplifyapp.com");
+statusNotifierFn.addEnvironment(
+  "APP_URL",
+  process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com"
+);
 
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
 const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
