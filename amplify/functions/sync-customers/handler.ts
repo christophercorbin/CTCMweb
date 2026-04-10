@@ -39,7 +39,9 @@ async function getUserPoolId(): Promise<string> {
   cachedUserPoolId = pool.Id;
   return cachedUserPoolId;
 }
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_API_ENDPOINT!;
+const GRAPHQL_ENDPOINT =
+  process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
+  process.env.GRAPHQL_API_ENDPOINT!;
 
 // ── Address templates (mirror frontend CustomerManagement.tsx) ────────────────
 const buildAirAddress = (name: string) =>

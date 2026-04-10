@@ -12,7 +12,9 @@ import { emailWrapper, card, button } from "../shared/emailTemplate";
 const cognito = new CognitoIdentityProviderClient({});
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_API_ENDPOINT!;
+const GRAPHQL_ENDPOINT =
+  process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
+  process.env.GRAPHQL_API_ENDPOINT!;
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 const APP_URL = process.env.APP_URL ?? "https://www.cargolink.bb";
 

@@ -237,6 +237,7 @@ const schema = a
     allow.authenticated(),
     allow.resource(ocrProcessor),
     allow.resource(syncCustomers),
+    allow.resource(adminCreateCustomer),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;
