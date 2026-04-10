@@ -246,6 +246,18 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
                         <Phone className="w-4 h-4 text-gray-400" />
                         <span>{customer.phone ?? '—'}</span>
                       </div>
+                      {customer.company && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <span className="text-gray-400 text-xs font-semibold uppercase">Company:</span>
+                          <span>{customer.company}</span>
+                        </div>
+                      )}
+                      {(customer.address || customer.city || customer.parish) && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <span className="text-gray-400 text-xs font-semibold uppercase">Address:</span>
+                          <span>{[customer.address, customer.city, customer.parish, customer.country].filter(Boolean).join(', ')}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -338,6 +350,11 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
     name: customer?.name ?? '',
     phone: customer?.phone ?? '',
     email: customer?.email ?? '',
+    company: customer?.company ?? '',
+    address: customer?.address ?? '',
+    city: customer?.city ?? '',
+    parish: customer?.parish ?? '',
+    country: customer?.country ?? 'Barbados',
     airSkyboxAddress: customer?.airSkyboxAddress ?? '',
     seaSkyboxAddress: customer?.seaSkyboxAddress ?? '',
   });
@@ -382,6 +399,11 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          company: formData.company || undefined,
+          address: formData.address || undefined,
+          city: formData.city || undefined,
+          parish: formData.parish || undefined,
+          country: formData.country || undefined,
           airSkyboxAddress: formData.airSkyboxAddress,
           seaSkyboxAddress: formData.seaSkyboxAddress,
         });
@@ -393,6 +415,11 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           name: formData.name,
           email: formData.email,
           phone: formData.phone || undefined,
+          company: formData.company || undefined,
+          address: formData.address || undefined,
+          city: formData.city || undefined,
+          parish: formData.parish || undefined,
+          country: formData.country || undefined,
           airSkyboxAddress: formData.airSkyboxAddress || undefined,
           seaSkyboxAddress: formData.seaSkyboxAddress || undefined,
         });
@@ -451,6 +478,56 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
               onChange={(e) => handlePhoneChange(e.target.value)}
               placeholder="(246) 123-4567"
               required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company / Business Name</label>
+          <Input
+            type="text"
+            value={formData.company}
+            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            placeholder="Caribbean Imports Ltd."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+          <Input
+            type="text"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            placeholder="123 Broad Street"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <Input
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              placeholder="Bridgetown"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Parish</label>
+            <Input
+              type="text"
+              value={formData.parish}
+              onChange={(e) => setFormData({ ...formData, parish: e.target.value })}
+              placeholder="St. Michael"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <Input
+              type="text"
+              value={formData.country}
+              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+              placeholder="Barbados"
             />
           </div>
         </div>

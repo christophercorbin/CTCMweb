@@ -234,10 +234,11 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
         // ── Link to existing shipment ──
         shipmentId = selectedShipmentId;
 
-        // Update status to MIAMI_WAREHOUSE
+        // Update status to MIAMI_WAREHOUSE and save WR#
         await client.models.Shipment.update({
           id: shipmentId,
           status: 'MIAMI_WAREHOUSE',
+          warehouseReceiptNumber: formData.warehouse_receipt_number || undefined,
         });
       } else {
         // ── Create new shipment ──
@@ -268,6 +269,7 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
           type: formData.shipment_type as 'AIR' | 'SEA',
           origin,
           description,
+          warehouseReceiptNumber: formData.warehouse_receipt_number || undefined,
         });
 
         if (shipmentErrors?.length) throw new Error(shipmentErrors[0].message);

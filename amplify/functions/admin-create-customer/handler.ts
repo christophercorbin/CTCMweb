@@ -3,6 +3,7 @@ import {
   AdminCreateUserCommand,
   AdminAddUserToGroupCommand,
   AdminUpdateUserAttributesCommand,
+  ListUserPoolsCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { randomUUID } from "crypto";
@@ -11,10 +12,44 @@ import { emailWrapper, card, button } from "../shared/emailTemplate";
 const cognito = new CognitoIdentityProviderClient({});
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 
-const USER_POOL_ID = process.env.USER_POOL_ID!;
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_API_ENDPOINT!;
+const GRAPHQL_ENDPOINT =
+  process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
+  process.env.GRAPHQL_API_ENDPOINT!;
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 const APP_URL = process.env.APP_URL ?? "https://www.cargolink.bb";
+
+// ── User Pool ID resolution ──────────────────────────────────────────────────
+// USER_POOL_ID cannot be injected via CDK due to a cross-stack cycle
+// (data stack → auth stack). It can be set as an Amplify Console env var
+// for deployed branches. For sandbox, we auto-discover it at runtime.
+let cachedUserPoolId: string | undefined = process.env.USER_POOL_ID;
+
+async function getUserPoolId(): Promise<string> {
+  if (cachedUserPoolId) return cachedUserPoolId;
+
+  console.log("USER_POOL_ID not set — discovering via ListUserPools...");
+  const { UserPools } = await cognito.send(
+    new ListUserPoolsCommand({ MaxResults: 60 })
+  );
+
+  // Match the Amplify-managed pool by name pattern (contains "ctcm" or "cargolink")
+  const pool = UserPools?.find(
+    (p) =>
+      p.Name?.toLowerCase().includes("ctcm") ||
+      p.Name?.toLowerCase().includes("cargolink") ||
+      p.Name?.toLowerCase().includes("amplify")
+  ) ?? UserPools?.[0]; // fallback to first pool in account/region
+
+  if (!pool?.Id) {
+    throw new Error(
+      "Could not discover USER_POOL_ID. Set it as an environment variable."
+    );
+  }
+
+  console.log(`Discovered User Pool: ${pool.Name} (${pool.Id})`);
+  cachedUserPoolId = pool.Id;
+  return cachedUserPoolId;
+}
 
 // ── Temp password generator ───────────────────────────────────────────────────
 function generateTempPassword(): string {
@@ -49,6 +84,11 @@ async function createCustomerInAppSync(input: {
   name: string;
   email: string;
   phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  parish?: string;
+  country?: string;
   cognitoSub: string;
   airSkyboxAddress?: string;
   seaSkyboxAddress?: string;
@@ -197,22 +237,29 @@ interface AppSyncEvent {
     name: string;
     email: string;
     phone?: string;
+    company?: string;
+    address?: string;
+    city?: string;
+    parish?: string;
+    country?: string;
     airSkyboxAddress?: string;
     seaSkyboxAddress?: string;
   };
 }
 
 export const handler = async (event: AppSyncEvent) => {
-  const { name, email, phone, airSkyboxAddress, seaSkyboxAddress } = event.arguments;
+  const { name, email, phone, company, address, city, parish, country, airSkyboxAddress, seaSkyboxAddress } = event.arguments;
 
   const customerId = randomUUID();
   const tempPassword = generateTempPassword();
 
   try {
+    const userPoolId = await getUserPoolId();
+
     // 1. Create Cognito user (suppress default email; we send our own)
     const createRes = await cognito.send(
       new AdminCreateUserCommand({
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: userPoolId,
         Username: email,
         TemporaryPassword: tempPassword,
         MessageAction: "SUPPRESS",
@@ -235,7 +282,7 @@ export const handler = async (event: AppSyncEvent) => {
     // 2. Add to customer group
     await cognito.send(
       new AdminAddUserToGroupCommand({
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: userPoolId,
         Username: email,
         GroupName: "customer",
       })
@@ -244,7 +291,7 @@ export const handler = async (event: AppSyncEvent) => {
     // 3. Set custom attributes
     await cognito.send(
       new AdminUpdateUserAttributesCommand({
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: userPoolId,
         Username: email,
         UserAttributes: [
           { Name: "custom:customerId", Value: customerId },
@@ -259,6 +306,11 @@ export const handler = async (event: AppSyncEvent) => {
       name,
       email,
       phone,
+      company,
+      address,
+      city,
+      parish,
+      country,
       cognitoSub,
       airSkyboxAddress,
       seaSkyboxAddress,

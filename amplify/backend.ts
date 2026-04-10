@@ -174,6 +174,7 @@ adminCreateCustomerFn.addToRolePolicy(
       "cognito-idp:AdminCreateUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminUpdateUserAttributes",
+      "cognito-idp:ListUserPools",
     ],
     resources: ["*"],
   })
@@ -191,13 +192,9 @@ adminCreateCustomerFn.addToRolePolicy(
 // Amplify Console (App settings → Environment variables). Each branch (develop,
 // main) must have its own value pointing to its own Cognito User Pool.
 adminCreateCustomerFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
-adminCreateCustomerFn.addEnvironment(
-  "GRAPHQL_API_ENDPOINT",
-  (backend.data.resources.graphqlApi as any).graphqlUrl
-);
-
-// Grant Lambda permission to call AppSync mutations (createCustomer)
-backend.data.resources.graphqlApi.grantMutation(adminCreateCustomerFn);
+// GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
+// via allow.resource(adminCreateCustomer) in data/resource.ts.
+// AppSync mutation permissions are also granted automatically by allow.resource().
 
 // ─── syncCustomers: Cognito list + AppSync read/write permissions ─────────────
 const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Function;
@@ -206,19 +203,14 @@ const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Functio
 // USER_POOL_ID is set as a branch-specific env var in the Amplify Console — not here.
 syncCustomersFn.addToRolePolicy(
   new iam.PolicyStatement({
-    actions: ["cognito-idp:ListUsersInGroup"],
+    actions: ["cognito-idp:ListUsersInGroup", "cognito-idp:ListUserPools"],
     resources: ["*"],
   })
 );
 
-syncCustomersFn.addEnvironment(
-  "GRAPHQL_API_ENDPOINT",
-  (backend.data.resources.graphqlApi as any).graphqlUrl
-);
-
-// grantQuery for listCustomers + grantMutation for createCustomer
-backend.data.resources.graphqlApi.grantQuery(syncCustomersFn);
-backend.data.resources.graphqlApi.grantMutation(syncCustomersFn);
+// GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
+// via allow.resource(syncCustomers) in data/resource.ts.
+// AppSync query/mutation permissions are also granted automatically.
 
 // ─── postConfirmation: Cognito + AppSync + SES permissions ───────────────────
 const postConfirmationFn = backend.postConfirmation.resources.lambda as lambda.Function;

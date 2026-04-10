@@ -1,14 +1,47 @@
 import {
   CognitoIdentityProviderClient,
   ListUsersInGroupCommand,
+  ListUserPoolsCommand,
   type UserType,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { randomUUID } from "crypto";
 
 const cognito = new CognitoIdentityProviderClient({});
 
-const USER_POOL_ID = process.env.USER_POOL_ID!;
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_API_ENDPOINT!;
+// ── User Pool ID resolution ──────────────────────────────────────────────────
+// USER_POOL_ID cannot be injected via CDK due to a cross-stack cycle
+// (data stack → auth stack). It can be set as an Amplify Console env var
+// for deployed branches. For sandbox, we auto-discover it at runtime.
+let cachedUserPoolId: string | undefined = process.env.USER_POOL_ID;
+
+async function getUserPoolId(): Promise<string> {
+  if (cachedUserPoolId) return cachedUserPoolId;
+
+  console.log("USER_POOL_ID not set — discovering via ListUserPools...");
+  const { UserPools } = await cognito.send(
+    new ListUserPoolsCommand({ MaxResults: 60 })
+  );
+
+  const pool = UserPools?.find(
+    (p) =>
+      p.Name?.toLowerCase().includes("ctcm") ||
+      p.Name?.toLowerCase().includes("cargolink") ||
+      p.Name?.toLowerCase().includes("amplify")
+  ) ?? UserPools?.[0];
+
+  if (!pool?.Id) {
+    throw new Error(
+      "Could not discover USER_POOL_ID. Set it as an environment variable."
+    );
+  }
+
+  console.log(`Discovered User Pool: ${pool.Name} (${pool.Id})`);
+  cachedUserPoolId = pool.Id;
+  return cachedUserPoolId;
+}
+const GRAPHQL_ENDPOINT =
+  process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
+  process.env.GRAPHQL_API_ENDPOINT!;
 
 // ── Address templates (mirror frontend CustomerManagement.tsx) ────────────────
 const buildAirAddress = (name: string) =>
@@ -53,12 +86,13 @@ async function appsyncRequest(
 
 // ── Step 1: List all Cognito users in the customer group ─────────────────────
 async function listCognitoCustomers(): Promise<UserType[]> {
+  const userPoolId = await getUserPoolId();
   const users: UserType[] = [];
   let nextToken: string | undefined;
   do {
     const res = await cognito.send(
       new ListUsersInGroupCommand({
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: userPoolId,
         GroupName: "customer",
         Limit: 60,
         NextToken: nextToken,
