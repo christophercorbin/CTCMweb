@@ -94,9 +94,11 @@ export const AdminDashboard = () => {
       .filter((s) => {
         if (!q) return true
         const customerName = customerMap[s.customerId]?.toLowerCase() ?? ''
+        const wrNum = s.warehouseReceiptNumber?.toLowerCase() ?? ''
         return (
           s.trackingNumber.toLowerCase().includes(q) ||
-          customerName.includes(q)
+          customerName.includes(q) ||
+          wrNum.includes(q)
         )
       })
       .sort((a, b) => {
@@ -293,6 +295,9 @@ export const AdminDashboard = () => {
                         Tracking #
                       </th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">
+                        WR#
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">
                         Customer
                       </th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">
@@ -319,6 +324,13 @@ export const AdminDashboard = () => {
                           <p className="text-gray-900 font-medium">
                             {shipment.trackingNumber}
                           </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          {shipment.warehouseReceiptNumber ? (
+                            <span className="text-gray-700 font-mono text-xs">{shipment.warehouseReceiptNumber}</span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           {customerMap[shipment.customerId] ? (

@@ -174,6 +174,7 @@ adminCreateCustomerFn.addToRolePolicy(
       "cognito-idp:AdminCreateUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminUpdateUserAttributes",
+      "cognito-idp:ListUserPools",
     ],
     resources: ["*"],
   })
@@ -206,7 +207,7 @@ const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Functio
 // USER_POOL_ID is set as a branch-specific env var in the Amplify Console — not here.
 syncCustomersFn.addToRolePolicy(
   new iam.PolicyStatement({
-    actions: ["cognito-idp:ListUsersInGroup"],
+    actions: ["cognito-idp:ListUsersInGroup", "cognito-idp:ListUserPools"],
     resources: ["*"],
   })
 );

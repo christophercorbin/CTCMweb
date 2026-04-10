@@ -45,6 +45,9 @@ const schema = a
         email: a.string().required(),
         company: a.string(),
         address: a.string(),
+        city: a.string(),
+        parish: a.string(),
+        country: a.string(),
         airSkyboxAddress: a.string(),
         seaSkyboxAddress: a.string(),
         cognitoSub: a.string(), // set by post-confirmation trigger
@@ -72,6 +75,7 @@ const schema = a
         estimatedDelivery: a.datetime(),
         actualDelivery: a.datetime(),
         description: a.string(),
+        warehouseReceiptNumber: a.string(),
         customerId: a.id().required(),
         // Set to the customer's Cognito sub so admin-created shipments
         // are visible to the customer via allow.ownerDefinedIn below
@@ -198,6 +202,11 @@ const schema = a
         name: a.string().required(),
         email: a.string().required(),
         phone: a.string(),
+        company: a.string(),
+        address: a.string(),
+        city: a.string(),
+        parish: a.string(),
+        country: a.string(),
         airSkyboxAddress: a.string(),
         seaSkyboxAddress: a.string(),
       })
