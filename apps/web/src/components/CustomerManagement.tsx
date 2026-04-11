@@ -584,7 +584,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-4 border-t border-gray-200 sticky bottom-0 bg-white pb-1">
           <Button type="button" onClick={onClose} variant="secondary" className="flex-1">
             Cancel
           </Button>
