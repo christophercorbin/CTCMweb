@@ -157,10 +157,9 @@ statusNotifierFn.addToRolePolicy(
   })
 );
 statusNotifierFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
-statusNotifierFn.addEnvironment(
-  "APP_URL",
-  process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com"
-);
+if (process.env.APP_URL) {
+  statusNotifierFn.addEnvironment("APP_URL", process.env.APP_URL);
+}
 
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
 const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
@@ -187,10 +186,15 @@ adminCreateCustomerFn.addToRolePolicy(
   })
 );
 
-// USER_POOL_ID is NOT set here to avoid a CDK cross-stack cycle (data → auth).
-// Instead, set USER_POOL_ID as a branch-specific environment variable in the
-// Amplify Console (App settings → Environment variables). Each branch (develop,
-// main) must have its own value pointing to its own Cognito User Pool.
+// USER_POOL_ID and APP_URL are set as branch-specific env vars in the Amplify Console.
+// They're available at CDK synth time via process.env, so we pass them through here.
+// This is safe — plain strings, not CDK token refs, so no cross-stack cycle.
+if (process.env.USER_POOL_ID) {
+  adminCreateCustomerFn.addEnvironment("USER_POOL_ID", process.env.USER_POOL_ID);
+}
+if (process.env.APP_URL) {
+  adminCreateCustomerFn.addEnvironment("APP_URL", process.env.APP_URL);
+}
 adminCreateCustomerFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
 // GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
 // via allow.resource(adminCreateCustomer) in data/resource.ts.
@@ -208,6 +212,9 @@ syncCustomersFn.addToRolePolicy(
   })
 );
 
+if (process.env.USER_POOL_ID) {
+  syncCustomersFn.addEnvironment("USER_POOL_ID", process.env.USER_POOL_ID);
+}
 // GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
 // via allow.resource(syncCustomers) in data/resource.ts.
 // AppSync query/mutation permissions are also granted automatically.

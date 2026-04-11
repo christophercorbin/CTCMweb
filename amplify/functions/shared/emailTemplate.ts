@@ -5,7 +5,7 @@
  * Brand colours: navy #1B2D78 · gold #F5C518
  */
 
-const APP_URL = process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com";
+const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 const LOGO_URL = `${APP_URL}/logos/logo-color-stacked.png`;
 
 export function emailWrapper(content: string): string {
