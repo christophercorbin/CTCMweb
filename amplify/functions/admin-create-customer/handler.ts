@@ -16,7 +16,7 @@ const GRAPHQL_ENDPOINT =
   process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
   process.env.GRAPHQL_API_ENDPOINT!;
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
-const APP_URL = process.env.APP_URL ?? "https://www.cargolink.bb";
+const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 
 // ── User Pool ID resolution ──────────────────────────────────────────────────
 // USER_POOL_ID cannot be injected via CDK due to a cross-stack cycle

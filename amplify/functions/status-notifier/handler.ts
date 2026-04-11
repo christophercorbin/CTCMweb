@@ -99,7 +99,7 @@ export const handler = async (event: AppSyncEvent) => {
   const defaultBody = DEFAULT_BODIES[status] ?? `Your shipment status has been updated to: ${statusLabel}.`;
   const body = customMessage?.trim() || defaultBody;
 
-  const APP_URL = process.env.APP_URL ?? "https://develop.d1yo6c4008x99n.amplifyapp.com";
+  const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 
   const html = emailWrapper(`
     <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Shipment Update</p>
