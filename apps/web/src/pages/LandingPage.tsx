@@ -38,10 +38,12 @@ const IMG = {
 
 
 export function LandingPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
 
   const [trackValue, setTrackValue] = useState('')
+
+  const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
 
   const handleTrackSubmit = (e: FormEvent) => {
     e.preventDefault()
