@@ -280,10 +280,13 @@ export const Register = () => {
           <Button
             type="submit"
             loading={loading}
-            className="w-full mt-2 py-3 text-base font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all gap-2"
+            className="w-full mt-3 py-3.5 text-base font-bold uppercase tracking-wide gap-2 rounded-xl
+                       bg-brand-gold !text-brand-navy hover:bg-brand-gold-dark
+                       shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                       ring-1 ring-brand-gold-dark/30"
           >
             Create Account
-            {!loading && <ArrowRight className="w-4 h-4" />}
+            {!loading && <ArrowRight className="w-5 h-5" />}
           </Button>
         </form>
 
