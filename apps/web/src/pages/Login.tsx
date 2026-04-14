@@ -198,10 +198,15 @@ export const Login = () => {
             <Button
               type="submit"
               loading={loading}
-              className="w-full mt-2 py-3 text-base font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all gap-2"
+              className="w-full mt-3 py-3.5 text-base font-bold uppercase tracking-wide rounded-xl
+                         bg-brand-gold !text-brand-navy hover:bg-brand-gold-dark
+                         shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                         ring-1 ring-brand-gold-dark/30"
             >
-              Set Password & Sign In
-              {!loading && <ArrowRight className="w-4 h-4" />}
+              <span className="inline-flex items-center gap-2">
+                Set Password & Sign In
+                <ArrowRight className="w-5 h-5" aria-hidden="true" />
+              </span>
             </Button>
           </form>
         </div>
@@ -255,10 +260,15 @@ export const Login = () => {
           <Button
             type="submit"
             loading={loading}
-            className="w-full mt-2 py-3 text-base font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all gap-2"
+            className="w-full mt-3 py-3.5 text-base font-bold uppercase tracking-wide rounded-xl
+                       bg-brand-gold !text-brand-navy hover:bg-brand-gold-dark
+                       shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                       ring-1 ring-brand-gold-dark/30"
           >
-            Login
-            {!loading && <ArrowRight className="w-4 h-4" />}
+            <span className="inline-flex items-center gap-2">
+              Login
+              <ArrowRight className="w-5 h-5" aria-hidden="true" />
+            </span>
           </Button>
         </form>
 
