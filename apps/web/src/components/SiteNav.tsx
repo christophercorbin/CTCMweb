@@ -73,7 +73,7 @@ export function SiteNav() {
               <div ref={servicesRef} className="relative">
                 <button
                   onClick={() => setServicesOpen(!servicesOpen)}
-                  className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none"
+                  className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none uppercase tracking-wide"
                 >
                   Our Services
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
