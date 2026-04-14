@@ -74,7 +74,7 @@ const registerSchema = z
     password:  passwordSchema.max(128, 'Password is too long'),
     confirmPassword: z.string(),
     acceptTerms: z.literal(true, {
-      errorMap: () => ({ message: 'You must accept the Terms to continue' }),
+      message: 'You must accept the Terms to continue',
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
