@@ -1,5 +1,5 @@
-import { useEffect, FormEvent, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   MapPin,
   Phone,
@@ -9,7 +9,6 @@ import {
   Truck,
   ClipboardList,
   AlertTriangle,
-  Search,
   ArrowRight,
 } from 'lucide-react'
 import { useAuth } from '../contexts/useAuth'
@@ -39,18 +38,8 @@ const IMG = {
 
 export function LandingPage() {
   const { isAuthenticated, user } = useAuth()
-  const navigate = useNavigate()
-
-  const [trackValue, setTrackValue] = useState('')
 
   const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
-
-  const handleTrackSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    const q = trackValue.trim()
-    if (!q) return
-    navigate(isAuthenticated ? `/dashboard?track=${encodeURIComponent(q)}` : `/login?next=${encodeURIComponent(`/dashboard?track=${q}`)}`)
-  }
 
   /* Scroll-reveal — fail-safe: content is visible by default.
      We OPT IN to the animation by adding .cl-animate once the observer fires,
@@ -171,7 +160,7 @@ export function LandingPage() {
                   to="/register"
                   className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-brand-navy bg-brand-gold rounded-lg hover:brightness-95 transition-all shadow-lg pulse-gold"
                 >
-                  Get My US Address <ArrowRight className="w-4 h-4" />
+                  Get Started <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a
                   href="#contact"
@@ -183,32 +172,6 @@ export function LandingPage() {
             )}
           </div>
 
-          {/* Tracking widget */}
-          <form
-            onSubmit={handleTrackSubmit}
-            className="hero-4 mx-auto max-w-lg flex items-stretch bg-white rounded-full shadow-xl overflow-hidden"
-            role="search"
-            aria-label="Track a shipment"
-          >
-            <label htmlFor="hero-track" className="sr-only">Tracking number</label>
-            <div className="flex items-center pl-5 text-gray-400">
-              <Search className="w-5 h-5" />
-            </div>
-            <input
-              id="hero-track"
-              type="text"
-              value={trackValue}
-              onChange={(e) => setTrackValue(e.target.value)}
-              placeholder="Track a shipment by tracking number"
-              className="flex-1 px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="px-6 sm:px-8 text-sm font-bold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors uppercase tracking-wide"
-            >
-              Track
-            </button>
-          </form>
         </div>
       </section>
 

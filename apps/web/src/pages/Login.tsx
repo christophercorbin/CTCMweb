@@ -10,22 +10,17 @@ import { useAuth } from '../contexts/useAuth'
 import { enableDemoMode, enableAdminDemoMode } from '../utils/mockData'
 import { redirectAfterLogin } from '../auth/useAuthRedirect'
 import { cognitoConfirmNewPassword } from '../lib/cognito'
+import { emailSchema, passwordSchema } from '../lib/schemas'
 
 const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Please enter a valid email address').max(254, 'Email is too long'),
+  email: emailSchema,
   password: z.string().min(1, 'Password is required'),
 })
 
 /** Mirror Cognito's password policy so users see errors client-side. */
 const newPasswordSchema = z
   .object({
-    newPassword: z
-      .string()
-      .min(8,  'At least 8 characters')
-      .max(128, 'Password is too long')
-      .regex(/[a-z]/, 'Must include a lowercase letter')
-      .regex(/[A-Z]/, 'Must include an uppercase letter')
-      .regex(/[0-9]/, 'Must include a number'),
+    newPassword: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {

@@ -7,71 +7,23 @@ import toast from 'react-hot-toast'
 import { ArrowRight, Check, Eye, EyeOff } from 'lucide-react'
 import { Button, Input } from '../components'
 import { useAuth } from '../contexts/useAuth'
-
-/**
- * Password policy — mirrors Cognito so users get errors client-side
- * instead of a cryptic backend rejection.
- */
-const passwordSchema = z
-  .string()
-  .min(8,  'At least 8 characters')
-  .regex(/[a-z]/, 'Must include a lowercase letter')
-  .regex(/[A-Z]/, 'Must include an uppercase letter')
-  .regex(/[0-9]/, 'Must include a number')
-
-/**
- * Address must contain a few tokens + a digit or comma — catches stray strings
- * like "etst" or "aaaaa". Capped to prevent oversized payloads / header injection.
- */
-const addressSchema = z
-  .string()
-  .trim()
-  .min(10,  'Please enter a full address (street, city, parish)')
-  .max(200, 'Address is too long')
-  .refine((v) => /\d/.test(v) || /,/.test(v), {
-    message: 'Address should include a street number or be comma-separated',
-  })
-  .refine((v) => !/[\r\n]/.test(v), { message: 'Address cannot contain line breaks' })
-
-/**
- * Phone: E.164 = 8–15 digits after stripping separators.
- */
-const phoneSchema = z
-  .string()
-  .trim()
-  .max(20, 'Phone number is too long')
-  .refine((v) => {
-    const d = v.replace(/\D/g, '')
-    return d.length >= 8 && d.length <= 15
-  }, 'Please enter a valid international phone number (8–15 digits)')
-
-/**
- * Name: Unicode letters + common separators, capped at 50, with zero-width /
- * RTL-override characters rejected (homograph / spoofing defence).
- */
-const nameSchema = z
-  .string()
-  .trim()
-  .min(2,  'Must be at least 2 characters')
-  .max(50, 'Must be 50 characters or fewer')
-  .regex(/^[\p{L}\s'\-.]+$/u, 'Letters, spaces, hyphens and apostrophes only')
-  .refine((v) => !/[\u200B-\u200F\u202A-\u202E\uFEFF]/.test(v), {
-    message: 'Contains invalid invisible characters',
-  })
+import {
+  nameSchema,
+  emailSchema,
+  phoneSchema,
+  addressSchema,
+  passwordSchema,
+  normalisePhone,
+} from '../lib/schemas'
 
 const registerSchema = z
   .object({
     firstName: nameSchema,
     lastName:  nameSchema,
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .email('Please enter a valid email address')
-      .max(254, 'Email is too long'),
+    email:     emailSchema,
     phone:     phoneSchema,
     address:   addressSchema,
-    password:  passwordSchema.max(128, 'Password is too long'),
+    password:  passwordSchema,
     confirmPassword: z.string(),
     acceptTerms: z.literal(true, {
       message: 'You must accept the Terms to continue',
@@ -126,9 +78,7 @@ export const Register = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true)
     try {
-      // Normalise phone to E.164
-      let phone = data.phone.replace(/[\s\-().]/g, '')
-      if (!phone.startsWith('+')) phone = `+${phone}`
+      const phone = normalisePhone(data.phone)
 
       await signUp(data.email, data.password, data.firstName, data.lastName, phone, data.address)
       toast.success('Account created! Check your email for a verification code.')
