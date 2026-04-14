@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { SiteNav } from '../components/SiteNav'
+import { SiteFooter } from '../components/SiteFooter'
 import {
-  Facebook, Instagram, Twitter, Linkedin,
-  MapPin, Phone, Mail, CheckCircle,
   Package, Truck, ArrowRight, Anchor,
 } from 'lucide-react'
 
@@ -73,7 +72,7 @@ export function OceanFreightPage() {
             <div data-animate="right">
               <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Ocean Freight</p>
               <h2 className="text-3xl sm:text-[40px] font-bold text-gray-800 leading-tight mb-5">
-                Shipping To Barbados...<br />That's Easy!
+                Shipping to Barbados...<br />that's easy!
               </h2>
               <p className="text-gray-600 leading-relaxed mb-4">
                 CargoLink Barbados offers a one stop solution. We ship containers, boxes, barrels, dry goods,
@@ -113,11 +112,11 @@ export function OceanFreightPage() {
               { icon: Anchor,   title: 'Dry & Temperature Goods',   desc: 'Dry goods, chemicals, building materials, plus frozen and chilled cargo at our Miami facility.' },
             ].map(({ icon: Icon, title, desc }, i) => (
               <div key={title} data-animate data-delay={String(i * 120)}
-                className="card-lift bg-white border border-gray-200 rounded-xl p-8 group">
+                className="card-lift h-full bg-white border border-gray-200 rounded-xl p-8 group">
                 <div className="w-12 h-12 bg-brand-navy rounded-xl flex items-center justify-center mb-5 shadow group-hover:scale-110 transition-transform duration-300">
                   <Icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-brand-navy transition-colors">{title}</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -133,7 +132,7 @@ export function OceanFreightPage() {
         </div>
         <div data-animate className="relative z-10 max-w-3xl mx-auto px-4">
           <h2 className="text-2xl sm:text-[32px] font-bold text-white leading-snug mb-4">
-            Weekly Sailing From Miami To Barbados
+            Weekly sailing from Miami to Barbados
           </h2>
           <p className="text-white/70 text-base">
             CARGOLINK BARBADOS offers LCL &amp; FCL services from the U.S., Canada, Europe, the UK,
@@ -168,74 +167,20 @@ export function OceanFreightPage() {
       {/* ── CTA ── */}
       <section className="py-16 bg-brand-navy text-center">
         <div data-animate className="max-w-2xl mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Ready To Ship With Us?</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Ready to ship with us?</h2>
           <p className="text-white/70 mb-8">Contact our sales team for a quote on your ocean freight shipment.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="/#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-bold text-brand-navy bg-brand-gold rounded-lg hover:opacity-90 transition-all shadow-lg pulse-gold">
-              Request A Quote <ArrowRight className="w-5 h-5" />
+              Request a Quote <ArrowRight className="w-5 h-5" />
             </a>
             <Link to="/register" className="inline-flex items-center gap-2 px-10 py-4 text-base font-bold text-white border-2 border-white rounded-lg hover:bg-white hover:text-brand-navy transition-all">
-              Open An Account
+              Open an account
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="bg-white border-t border-gray-200 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
-            <div>
-              <img src="/logos/logo-cropped.png" alt="CargoLink Barbados" className="h-16 w-auto mb-3" />
-              <p className="text-sm text-gray-500">Caribbean Trading and Cargo Management Inc.</p>
-              <div className="flex gap-3 mt-4">
-                {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
-                  <a key={i} href="#" className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center hover:bg-brand-navy-dark hover:scale-110 transition-all duration-200">
-                    <Icon className="w-4 h-4 text-white" />
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Quick Links</h5>
-              <ul className="space-y-2 text-sm text-gray-500">
-                {[
-                  { label: 'Home',          to: '/'             },
-                  { label: 'Air Freight',   to: '/air-freight'  },
-                  { label: 'Ocean Freight', to: '/ocean-freight'},
-                  { label: 'Rates',         to: '/rates'        },
-                ].map(({ label, to }) => (
-                  <li key={label}>
-                    <Link to={to} className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-                      <CheckCircle className="w-4 h-4 text-brand-navy" />{label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Contact Info</h5>
-              <div className="space-y-4">
-                {[
-                  { Icon: MapPin, text: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados' },
-                  { Icon: Mail,   text: 'info@cargolinkbarbados.com' },
-                  { Icon: Phone,  text: '+1246-537-2826' },
-                ].map(({ Icon, text }, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <p className="text-sm text-gray-500 whitespace-pre-line pt-1.5">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            <p>Copyright © 2026 Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

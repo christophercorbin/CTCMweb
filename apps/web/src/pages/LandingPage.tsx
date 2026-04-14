@@ -4,7 +4,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  CheckCircle,
   Package,
   ShoppingCart,
   Truck,
@@ -20,6 +19,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '../contexts/useAuth'
+import { SiteFooter } from '../components/SiteFooter'
 
 function getInitials(firstName?: string, lastName?: string, email?: string): string {
   if (firstName && lastName) return (firstName[0] + lastName[0]).toUpperCase()
@@ -549,15 +549,15 @@ export function LandingPage() {
 
       {/* ── SALES TEAM CTA ── */}
       <section className="py-16 bg-white text-center">
-        <div data-animate className="max-w-2xl mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our Sales Team Is Here To Help</h2>
+        <div data-animate className="max-w-3xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our sales team is here to help</h2>
           <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-10 pulse-gold">
-            Request A Quote
+            Request a Quote
           </a>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-4">
             <a
               href="mailto:info@cargolinkbarbados.com"
-              className="card-lift flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy transition-colors text-left"
+              className="card-lift inline-flex items-center gap-4 px-6 py-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy hover:text-brand-navy transition-colors text-left"
             >
               <div className="w-11 h-11 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
                 <Mail className="w-5 h-5 text-white" />
@@ -569,7 +569,7 @@ export function LandingPage() {
             </a>
             <a
               href="tel:+12465372826"
-              className="card-lift flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy transition-colors text-left"
+              className="card-lift inline-flex items-center gap-4 px-6 py-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy hover:text-brand-navy transition-colors text-left"
             >
               <div className="w-11 h-11 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
                 <Phone className="w-5 h-5 text-white" />
@@ -658,60 +658,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="bg-white border-t border-gray-200 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
-            <div>
-              <img src="/logos/logo-cropped.png" alt="CargoLink Barbados" className="h-16 w-auto mb-3" />
-              <p className="text-sm text-gray-500">Caribbean Trading and Cargo Management Inc.</p>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Quick Links</h5>
-              <ul className="space-y-2 text-sm text-gray-500">
-                {[
-                  { label: 'Home',              href: '#hero',    to: undefined },
-                  { label: 'About Us',          href: '#about',   to: undefined },
-                  { label: 'Rates',             href: undefined,  to: '/rates'  },
-                  { label: 'Contact Us',        href: '#contact', to: undefined },
-                ].map(({ label, href, to }) => (
-                  <li key={label}>
-                    {to ? (
-                      <Link to={to} className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-                        <CheckCircle className="w-4 h-4 text-brand-navy" />{label}
-                      </Link>
-                    ) : (
-                      <a href={href!} className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-                        <CheckCircle className="w-4 h-4 text-brand-navy" />{label}
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Contact Info</h5>
-              <div className="space-y-4">
-                {[
-                  { Icon: MapPin, text: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados' },
-                  { Icon: Mail,   text: 'info@cargolinkbarbados.com' },
-                  { Icon: Phone,  text: '+1-246-537-2826' },
-                ].map(({ Icon, text }, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <p className="text-sm text-gray-500 whitespace-pre-line leading-tight">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            <p>Copyright © 2026 Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
     </div>
   )
