@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { ArrowRight, Check, Eye, EyeOff } from 'lucide-react'
 import { Button, Input } from '../components'
 import { useAuth } from '../contexts/useAuth'
 
@@ -277,8 +277,13 @@ export const Register = () => {
             <p className="text-xs text-red-600 -mt-2">{errors.acceptTerms.message}</p>
           )}
 
-          <Button type="submit" loading={loading} className="w-full mt-2">
+          <Button
+            type="submit"
+            loading={loading}
+            className="w-full mt-2 py-3 text-base font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all gap-2"
+          >
             Create Account
+            {!loading && <ArrowRight className="w-4 h-4" />}
           </Button>
         </form>
 
