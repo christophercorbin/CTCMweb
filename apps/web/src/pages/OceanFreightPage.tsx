@@ -18,27 +18,37 @@ const IMG = {
 export function OceanFreightPage() {
   useEffect(() => {
     window.scrollTo(0, 0)
-    const els = document.querySelectorAll('[data-animate]')
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-animate]'))
+    if (reduce) { els.forEach((el) => el.classList.add('cl-visible')); return }
+    els.forEach((el) => el.classList.add('cl-pre'))
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) {
           const el = e.target as HTMLElement
-          setTimeout(() => el.classList.add('cl-visible'), parseInt(el.dataset.delay || '0'))
+          setTimeout(() => { el.classList.remove('cl-pre'); el.classList.add('cl-visible') }, parseInt(el.dataset.delay || '0'))
           obs.unobserve(el)
         }
       })
     }, { threshold: 0.12 })
     els.forEach((el) => obs.observe(el))
-    return () => obs.disconnect()
+    // Fallback: after 1.5s, force any remaining hidden elements visible
+    const failSafe = window.setTimeout(() => {
+      document.querySelectorAll<HTMLElement>('[data-animate].cl-pre').forEach((el) => {
+        el.classList.remove('cl-pre'); el.classList.add('cl-visible')
+      })
+    }, 1500)
+    return () => { obs.disconnect(); window.clearTimeout(failSafe) }
   }, [])
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
       <style>{`
-        [data-animate]         { opacity:0; transform:translateY(28px); transition:opacity .65s ease,transform .65s ease; }
-        [data-animate="left"]  { transform:translateX(-36px); }
-        [data-animate="right"] { transform:translateX(36px); }
-        [data-animate].cl-visible,[data-animate="left"].cl-visible,[data-animate="right"].cl-visible { opacity:1; transform:none; }
+        [data-animate]                     { transition:opacity .65s ease, transform .65s ease; }
+        [data-animate].cl-pre              { opacity:0; transform:translateY(28px); }
+        [data-animate="left"].cl-pre       { opacity:0; transform:translateX(-36px); }
+        [data-animate="right"].cl-pre      { opacity:0; transform:translateX(36px); }
+        [data-animate].cl-visible          { opacity:1; transform:none; }
         .card-lift { transition:transform .25s ease,box-shadow .25s ease; }
         .card-lift:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(27,45,120,.12); }
         @keyframes pulseGold { 0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,.55);}60%{box-shadow:0 0 0 14px rgba(245,197,24,0);} }
