@@ -7,6 +7,8 @@ const LINKS: { label: string; to: string }[] = [
   { label: 'Ocean Freight', to: '/ocean-freight' },
   { label: 'Rates',         to: '/rates'         },
   { label: 'Contact Us',    to: '/#contact'      },
+  { label: 'Privacy Policy',      to: '/privacy' },
+  { label: 'Terms & Conditions',  to: '/terms'   },
 ]
 
 const CONTACT: { Icon: typeof MapPin; text: string; href?: string }[] = [

@@ -192,9 +192,9 @@ export const Login = () => {
 
             <Button
               type="submit"
+              variant="gold"
               loading={loading}
               className="w-full mt-3 py-3.5 text-base font-bold uppercase tracking-wide rounded-xl
-                         bg-brand-gold !text-brand-navy hover:bg-brand-gold-dark
                          shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
                          ring-1 ring-brand-gold-dark/30"
             >
@@ -254,9 +254,9 @@ export const Login = () => {
 
           <Button
             type="submit"
+            variant="gold"
             loading={loading}
             className="w-full mt-3 py-3.5 text-base font-bold uppercase tracking-wide rounded-xl
-                       bg-brand-gold !text-brand-navy hover:bg-brand-gold-dark
                        shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
                        ring-1 ring-brand-gold-dark/30"
           >

@@ -152,10 +152,10 @@ export function RatesPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-6 py-5 mt-6">
               <h4 className="font-bold text-gray-800 mb-2">Duties &amp; Taxes</h4>
               <p className="text-gray-600 text-sm leading-relaxed">
-                If you purchase an item(s) and the total value is <strong>USD$30.00 or less</strong>, customs duties are not applicable.
+                If you purchase an item(s) and the total value is <strong>$75 USD or less</strong>, customs duties are not applicable.
               </p>
               <p className="text-gray-600 text-sm leading-relaxed mt-2">
-                If the total value exceeds USD$30.00, duties are applied. Items attract different rates of duty
+                If the total value exceeds $75 USD, duties are applied. Items attract different rates of duty
                 as determined by the Barbados Customs Authority. Our Duty Calculator gives you a guide for most common items.
               </p>
             </div>
