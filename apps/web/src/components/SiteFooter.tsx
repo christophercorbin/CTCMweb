@@ -59,8 +59,13 @@ export function SiteFooter() {
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
+        <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400 space-y-2">
           <p>Copyright © 2026 Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
+          <p className="space-x-3">
+            <Link to="/privacy" className="hover:text-brand-navy transition-colors">Privacy Policy</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/terms" className="hover:text-brand-navy transition-colors">Terms &amp; Conditions</Link>
+          </p>
         </div>
       </div>
     </footer>
