@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { KeyRound } from 'lucide-react'
 import { Button, Input } from '../components'
 import { cognitoResetPassword, cognitoConfirmResetPassword } from '../lib/cognito'
 
@@ -70,28 +71,30 @@ export const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-brand-gradient">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-xl px-6 py-4 shadow-sm border border-gray-200">
+        <div className="flex items-center justify-center mb-6">
+          <Link to="/" aria-label="Back to CargoLink Barbados home">
             <img
-              src="/logos/logo-color-horizontal.png"
+              src="/logos/logo-color-stacked.png"
               alt="CargoLink Barbados"
-              className="h-12 w-auto"
+              className="h-28 w-auto hover:opacity-90 transition-opacity"
             />
-          </div>
+          </Link>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <KeyRound className="w-5 h-5 text-brand-navy" />
+          <h1 className="text-2xl font-bold text-brand-navy">
             {step === 'email' ? 'Reset your password' : 'Set a new password'}
           </h1>
-          <p className="text-gray-500 text-sm mb-6">
-            {step === 'email'
-              ? "Enter your email and we'll send a reset code."
-              : `We sent a 6-digit code to ${sentEmail}`}
-          </p>
+        </div>
+        <p className="text-gray-500 text-sm mb-6 text-center">
+          {step === 'email'
+            ? "Enter your email and we'll send a reset code."
+            : `We sent a 6-digit code to ${sentEmail}`}
+        </p>
 
           {step === 'email' ? (
             <form onSubmit={emailForm.handleSubmit(handleRequestCode)} className="space-y-4">
@@ -148,11 +151,10 @@ export const ForgotPassword = () => {
           )}
 
           <div className="mt-6 text-center">
-            <Link to="/login" className="text-sm text-blue-600 font-medium hover:text-blue-700">
+            <Link to="/login" className="text-sm text-brand-navy font-medium hover:underline">
               Back to sign in
             </Link>
           </div>
-        </div>
       </div>
     </div>
   )

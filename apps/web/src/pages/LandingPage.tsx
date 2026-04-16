@@ -42,30 +42,47 @@ export function LandingPage() {
   const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
 
   /* Scroll-reveal — fail-safe: content is visible by default.
-     We OPT IN to the animation by adding .cl-animate once the observer fires,
-     so if JS fails the page is still fully readable.
-     Respects prefers-reduced-motion. */
+     We OPT IN to the animation by adding .cl-pre once JS is running,
+     then .cl-visible fades it back in when the observer fires.
+     If JS never runs, the whole page stays readable.
+     Respects prefers-reduced-motion.
+     Safety: a 1.5 s timeout reveals anything the observer misses. */
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduceMotion) return
-    const els = document.querySelectorAll('[data-animate]')
+    const els = document.querySelectorAll<HTMLElement>('[data-animate]')
+
+    // Helper to reveal a single element
+    const reveal = (el: HTMLElement) => {
+      if (el.classList.contains('cl-visible')) return
+      const delay = parseInt(el.dataset.delay || '0')
+      setTimeout(() => {
+        el.classList.remove('cl-pre')
+        el.classList.add('cl-visible')
+      }, delay)
+    }
+
     // Set initial hidden state now that we know JS is running
     els.forEach((el) => el.classList.add('cl-pre'))
+
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) {
-          const el = e.target as HTMLElement
-          const delay = parseInt(el.dataset.delay || '0')
-          setTimeout(() => {
-            el.classList.remove('cl-pre')
-            el.classList.add('cl-visible')
-          }, delay)
-          obs.unobserve(el)
+          reveal(e.target as HTMLElement)
+          obs.unobserve(e.target)
         }
       })
-    }, { threshold: 0.08 })
+    }, { threshold: 0.05, rootMargin: '0px 0px 80px 0px' })
+
     els.forEach((el) => obs.observe(el))
-    return () => obs.disconnect()
+
+    // Safety net: if the observer misses anything (race condition,
+    // off-screen calc error), force-reveal after 1.5 s
+    const safetyTimer = setTimeout(() => {
+      els.forEach((el) => reveal(el))
+    }, 1500)
+
+    return () => { obs.disconnect(); clearTimeout(safetyTimer) }
   }, [])
 
   return (
