@@ -67,13 +67,17 @@ export function SiteNav() {
 
             {/* Desktop nav links */}
             <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
-              <Link to="/" className={linkCls}>Home{underline}</Link>
+              <Link
+                to="/"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={linkCls}
+              >Home{underline}</Link>
 
               {/* Our Services dropdown */}
               <div ref={servicesRef} className="relative">
                 <button
                   onClick={() => setServicesOpen(!servicesOpen)}
-                  className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none"
+                  className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none uppercase tracking-wide"
                 >
                   Our Services
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
@@ -164,7 +168,9 @@ export function SiteNav() {
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-3 space-y-0.5">
-            <Link to="/" onClick={() => setMobileOpen(false)}
+            <Link
+              to="/"
+              onClick={() => { setMobileOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">
               Home <ChevronDown className="w-4 h-4 -rotate-90" />
             </Link>

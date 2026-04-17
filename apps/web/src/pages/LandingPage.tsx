@@ -1,36 +1,19 @@
-import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   MapPin,
   Phone,
   Mail,
-  CheckCircle,
   Package,
   ShoppingCart,
   Truck,
   ClipboardList,
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin,
-  Menu,
-  X,
+  AlertTriangle,
   ArrowRight,
-  ChevronDown,
-  LayoutDashboard,
-  User,
-  LogOut,
 } from 'lucide-react'
 import { useAuth } from '../contexts/useAuth'
-
-function getInitials(firstName?: string, lastName?: string, email?: string): string {
-  if (firstName && lastName) return (firstName[0] + lastName[0]).toUpperCase()
-  if (firstName) return firstName.slice(0, 2).toUpperCase()
-  const local = (email ?? '').split('@')[0]
-  const parts  = local.split(/[._\-+]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return local.slice(0, 2).toUpperCase()
-}
+import { SiteFooter } from '../components/SiteFooter'
+import { SiteNav } from '../components/SiteNav'
 
 // All images served locally from /public/images/
 const IMG = {
@@ -54,52 +37,52 @@ const IMG = {
 
 
 export function LandingPage() {
-  const { isAuthenticated, user, signOut } = useAuth()
-  const navigate = useNavigate()
-
-  const [mobileOpen,   setMobileOpen]   = useState(false)
-  const [servicesOpen, setServicesOpen] = useState(false)
-  const [profileOpen,  setProfileOpen]  = useState(false)
-
-  const servicesRef = useRef<HTMLDivElement>(null)
-  const profileRef  = useRef<HTMLDivElement>(null)
+  const { isAuthenticated, user } = useAuth()
 
   const dashboardPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
-  const initials      = user ? getInitials(user.firstName, user.lastName, user.email) : ''
-  const displayName   = user?.firstName || user?.email?.split('@')[0] || 'Account'
 
-  const handleSignOut = async () => {
-    setProfileOpen(false)
-    setMobileOpen(false)
-    await signOut()
-    navigate('/')
-  }
-
-  /* Close dropdowns on outside click */
+  /* Scroll-reveal — fail-safe: content is visible by default.
+     We OPT IN to the animation by adding .cl-pre once JS is running,
+     then .cl-visible fades it back in when the observer fires.
+     If JS never runs, the whole page stays readable.
+     Respects prefers-reduced-motion.
+     Safety: a 1.5 s timeout reveals anything the observer misses. */
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) setServicesOpen(false)
-      if (profileRef.current  && !profileRef.current.contains(e.target as Node))  setProfileOpen(false)
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) return
+    const els = document.querySelectorAll<HTMLElement>('[data-animate]')
+
+    // Helper to reveal a single element
+    const reveal = (el: HTMLElement) => {
+      if (el.classList.contains('cl-visible')) return
+      const delay = parseInt(el.dataset.delay || '0')
+      setTimeout(() => {
+        el.classList.remove('cl-pre')
+        el.classList.add('cl-visible')
+      }, delay)
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
-  /* Scroll-reveal — watches every [data-animate] element */
-  useEffect(() => {
-    const els = document.querySelectorAll('[data-animate]')
+    // Set initial hidden state now that we know JS is running
+    els.forEach((el) => el.classList.add('cl-pre'))
+
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) {
-          const el = e.target as HTMLElement
-          const delay = parseInt(el.dataset.delay || '0')
-          setTimeout(() => el.classList.add('cl-visible'), delay)
-          obs.unobserve(el)
+          reveal(e.target as HTMLElement)
+          obs.unobserve(e.target)
         }
       })
-    }, { threshold: 0.12 })
+    }, { threshold: 0.05, rootMargin: '0px 0px 80px 0px' })
+
     els.forEach((el) => obs.observe(el))
-    return () => obs.disconnect()
+
+    // Safety net: if the observer misses anything (race condition,
+    // off-screen calc error), force-reveal after 1.5 s
+    const safetyTimer = setTimeout(() => {
+      els.forEach((el) => reveal(el))
+    }, 1500)
+
+    return () => { obs.disconnect(); clearTimeout(safetyTimer) }
   }, [])
 
   return (
@@ -107,17 +90,17 @@ export function LandingPage() {
 
       {/* ── Global animation styles ── */}
       <style>{`
-        /* Scroll-reveal base states */
-        [data-animate]           { opacity:0; transform:translateY(32px); transition:opacity .65s ease, transform .65s ease; }
-        [data-animate="left"]    { transform:translateX(-40px); }
-        [data-animate="right"]   { transform:translateX(40px); }
-        [data-animate="scale"]   { transform:scale(0.88); }
-        [data-animate="fade"]    { transform:none; }
-        [data-animate].cl-visible,
-        [data-animate="left"].cl-visible,
-        [data-animate="right"].cl-visible,
-        [data-animate="scale"].cl-visible,
-        [data-animate="fade"].cl-visible { opacity:1; transform:none; }
+        /* Scroll-reveal — FAIL-SAFE.
+           Content is visible by default. Only when JS adds .cl-pre
+           does the element hide, and .cl-visible fades it back in.
+           If JS never runs, the whole page stays readable. */
+        [data-animate]                     { transition:opacity .65s ease, transform .65s ease; }
+        [data-animate].cl-pre              { opacity:0; transform:translateY(32px); }
+        [data-animate="left"].cl-pre       { opacity:0; transform:translateX(-40px); }
+        [data-animate="right"].cl-pre      { opacity:0; transform:translateX(40px); }
+        [data-animate="scale"].cl-pre      { opacity:0; transform:scale(0.88); }
+        [data-animate="fade"].cl-pre       { opacity:0; transform:none; }
+        [data-animate].cl-visible          { opacity:1; transform:none; }
 
         /* Hero staggered entrance */
         @keyframes heroUp {
@@ -154,196 +137,58 @@ export function LandingPage() {
         /* Underline draw on nav links (landing) */
         /* already handled inline via Tailwind */
       `}</style>
-
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50">
-        <div className="bg-white shadow-md border-b-4 border-brand-gold">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-28">
-
-              {/* Logo → always back to landing page */}
-              <Link to="/" className="shrink-0 py-2">
-                <img
-                  src="/logos/logo-cropped.png"
-                  alt="CargoLink Barbados — The Smarter way to ship"
-                  className="h-24 w-auto drop-shadow-sm"
-                />
-              </Link>
-
-              {/* Desktop nav */}
-              <nav className="hidden lg:flex items-center gap-1 text-[14px] font-semibold text-gray-700 tracking-wide uppercase">
-                <a href="#hero" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                  Home
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </a>
-
-                {/* Our Services dropdown */}
-                <div ref={servicesRef} className="relative">
-                  <button
-                    onClick={() => setServicesOpen(!servicesOpen)}
-                    className="relative flex items-center gap-1 px-4 py-2 group transition-colors hover:text-brand-navy focus:outline-none"
-                  >
-                    Our Services
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${servicesOpen ? 'rotate-180' : ''}`} />
-                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                  </button>
-                  {servicesOpen && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-72 bg-brand-navy rounded-b-xl shadow-2xl overflow-hidden z-50 border-t-4 border-brand-gold">
-                      <Link to="/air-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10">
-                        <img src={IMG.iconPlane} className="w-6 h-6 object-contain invert" alt="" />
-                        CargoLink Barbados Express Air Freight
-                      </Link>
-                      <Link to="/ocean-freight" onClick={() => setServicesOpen(false)} className="flex items-center gap-3 px-6 py-4 text-sm text-white hover:bg-white/10 transition-colors">
-                        <img src={IMG.iconShip} className="w-6 h-6 object-contain invert" alt="" />
-                        CargoLink Barbados Ocean Freight
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                <Link to="/rates" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                  Rates
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </Link>
-                <a href="#contact" className="relative px-4 py-2 group transition-colors hover:text-brand-navy">
-                  Contact Us
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </a>
-              </nav>
-
-              {/* Right: auth-aware */}
-              <div className="hidden lg:flex items-center gap-3">
-                {isAuthenticated && user ? (
-                  <div ref={profileRef} className="relative">
-                    <button
-                      onClick={() => setProfileOpen(!profileOpen)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm shrink-0">
-                        {initials}
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700 max-w-[120px] truncate">{displayName}</span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {profileOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Signed in as</p>
-                          <p className="text-sm font-semibold text-gray-800 truncate">{user.email}</p>
-                        </div>
-                        <Link to={dashboardPath} onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                          <LayoutDashboard className="w-4 h-4 text-brand-navy" /> Dashboard
-                        </Link>
-                        <Link to="/customer-info" onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
-                          <User className="w-4 h-4 text-brand-navy" /> My Account
-                        </Link>
-                        <button onClick={handleSignOut}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100">
-                          <LogOut className="w-4 h-4" /> Sign Out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <Link to="/login" className="px-4 py-2 text-sm font-semibold text-brand-navy hover:text-brand-navy-dark transition-colors uppercase tracking-wide">
-                      Login
-                    </Link>
-                    <Link to="/register" className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 uppercase tracking-wide">
-                      Sign Up <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile hamburger */}
-              <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2.5 rounded-lg bg-brand-navy text-white hover:bg-brand-navy-dark transition-colors" aria-label="Menu">
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
-            <div className="px-4 py-3 space-y-0.5">
-              <a href="#hero"     onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Home <ChevronDown className="w-4 h-4 -rotate-90" /></a>
-              <div className="border-b border-gray-100">
-                <p className="py-3 text-sm font-semibold text-gray-800 uppercase tracking-wide">Our Services</p>
-                <Link to="/air-freight"   onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-2.5 text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconPlane} className="w-5 h-5 object-contain" alt="" /> Express Air Freight</Link>
-                <Link to="/ocean-freight" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pl-4 pb-3   text-sm text-gray-600 hover:text-brand-navy"><img src={IMG.iconShip}  className="w-5 h-5 object-contain" alt="" /> Ocean Freight</Link>
-              </div>
-              <Link to="/rates"  onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy border-b border-gray-100 uppercase tracking-wide">Rates <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
-              <a href="#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 text-sm font-semibold text-gray-800 hover:text-brand-navy uppercase tracking-wide">Contact Us <ChevronDown className="w-4 h-4 -rotate-90" /></a>
-            </div>
-            {isAuthenticated && user ? (
-              <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-2">
-                <div className="flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-xl">
-                  <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm shrink-0">{initials}</div>
-                  <p className="text-sm font-semibold text-gray-800 truncate max-w-[180px]">{user.email}</p>
-                </div>
-                <Link to={dashboardPath} onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 w-full py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg justify-center uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
-                </Link>
-                <button onClick={handleSignOut}
-                  className="w-full py-3 text-sm font-bold text-red-600 border-2 border-red-200 rounded-lg uppercase tracking-wide hover:bg-red-50 transition-colors">
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-3 px-4 pb-4">
-                <Link to="/login"    onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-brand-navy border-2 border-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy hover:text-white transition-colors">Login</Link>
-                <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold text-white bg-brand-navy rounded-lg uppercase tracking-wide hover:bg-brand-navy-dark transition-colors">Sign Up</Link>
-              </div>
-            )}
-          </div>
-        )}
-      </header>
+      <SiteNav />
 
       {/* ── HERO ── */}
       <section id="hero" className="relative min-h-[640px] flex items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMG.heroBg} alt="CargoLink Barbados hero" className="w-full h-full object-cover object-center scale-105" style={{ animation: 'none' }} />
-          <div className="absolute inset-0 bg-brand-navy/60" />
+          <img
+            src={IMG.heroBg}
+            alt=""
+            className="w-full h-full object-cover object-center scale-105"
+            style={{ animation: 'none' }}
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-brand-navy/75" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-4 py-28">
-          <p className="hero-1 text-brand-gold font-semibold text-xl mb-4 tracking-wide">Smart Shipping To The Caribbean</p>
+          <p className="hero-1 text-brand-gold font-semibold text-xl mb-4 tracking-wide">Smart Shipping to the Caribbean</p>
           <h1 className="hero-2 text-4xl sm:text-5xl lg:text-[65px] font-bold text-white leading-tight mb-6">
-            Welcome To CargoLink Barbados
+            Welcome to CargoLink Barbados
           </h1>
-          <p className="hero-3 text-white/80 text-base leading-relaxed mb-10 max-w-xl mx-auto">
+          <p className="hero-3 text-white/80 text-base leading-relaxed mb-8 max-w-xl mx-auto">
             CargoLink Barbados provides a complete logistics solution including freight forwarding,
             customs clearance, package consolidation, and door-to-door delivery.
           </p>
-          <a href="#contact" className="hero-4 inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20 pulse-gold">
-            Contact Us
-          </a>
-        </div>
-      </section>
 
-      {/* ── THREE SERVICE CARDS ── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { img: IMG.iconTruck,     title: 'Global Freight Solutions',  desc: 'We provide reliable international freight solutions to move your cargo safely and efficiently across global routes and Caribbean destinations.' },
-              { img: IMG.iconCargo,     title: 'Cargo Transportation',      desc: 'Our transportation services ensure secure and timely movement of goods, handling everything from small packages to large shipments.' },
-              { img: IMG.iconWarehouse, title: 'Secure Storage Services',   desc: 'Safe and organized warehouse storage designed to protect your cargo before shipment or delivery to its final destination.' },
-            ].map(({ img, title, desc }, i) => (
-              <div key={title} data-animate data-delay={String(i * 130)}
-                className="card-lift bg-white border border-gray-200 rounded-xl p-8 shadow-sm group cursor-default">
-                <div className="float-anim inline-block mb-5">
-                  <img src={img} alt={title} className="w-14 h-14 object-contain" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-3 group-hover:text-brand-navy transition-colors">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
+          {/* Primary CTA — auth-aware */}
+          <div className="hero-4 flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            {isAuthenticated ? (
+              <Link
+                to={dashboardPath}
+                className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg border border-white/20 pulse-gold"
+              >
+                Go to Dashboard <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold text-brand-navy bg-brand-gold rounded-lg hover:brightness-95 transition-all shadow-lg pulse-gold"
+                >
+                  Get Started <ArrowRight className="w-4 h-4" />
+                </Link>
+                <a
+                  href="#contact"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-white/10 backdrop-blur rounded-lg hover:bg-white/20 transition-all border border-white/30"
+                >
+                  Contact Us
+                </a>
+              </>
+            )}
           </div>
+
         </div>
       </section>
 
@@ -355,11 +200,11 @@ export function LandingPage() {
             {/* Left: 2-column image grid */}
             <div data-animate="left" className="grid grid-cols-2 gap-3">
               <div className="space-y-3">
-                <img src={IMG.containers}    alt="Cargo containers" className="w-full rounded-xl object-cover h-44 hover:scale-105 transition-transform duration-500" />
-                <img src={IMG.packages}      alt="CargoLink packages" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={IMG.containers}    alt="Cargo containers" loading="lazy" className="w-full rounded-xl object-cover h-44 hover:scale-105 transition-transform duration-500" />
+                <img src={IMG.packages}      alt="CargoLink packages" loading="lazy" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" />
               </div>
               <div>
-                <img src={IMG.airFreightPlan} alt="CargoLink Barbados aircraft" className="w-full rounded-xl object-cover h-full hover:scale-105 transition-transform duration-500" style={{ minHeight: '380px' }} />
+                <img src={IMG.airFreightPlan} alt="CargoLink Barbados aircraft" loading="lazy" className="w-full rounded-xl object-cover h-full hover:scale-105 transition-transform duration-500" style={{ minHeight: '380px' }} />
               </div>
             </div>
 
@@ -369,10 +214,10 @@ export function LandingPage() {
               <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800 leading-tight mb-6">
                 Your Trusted Caribbean Shipping Partner
               </h2>
-              <p className="text-gray-600 leading-relaxed mb-4">
+              <p className="text-gray-600 leading-relaxed mb-4 text-justify">
                 CargoLink Barbados is owned by Caribbean Trading and Cargo Management Inc. is a Barbadian company established in 2017.
               </p>
-              <p className="text-gray-600 leading-relaxed mb-10">
+              <p className="text-gray-600 leading-relaxed mb-10 text-justify">
                 Our management has over 25 years of experience in international shipping specialising in Air freight and Ocean freight logistics into the Caribbean.
               </p>
 
@@ -398,13 +243,14 @@ export function LandingPage() {
       {/* ── MID-PAGE BAND ── */}
       <section className="relative py-24 overflow-hidden text-center">
         <div className="absolute inset-0">
-          <img src={IMG.bandBg} alt="" className="w-full h-full object-cover object-center scale-110" style={{ animation: 'floatY 8s ease-in-out infinite' }} />
+          <img src={IMG.bandBg} alt="" loading="lazy" className="w-full h-full object-cover object-center scale-110" style={{ animation: 'floatY 8s ease-in-out infinite' }} />
           <div className="absolute inset-0 bg-brand-navy/70" />
         </div>
-        <div data-animate="scale" className="relative z-10 max-w-3xl mx-auto px-4">
+        <div data-animate="scale" className="relative z-10 max-w-3xl mx-auto px-4 text-center">
           <p className="text-brand-gold font-semibold text-xl mb-4 tracking-wide">The Smarter Way To Ship</p>
-          <h2 className="text-2xl sm:text-[30px] font-bold text-white leading-snug">
-            Air Freight And Ocean Freight Logistics Into The Caribbean<br className="hidden sm:block" />
+          <h2 className="text-2xl sm:text-[30px] font-bold text-white leading-snug text-center">
+            Air Freight And Ocean Freight Logistics<br />
+            Into the Caribbean<br />
             Shop, Consolidate, Then Leave The Rest To Us!
           </h2>
         </div>
@@ -427,11 +273,11 @@ export function LandingPage() {
               { img: IMG.iconWarehouse2, title: 'Warehouse & Cargo Handling', desc: 'Our warehouse in Medley, Florida offers over 33,000 sq ft of storage space and can handle dry goods, heavy equipment, vehicles, and temperature-controlled cargo.' },
             ].map(({ img, title, desc }, i) => (
               <div key={title} data-animate data-delay={String(i * 130)}
-                className="card-lift border border-gray-200 rounded-xl p-8 group cursor-default">
-                <div className="float-anim inline-block mb-5">
-                  <img src={img} alt={title} className="w-12 h-12 object-contain" />
+                className="card-lift border border-gray-200 rounded-xl p-8 cursor-default">
+                <div className="float-anim w-14 h-14 rounded-xl bg-brand-navy flex items-center justify-center mb-5 shadow">
+                  <img src={img} alt={title} className="w-8 h-8 object-contain brightness-0 invert" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-3 group-hover:text-brand-navy transition-colors">{title}</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -442,13 +288,13 @@ export function LandingPage() {
       {/* ── AIR FREIGHT ── */}
       <section id="air-freight" className="py-20 bg-white border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 data-animate className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-12">AIR FREIGHT</h2>
+          <h2 data-animate className="text-3xl sm:text-[44px] font-bold text-gray-800 mb-12">Air Freight</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
             {/* Left: two photos */}
             <div data-animate="left" className="grid grid-cols-2 gap-3">
-              <img src={IMG.airFreightBig} alt="Cargo being loaded onto aircraft" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
-              <img src={IMG.hero}          alt="Cargo plane at sunset"            className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
+              <img src={IMG.airFreightBig} alt="Cargo being loaded onto aircraft" loading="lazy" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
+              <img src={IMG.hero}          alt="Cargo plane at sunset"            loading="lazy" className="w-full rounded-xl object-cover hover:scale-105 transition-transform duration-500" style={{ height: '500px' }} />
             </div>
 
             {/* Right: 3 steps */}
@@ -476,19 +322,19 @@ export function LandingPage() {
       {/* ── OCEAN FREIGHT ── */}
       <section id="ocean-freight" className="relative py-24 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMG.oceanBg} alt="Container port" className="w-full h-full object-cover object-center scale-105" style={{ transition: 'transform 8s ease' }} />
+          <img src={IMG.oceanBg} alt="" loading="lazy" className="w-full h-full object-cover object-center scale-105" style={{ transition: 'transform 8s ease' }} />
           <div className="absolute inset-0 bg-brand-navy/75" />
         </div>
         <div data-animate="right" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl sm:text-[45px] font-bold text-white mb-6">OCEAN FREIGHT</h2>
+          <h2 className="text-4xl sm:text-[45px] font-bold text-white mb-6">Ocean Freight</h2>
           <h3 className="text-2xl sm:text-[35px] font-bold text-white mb-6">Shipping To Barbados...That's Easy!</h3>
-          <p className="text-white/80 text-base leading-relaxed mb-4">
+          <p className="text-white/80 text-base leading-relaxed mb-4 text-justify">
             CargoLink Barbados offers a one stop solution.
           </p>
-          <p className="text-white/80 text-base leading-relaxed mb-4">
+          <p className="text-white/80 text-base leading-relaxed mb-4 text-justify">
             We ship containers, boxes, barrels, dry goods, heavy equipment, vehicles, tires, chemicals, home goods and building materials to Barbados.
           </p>
-          <p className="text-white/80 text-base leading-relaxed mb-8">
+          <p className="text-white/80 text-base leading-relaxed mb-8 text-justify">
             Our warehouse is conveniently located in Medley, Florida. The facility boasts over 33,000 square feet of warehouse space, with 11 overhead doors and a loading ramp. We have the ability to receive temperature-controlled cargo (frozen and chilled) at the facility.
           </p>
           <h3 className="text-2xl sm:text-[30px] font-bold text-white">Weekly Sailing From Miami To Barbados.</h3>
@@ -497,17 +343,35 @@ export function LandingPage() {
 
       {/* ── SALES TEAM CTA ── */}
       <section className="py-16 bg-white text-center">
-        <div data-animate className="max-w-2xl mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our Sales Team Is Here To Help</h2>
-          <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-8 pulse-gold">
-            Request A Quote
+        <div data-animate className="max-w-3xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Our sales team is here to help</h2>
+          <a href="#contact" className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold text-white bg-brand-navy rounded-lg hover:bg-brand-navy-dark transition-all shadow-lg mb-10 pulse-gold">
+            Request a Quote
           </a>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600 mt-2">
-            <a href="mailto:info@cargolinkbarbados.com" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-              <Mail className="w-4 h-4 text-brand-navy" /> info@cargolinkbarbados.com
+          <div className="flex flex-wrap justify-center gap-4">
+            <a
+              href="mailto:info@cargolinkbarbados.com"
+              className="card-lift inline-flex items-center gap-4 px-6 py-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy hover:text-brand-navy transition-colors text-left"
+            >
+              <div className="w-11 h-11 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Email</p>
+                <p className="text-sm font-semibold text-gray-800">info@cargolinkbarbados.com</p>
+              </div>
             </a>
-            <a href="tel:+12465372826" className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-              <Phone className="w-4 h-4 text-brand-navy" /> +1246-537-2826
+            <a
+              href="tel:+12465372826"
+              className="card-lift inline-flex items-center gap-4 px-6 py-5 rounded-xl border border-gray-200 bg-white hover:border-brand-navy hover:text-brand-navy transition-colors text-left"
+            >
+              <div className="w-11 h-11 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <Phone className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Phone</p>
+                <p className="text-sm font-semibold text-gray-800">+1-246-537-2826</p>
+              </div>
             </a>
           </div>
         </div>
@@ -516,13 +380,24 @@ export function LandingPage() {
       {/* ── HOW IT WORKS ── */}
       <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div data-animate className="text-center mb-14">
+          <div data-animate className="text-center mb-8">
             <p className="text-[#1141be] font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
             <h2 className="text-3xl sm:text-[44px] font-bold text-gray-800">How It Works</h2>
             <p className="mt-4 text-gray-500 max-w-xl mx-auto text-sm">
               Air &amp; Ocean freight logistics into the Caribbean — shop online, then leave the rest to us.
             </p>
           </div>
+
+          {/* Cutoff notice — placed prominently above the steps */}
+          <div data-animate className="mb-10 flex justify-center">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 inline-flex items-center gap-3 max-w-full overflow-x-auto">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <p className="text-amber-800 text-sm font-medium whitespace-nowrap">
+                Cargo must reach our Miami warehouse by <strong>noon Thursday</strong> for Friday shipment to Barbados.
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { step: '01', icon: ClipboardList, title: 'Sign Up',              desc: 'Create your free CargoLink Barbados account online in minutes.' },
@@ -534,7 +409,10 @@ export function LandingPage() {
             ].map(({ step, icon: Icon, title, desc }, i) => (
               <div key={step} data-animate data-delay={String(i * 100)}
                 className="step-card card-lift relative bg-white border border-gray-200 rounded-xl p-8 group">
-                <div className="step-num absolute top-5 right-5 text-4xl font-black text-gray-50 select-none leading-none">{step}</div>
+                {/* Solid navy numbered badge — replaces faint watermark */}
+                <div className="absolute -top-4 -right-4 w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center shadow-md ring-4 ring-gray-50">
+                  <span className="text-sm font-bold">{step}</span>
+                </div>
                 <div className="w-12 h-12 bg-brand-navy rounded-xl flex items-center justify-center mb-5 shadow group-hover:scale-110 transition-transform duration-300">
                   <Icon className="w-6 h-6 text-white" />
                 </div>
@@ -542,11 +420,6 @@ export function LandingPage() {
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
-          </div>
-          <div data-animate data-delay="200" className="mt-10 bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 text-center max-w-2xl mx-auto">
-            <p className="text-amber-800 text-sm font-medium">
-              ⚠️ Cargo must reach our Miami warehouse by <strong>noon Thursday</strong> for Friday shipment to Barbados.
-            </p>
           </div>
         </div>
       </section>
@@ -562,7 +435,7 @@ export function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { icon: MapPin, label: 'Address',       detail: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados', href: undefined },
-              { icon: Phone,  label: 'Phone Number',  detail: '+1246-537-2826',             href: 'tel:+12465372826' },
+              { icon: Phone,  label: 'Phone Number',  detail: '+1-246-537-2826',             href: 'tel:+12465372826' },
               { icon: Mail,   label: 'Email Address', detail: 'info@cargolinkbarbados.com', href: 'mailto:info@cargolinkbarbados.com' },
             ].map(({ icon: Icon, label, detail, href }, i) => (
               <div key={label} data-animate data-delay={String(i * 120)} className="flex flex-col items-center text-center group">
@@ -579,69 +452,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="bg-white border-t border-gray-200 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
-            <div>
-              <img src="/logos/logo-cropped.png" alt="CargoLink Barbados" className="h-16 w-auto mb-3" />
-              <p className="text-sm text-gray-500">Caribbean Trading and Cargo Management Inc.</p>
-              <div className="flex gap-3 mt-4">
-                {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
-                  <a key={i} href="#" className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center hover:bg-brand-navy-dark hover:scale-110 transition-all duration-200">
-                    <Icon className="w-4 h-4 text-white" />
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Quick Links</h5>
-              <ul className="space-y-2 text-sm text-gray-500">
-                {[
-                  { label: 'Home',              href: '#hero',    to: undefined },
-                  { label: 'About Us',          href: '#about',   to: undefined },
-                  { label: 'Rates',             href: undefined,  to: '/rates'  },
-                  { label: 'Contact Us',        href: '#contact', to: undefined },
-                  { label: 'Legal',             href: '#',        to: undefined },
-                  { label: 'Terms & Condition', href: '#',        to: undefined },
-                ].map(({ label, href, to }) => (
-                  <li key={label}>
-                    {to ? (
-                      <Link to={to} className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-                        <CheckCircle className="w-4 h-4 text-brand-navy" />{label}
-                      </Link>
-                    ) : (
-                      <a href={href!} className="flex items-center gap-2 hover:text-brand-navy transition-colors">
-                        <CheckCircle className="w-4 h-4 text-brand-navy" />{label}
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h5 className="text-gray-900 font-bold text-base mb-4">Contact Info</h5>
-              <div className="space-y-4">
-                {[
-                  { Icon: MapPin, text: 'Suite #1 Ficus Court Brighton,\nSt. Michael, Barbados' },
-                  { Icon: Mail,   text: 'info@cargolinkbarbados.com' },
-                  { Icon: Phone,  text: '+1246-537-2826' },
-                ].map(({ Icon, text }, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-brand-navy rounded-full flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <p className="text-sm text-gray-500 whitespace-pre-line pt-1.5">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            <p>Copyright © 2026 Caribbean Trading and Cargo Management Inc. All Rights Reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
     </div>
   )

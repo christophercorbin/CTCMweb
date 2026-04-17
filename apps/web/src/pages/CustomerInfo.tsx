@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Card } from '../components/Card';
@@ -6,26 +9,37 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import toast from 'react-hot-toast';
-import { User, Mail, Phone, MapPin, Building, Plane, Ship, Package, Copy, Check } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building, Plane, Ship, Package, Copy, Check, Pencil } from 'lucide-react';
+import {
+  nameSchema,
+  phoneSchema,
+  addressSchema,
+  companySchema,
+  normalisePhone,
+} from '../lib/schemas';
 
 const client = generateClient<Schema>();
 
-interface CustomerData {
+/** Editable profile fields. Email is read-only (managed by Cognito). */
+const profileSchema = z.object({
+  firstName: nameSchema,
+  lastName:  nameSchema,
+  phone:     phoneSchema,
+  address:   addressSchema,
+  company:   companySchema,
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
+interface CustomerRecord extends ProfileFormData {
   id: string;
-  name: string;
-  firstName: string;
-  lastName: string;
   email: string;
-  phone: string;
-  address: string;
-  company: string;
   airSkyboxAddress: string;
   seaSkyboxAddress: string;
 }
 
-const EMPTY: CustomerData = {
+const EMPTY: CustomerRecord = {
   id: '',
-  name: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -83,16 +97,52 @@ function AddressBlock({ icon, title, address, sub }: {
   );
 }
 
+/** Read-mode field: label + icon + plain text (or "—" placeholder). */
+function ReadField({
+  icon,
+  label,
+  value,
+  className = '',
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  className?: string
+}) {
+  return (
+    <div className={className}>
+      <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+        {icon}
+        {label}
+      </div>
+      <p className={`text-base ${value ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+        {value || 'Not set'}
+      </p>
+    </div>
+  );
+}
+
 export const CustomerInfo = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [customerData, setCustomerData] = useState<CustomerData>(EMPTY);
-  // Snapshot to restore on cancel
-  const [snapshot, setSnapshot] = useState<CustomerData>(EMPTY);
+  const [record, setRecord] = useState<CustomerRecord>(EMPTY);
+
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    mode: 'onBlur',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      address: '',
+      company: '',
+    },
+  });
 
   useEffect(() => {
     fetchCustomerInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchCustomerInfo = async () => {
@@ -106,33 +156,37 @@ export const CustomerInfo = () => {
         return;
       }
 
-      const record = data?.[0];
-      if (!record) {
-        // No Customer record yet (e.g. admin-created account without post-confirmation trigger)
+      const row = data?.[0];
+      if (!row) {
         setLoading(false);
         return;
       }
 
-      const fullName = record.name ?? ''
-      const spaceIdx = fullName.indexOf(' ')
-      const firstName = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName
-      const lastName  = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : ''
+      const fullName = row.name ?? '';
+      const spaceIdx = fullName.indexOf(' ');
+      const firstName = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName;
+      const lastName  = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : '';
 
-      const loaded: CustomerData = {
-        id: record.id,
-        name: fullName,
+      const loaded: CustomerRecord = {
+        id: row.id,
         firstName,
         lastName,
-        email: record.email ?? '',
-        phone: record.phone ?? '',
-        address: record.address ?? '',
-        company: record.company ?? '',
-        airSkyboxAddress: record.airSkyboxAddress ?? '',
-        seaSkyboxAddress: record.seaSkyboxAddress ?? '',
+        email: row.email ?? '',
+        phone: row.phone ?? '',
+        address: row.address ?? '',
+        company: row.company ?? '',
+        airSkyboxAddress: row.airSkyboxAddress ?? '',
+        seaSkyboxAddress: row.seaSkyboxAddress ?? '',
       };
 
-      setCustomerData(loaded);
-      setSnapshot(loaded);
+      setRecord(loaded);
+      form.reset({
+        firstName: loaded.firstName,
+        lastName: loaded.lastName,
+        phone: loaded.phone,
+        address: loaded.address,
+        company: loaded.company,
+      });
     } catch (error) {
       console.error('[CustomerInfo] fetch error:', error);
       toast.error('Failed to load customer information');
@@ -141,8 +195,8 @@ export const CustomerInfo = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!customerData.id) {
+  const onSave = async (data: ProfileFormData) => {
+    if (!record.id) {
       toast.error('No customer record found');
       return;
     }
@@ -150,14 +204,17 @@ export const CustomerInfo = () => {
     try {
       setSaving(true);
 
-      const combinedName = [customerData.firstName.trim(), customerData.lastName.trim()].filter(Boolean).join(' ')
+      const combinedName = [data.firstName.trim(), data.lastName.trim()]
+        .filter(Boolean)
+        .join(' ');
+      const phone = data.phone ? normalisePhone(data.phone) : undefined;
 
       const { errors } = await client.models.Customer.update({
-        id: customerData.id,
-        name: combinedName || customerData.name,
-        phone: customerData.phone || undefined,
-        address: customerData.address || undefined,
-        company: customerData.company || undefined,
+        id: record.id,
+        name: combinedName,
+        phone,
+        address: data.address || undefined,
+        company: data.company || undefined,
       });
 
       if (errors?.length) {
@@ -166,7 +223,14 @@ export const CustomerInfo = () => {
         return;
       }
 
-      setSnapshot(customerData);
+      setRecord({
+        ...record,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: phone ?? '',
+        address: data.address,
+        company: data.company ?? '',
+      });
       setEditing(false);
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -178,7 +242,13 @@ export const CustomerInfo = () => {
   };
 
   const handleCancel = () => {
-    setCustomerData(snapshot);
+    form.reset({
+      firstName: record.firstName,
+      lastName: record.lastName,
+      phone: record.phone,
+      address: record.address,
+      company: record.company,
+    });
     setEditing(false);
   };
 
@@ -198,7 +268,7 @@ export const CustomerInfo = () => {
       </div>
 
       <Card>
-        <div className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSave)} className="space-y-6" noValidate>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -206,120 +276,141 @@ export const CustomerInfo = () => {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Personal Details</h2>
-                <p className="text-sm text-gray-500">Your account information</p>
+                <p className="text-sm text-gray-500">
+                  {editing ? 'Editing — click Save when done' : 'Your account information'}
+                </p>
               </div>
             </div>
             {!editing && (
-              <Button onClick={() => setEditing(true)} variant="secondary">
+              <Button
+                type="button"
+                onClick={() => setEditing(true)}
+                variant="secondary"
+                icon={Pencil}
+              >
                 Edit
               </Button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  First Name
-                </div>
-              </label>
-              <Input
-                value={customerData.firstName}
-                onChange={(e) => setCustomerData({ ...customerData, firstName: e.target.value })}
-                disabled={!editing}
-                placeholder="Enter your first name"
-              />
-            </div>
+          {editing ? (
+            // ── Edit mode ─────────────────────────────────────────────────
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    First Name *
+                  </div>
+                </label>
+                <Input
+                  placeholder="Enter your first name"
+                  autoComplete="given-name"
+                  error={form.formState.errors.firstName?.message}
+                  {...form.register('firstName')}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Last Name
-                </div>
-              </label>
-              <Input
-                value={customerData.lastName}
-                onChange={(e) => setCustomerData({ ...customerData, lastName: e.target.value })}
-                disabled={!editing}
-                placeholder="Enter your last name"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Last Name *
+                  </div>
+                </label>
+                <Input
+                  placeholder="Enter your last name"
+                  autoComplete="family-name"
+                  error={form.formState.errors.lastName?.message}
+                  {...form.register('lastName')}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Email Address
-                </div>
-              </label>
-              <Input
-                type="email"
-                value={customerData.email}
-                disabled
-                placeholder="Your email address"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Address
+                  </div>
+                </label>
+                <Input type="email" value={record.email} disabled />
+                <p className="text-xs text-gray-500 mt-1">Email cannot be changed — contact support.</p>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Phone Number
-                </div>
-              </label>
-              <Input
-                type="tel"
-                value={customerData.phone}
-                onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
-                disabled={!editing}
-                placeholder="Enter your phone number"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Phone Number *
+                  </div>
+                </label>
+                <Input
+                  type="tel"
+                  placeholder="+1 (246) 555-0100"
+                  autoComplete="tel"
+                  error={form.formState.errors.phone?.message}
+                  {...form.register('phone')}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4" />
-                  Company
-                </div>
-              </label>
-              <Input
-                value={customerData.company}
-                onChange={(e) => setCustomerData({ ...customerData, company: e.target.value })}
-                disabled={!editing}
-                placeholder="Enter your company name"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-4 h-4" />
+                    Company
+                  </div>
+                </label>
+                <Input
+                  placeholder="Optional"
+                  autoComplete="organization"
+                  error={form.formState.errors.company?.message}
+                  {...form.register('company')}
+                />
+              </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Address
-                </div>
-              </label>
-              <Input
-                value={customerData.address}
-                onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
-                disabled={!editing}
-                placeholder="Enter your full address"
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Address *
+                  </div>
+                </label>
+                <Input
+                  placeholder="Street, City, Parish, Barbados"
+                  autoComplete="street-address"
+                  error={form.formState.errors.address?.message}
+                  {...form.register('address')}
+                />
+              </div>
+            </div>
+          ) : (
+            // ── Read mode ─────────────────────────────────────────────────
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ReadField icon={<User className="w-4 h-4" />} label="First Name" value={record.firstName} />
+              <ReadField icon={<User className="w-4 h-4" />} label="Last Name"  value={record.lastName} />
+              <ReadField icon={<Mail className="w-4 h-4" />} label="Email Address" value={record.email} />
+              <ReadField icon={<Phone className="w-4 h-4" />} label="Phone Number" value={record.phone} />
+              <ReadField icon={<Building className="w-4 h-4" />} label="Company" value={record.company ?? ''} />
+              <ReadField
+                icon={<MapPin className="w-4 h-4" />}
+                label="Address"
+                value={record.address}
+                className="md:col-span-2"
               />
             </div>
-          </div>
+          )}
 
           {editing && (
             <div className="flex gap-3 pt-4 border-t">
-              <Button onClick={handleSave} disabled={saving}>
+              <Button type="submit" loading={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
-              <Button onClick={handleCancel} variant="secondary" disabled={saving}>
+              <Button type="button" onClick={handleCancel} variant="secondary" disabled={saving}>
                 Cancel
               </Button>
             </div>
           )}
-        </div>
+        </form>
       </Card>
 
       <Card className="bg-gradient-to-br from-blue-50 to-teal-50 border-blue-200 mt-6">
@@ -335,13 +426,13 @@ export const CustomerInfo = () => {
               <AddressBlock
                 icon={<Plane className="w-5 h-5 text-blue-600" />}
                 title="✈ Air Freight"
-                address={customerData.airSkyboxAddress}
+                address={record.airSkyboxAddress}
                 sub="Faster delivery · typically 3–5 days"
               />
               <AddressBlock
                 icon={<Ship className="w-5 h-5 text-teal-600" />}
                 title="🚢 Sea Freight"
-                address={customerData.seaSkyboxAddress}
+                address={record.seaSkyboxAddress}
                 sub="Cost-effective · typically 3–4 weeks"
               />
             </div>

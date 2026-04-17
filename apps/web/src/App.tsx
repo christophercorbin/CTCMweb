@@ -24,6 +24,8 @@ import { LandingPage } from './pages/LandingPage'
 import { RatesPage } from './pages/RatesPage'
 import { AirFreightPage } from './pages/AirFreightPage'
 import { OceanFreightPage } from './pages/OceanFreightPage'
+import { PrivacyPolicy } from './pages/PrivacyPolicy'
+import { TermsConditions } from './pages/TermsConditions'
 
 function App() {
   return (
@@ -173,6 +175,8 @@ function App() {
         <Route path="/rates" element={<RatesPage />} />
         <Route path="/air-freight" element={<AirFreightPage />} />
         <Route path="/ocean-freight" element={<OceanFreightPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsConditions />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
