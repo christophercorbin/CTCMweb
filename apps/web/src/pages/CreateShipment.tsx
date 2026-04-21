@@ -16,8 +16,6 @@ const client = generateClient<Schema>()
 const createShipmentSchema = z.object({
   trackingNumber: z.string().min(3, 'Tracking number is required'),
   type: z.enum(['AIR', 'SEA'], { message: 'Shipping type is required' }),
-  origin: z.string().min(2, 'Origin is required'),
-  destination: z.string().min(2, 'Barbados address is required'),
   description: z.string().min(5, 'Description must be at least 5 characters'),
 })
 
@@ -94,8 +92,6 @@ export const CreateShipment = () => {
         trackingNumber: data.trackingNumber,
         type: data.type,
         status: 'PENDING',
-        origin: data.origin,
-        destination: data.destination,
         description: data.description,
         customerId,
       })
@@ -154,8 +150,8 @@ export const CreateShipment = () => {
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Shipment</h1>
-          <p className="text-gray-600 mt-1">Create a new freight shipment</p>
+          <h1 className="text-3xl font-bold text-gray-900">Pre-Alert</h1>
+          <p className="text-gray-600 mt-1">Let us know about an incoming shipment</p>
         </div>
       </div>
 
@@ -173,20 +169,6 @@ export const CreateShipment = () => {
             options={shippingTypeOptions}
             error={errors.type?.message}
             {...register('type')}
-          />
-
-          <Input
-            label="Origin"
-            placeholder="e.g., Miami, FL"
-            error={errors.origin?.message}
-            {...register('origin')}
-          />
-
-          <Input
-            label="Barbados Address"
-            placeholder="e.g., Bridgetown, Barbados"
-            error={errors.destination?.message}
-            {...register('destination')}
           />
 
           <Textarea
@@ -260,7 +242,7 @@ export const CreateShipment = () => {
               Cancel
             </Button>
             <Button type="submit" loading={loading || customerLoading} disabled={customerLoading}>
-              {customerLoading ? 'Loading…' : 'Create Shipment'}
+              {customerLoading ? 'Loading…' : 'Submit Pre-Alert'}
             </Button>
           </div>
         </form>

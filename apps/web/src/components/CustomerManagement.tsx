@@ -21,7 +21,7 @@ const isNewCustomer = (customer: AppCustomer): boolean => {
 
 // ── Skybox address templates ──────────────────────────────────────
 const buildAirAddress = (name: string) =>
-  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane Suite B\nDoral\nFL 33182`
 
 const buildSeaAddress = (name: string) =>
   `${name}\nIntegrity Logistics - CTCM\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`
@@ -554,7 +554,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
             onChange={(e) => handleAirChange(e.target.value)}
             rows={4}
             className={`${fieldCls} font-mono resize-none`}
-            placeholder={`Customer Name\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral, FL 33182`}
+            placeholder={`Customer Name\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane Suite B\nDoral, FL 33182`}
           />
         </div>
 

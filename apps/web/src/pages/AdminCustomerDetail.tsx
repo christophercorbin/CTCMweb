@@ -7,14 +7,13 @@ import {
   Phone,
   Package,
   Eye,
-  Plus,
   Truck,
   PauseCircle,
   HelpCircle,
 } from 'lucide-react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
-import { Badge, Card, CardSkeleton, Button } from '../components'
+import { Badge, Card, CardSkeleton } from '../components'
 import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
 import { ShipmentStatus } from '../types'
 import { statusLabel } from '../constants/shipmentStatuses'
@@ -118,13 +117,6 @@ export const AdminCustomerDetail = () => {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          variant="primary"
-          icon={<Plus className="w-4 h-4" />}
-        >
-          New Shipment
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
