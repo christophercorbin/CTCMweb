@@ -106,7 +106,11 @@ async function listCognitoCustomers(): Promise<UserType[]> {
 
 // ── Step 2: List all existing Customer records from AppSync ──────────────────
 interface ExistingCustomer {
+  id: string;
   email: string;
+  name: string;
+  airSkyboxAddress?: string | null;
+  seaSkyboxAddress?: string | null;
   cognitoSub?: string | null;
 }
 
@@ -120,7 +124,7 @@ async function listExistingCustomers(
       query: /* GraphQL */ `
         query ListCustomers($limit: Int, $nextToken: String) {
           listCustomers(limit: $limit, nextToken: $nextToken) {
-            items { email cognitoSub }
+            items { id email name airSkyboxAddress seaSkyboxAddress cognitoSub }
             nextToken
           }
         }
@@ -137,6 +141,26 @@ async function listExistingCustomers(
     nextToken = page?.nextToken ?? null;
   } while (nextToken);
   return customers;
+}
+
+// ── Step 2b: Update a Customer record's skybox addresses ────────────────────
+async function updateCustomerAddresses(
+  signer: Awaited<ReturnType<typeof makeSigner>>,
+  input: { id: string; airSkyboxAddress: string; seaSkyboxAddress: string }
+) {
+  const body = JSON.stringify({
+    query: /* GraphQL */ `
+      mutation UpdateCustomer($input: UpdateCustomerInput!) {
+        updateCustomer(input: $input) { id }
+      }
+    `,
+    variables: { input },
+  });
+  const json = await appsyncRequest(signer, body);
+  if (json.errors) {
+    console.error("updateCustomer errors:", json.errors);
+    throw new Error(`Failed to update customer ${input.id}`);
+  }
 }
 
 // ── Step 3: Create a single Customer record in AppSync ───────────────────────
@@ -168,14 +192,22 @@ async function createCustomer(
 }
 
 // ── AppSync mutation handler ──────────────────────────────────────────────────
-export const handler = async (): Promise<{
+interface SyncEvent {
+  arguments?: { refreshAddresses?: boolean | null };
+}
+
+export const handler = async (event: SyncEvent = {}): Promise<{
   synced: number;
   skipped: number;
   errors: number;
+  refreshed: number;
 }> => {
   let synced = 0;
   let skipped = 0;
   let errors = 0;
+  let refreshed = 0;
+
+  const refreshAddresses = event?.arguments?.refreshAddresses === true;
 
   const signer = await makeSigner();
 
@@ -237,6 +269,32 @@ export const handler = async (): Promise<{
     }
   }
 
-  console.log(`Sync complete — synced: ${synced}, skipped: ${skipped}, errors: ${errors}`);
-  return { synced, skipped, errors };
+  // ── Optional: refresh stored skybox addresses on all existing records ─────
+  if (refreshAddresses) {
+    for (const c of existingCustomers) {
+      const name = c.name || c.email;
+      const nextAir = buildAirAddress(name);
+      const nextSea = buildSeaAddress(name);
+      if (c.airSkyboxAddress === nextAir && c.seaSkyboxAddress === nextSea) {
+        continue;
+      }
+      try {
+        await updateCustomerAddresses(signer, {
+          id: c.id,
+          airSkyboxAddress: nextAir,
+          seaSkyboxAddress: nextSea,
+        });
+        refreshed++;
+      } catch (err) {
+        console.error(`Error refreshing addresses for ${c.email}:`, err);
+        errors++;
+      }
+    }
+    console.log(`Address refresh complete — refreshed: ${refreshed}`);
+  }
+
+  console.log(
+    `Sync complete — synced: ${synced}, skipped: ${skipped}, errors: ${errors}, refreshed: ${refreshed}`
+  );
+  return { synced, skipped, errors, refreshed };
 };
