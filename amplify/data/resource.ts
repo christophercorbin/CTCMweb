@@ -220,14 +220,19 @@ const schema = a
       .authorization((allow) => [allow.group("admin")])
       .handler(a.handler.function(adminCreateCustomer)),
     // ─── Custom mutation: sync missing Customer records from Cognito ──────────
+    // Also (optionally) refresh stored skybox addresses on all existing records
+    // by passing `refreshAddresses: true`.
     syncCustomersFromCognito: a
       .mutation()
-      .arguments({})
+      .arguments({
+        refreshAddresses: a.boolean(),
+      })
       .returns(
         a.customType({
           synced: a.integer(),
           skipped: a.integer(),
           errors: a.integer(),
+          refreshed: a.integer(),
         })
       )
       .authorization((allow) => [allow.group("admin")])

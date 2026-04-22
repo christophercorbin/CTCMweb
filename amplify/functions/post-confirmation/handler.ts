@@ -14,7 +14,7 @@ const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "info@cargolinkbarbados.c
 
 // Mirror the address templates from CustomerManagement.tsx / sync-customers/handler.ts
 const buildAirAddress = (name: string) =>
-  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`;
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane Suite B\nDoral\nFL 33182`;
 
 const buildSeaAddress = (name: string) =>
   `${name}\nIntegrity Logistics - CTCM\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`;

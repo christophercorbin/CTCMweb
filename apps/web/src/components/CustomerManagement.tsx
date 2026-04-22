@@ -21,7 +21,7 @@ const isNewCustomer = (customer: AppCustomer): boolean => {
 
 // ── Skybox address templates ──────────────────────────────────────
 const buildAirAddress = (name: string) =>
-  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral\nFL 33182`
+  `${name}\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane Suite B\nDoral\nFL 33182`
 
 const buildSeaAddress = (name: string) =>
   `${name}\nIntegrity Logistics - CTCM\n10301 NW 108TH AVE UNIT 2B MEDLEY, FL 33178`
@@ -49,7 +49,7 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<AppCustomer | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshingAddresses, setRefreshingAddresses] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const fetchCustomers = async () => {
@@ -76,24 +76,40 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
     fetchCustomers();
   }, []);
 
-  /** Silently re-fetches from DynamoDB without triggering the full loading skeleton */
-  const refreshCustomers = async () => {
-    setRefreshing(true);
+  /**
+   * Triggers the sync-customers Lambda in "refresh addresses" mode — rewrites every
+   * existing Customer record's airSkyboxAddress and seaSkyboxAddress using the latest
+   * templates. Useful when the warehouse address format changes (e.g. adding Suite B)
+   * and we need to backfill stored values.
+   */
+  const refreshAddresses = async () => {
+    setRefreshingAddresses(true);
     try {
-      const allItems: AppCustomer[] = [];
-      let cursor: string | undefined;
-      do {
-        const result = await client.models.Customer.list({ limit: 1000, nextToken: cursor });
-        if (result.errors?.length) throw new Error(result.errors[0].message);
-        allItems.push(...result.data);
-        cursor = result.nextToken ?? undefined;
-      } while (cursor);
-      setCustomers(allItems);
+      const { data: result, errors } = await client.mutations.syncCustomersFromCognito({
+        refreshAddresses: true,
+      });
+      if (errors?.length) {
+        const msg = errors[0].message ?? 'Unknown error';
+        console.error('[Refresh Addresses] AppSync errors:', errors);
+        throw new Error(msg);
+      }
+      const { refreshed, errors: runErrors } = result ?? {};
+      if ((runErrors ?? 0) > 0) {
+        toast.error(`Address refresh finished with ${runErrors} error(s). Check CloudWatch logs.`);
+      } else {
+        toast.success(
+          refreshed === 0
+            ? 'All customer addresses are already up to date'
+            : `Refreshed ${refreshed} customer address${refreshed !== 1 ? 'es' : ''}`
+        );
+      }
+      await fetchCustomers();
     } catch (error) {
-      toast.error('Failed to refresh customers');
-      console.error(error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[Refresh Addresses] Failed:', error);
+      toast.error(`Address refresh failed: ${msg}`);
     } finally {
-      setRefreshing(false);
+      setRefreshingAddresses(false);
     }
   };
 
@@ -156,13 +172,13 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={refreshCustomers}
+            onClick={refreshAddresses}
             variant="secondary"
-            loading={refreshing}
+            loading={refreshingAddresses}
             icon={<RefreshCw className="w-4 h-4" />}
-            title="Re-fetch customers from database"
+            title="Rewrite stored skybox addresses on all existing customer records"
           >
-            Refresh
+            Refresh Addresses
           </Button>
           <Button
             onClick={handleSyncFromCognito}
@@ -554,7 +570,7 @@ const CustomerFormModal = ({ customer, onClose, onSuccess }: CustomerFormModalPr
             onChange={(e) => handleAirChange(e.target.value)}
             rows={4}
             className={`${fieldCls} font-mono resize-none`}
-            placeholder={`Customer Name\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane\nDoral, FL 33182`}
+            placeholder={`Customer Name\nCaribconex - CargoLink Barbados\n13155 NW 19th Lane Suite B\nDoral, FL 33182`}
           />
         </div>
 

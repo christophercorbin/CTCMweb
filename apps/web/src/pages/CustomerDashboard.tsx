@@ -158,7 +158,7 @@ export const CustomerDashboard = () => {
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-lg font-semibold text-sm shadow-sm transition-colors"
         >
           <Plus className="w-4 h-4" />
-          New Shipment
+          Pre-Alert
         </button>
       </div>
 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle, Plus } from 'lucide-react'
-import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card, Button } from '../components'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle } from 'lucide-react'
+import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
 import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
@@ -237,14 +237,6 @@ export const AdminDashboard = () => {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900">All Shipments</h2>
-                <Button
-                  onClick={() => openCreateModal()}
-                  variant="primary"
-                  icon={<Plus className="w-4 h-4" />}
-                  size="sm"
-                >
-                  New Shipment
-                </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
