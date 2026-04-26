@@ -119,7 +119,10 @@ const schema = a
         // Relationships
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.ownerDefinedIn("shipmentId").to(["read"]),
+        allow.group("admin"),
+      ]),
 
     // ─── ShipmentCharge ─────────────────────────────────────────────
     ShipmentCharge: a
@@ -133,8 +136,7 @@ const schema = a
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
       .authorization((allow) => [
-        allow.owner(),
-        allow.ownerDefinedIn("customerCognitoSub"),
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
         allow.group("admin"),
       ]),
 
@@ -147,12 +149,16 @@ const schema = a
         description: a.string(),
         eventTimestamp: a.datetime().required(),
         createdBy: a.string(), // Cognito sub of creator (admin)
+        customerCognitoSub: a.string(), // set by admin so customers can read their events
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
       .secondaryIndexes((index) => [
         index("shipmentId").sortKeys(["eventTimestamp"]), // ordered timeline
       ])
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
+        allow.group("admin"),
+      ]),
 
     // ─── Invoice ─────────────────────────────────────────────────────
     Invoice: a

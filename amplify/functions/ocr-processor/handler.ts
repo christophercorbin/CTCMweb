@@ -21,7 +21,9 @@ interface PersistPayload {
   action: "PERSIST";
   blocks: Block[];
   s3Key: string;
+  s3Bucket: string;
   uploadedBy: string;
+  shipmentId?: string;
 }
 
 type Payload = StartPayload | CheckPayload | PersistPayload;
@@ -60,9 +62,12 @@ async function persistToAppSync(
   fields: Record<string, string>,
   s3Key: string,
   uploadedBy: string,
-  rawBlocks: Block[]
+  rawBlocks: Block[],
+  shipmentId?: string
 ): Promise<void> {
-  const endpoint = process.env.GRAPHQL_API_ENDPOINT!;
+  const endpoint =
+    process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
+    process.env.GRAPHQL_API_ENDPOINT!;
 
   const mutation = /* GraphQL */ `
     mutation CreatePackage($input: CreatePackageInput!) {
@@ -70,7 +75,14 @@ async function persistToAppSync(
     }
   `;
 
+  if (!shipmentId) {
+    throw new Error(
+      "shipmentId is required to persist OCR results — pass it in the Step Functions input"
+    );
+  }
+
   const input = {
+    shipmentId,
     packageType: "BOX",
     weight: fields.weight ? parseFloat(fields.weight) : null,
     description: `OCR intake from ${s3Key} (uploaded by ${uploadedBy})`,
@@ -152,7 +164,8 @@ export const handler = async (payload: Payload): Promise<unknown> => {
         fields,
         payload.s3Key,
         payload.uploadedBy,
-        payload.blocks
+        payload.blocks,
+        payload.shipmentId
       );
       return { status: "PERSISTED", fields };
     }

@@ -43,7 +43,7 @@ cfnUserPoolClient.explicitAuthFlows = [
 cfnUserPool.emailConfiguration = {
   emailSendingAccount: "DEVELOPER",
   from: "CargoLink Barbados <info@cargolinkbarbados.com>",
-  sourceArn: `arn:aws:ses:us-east-1:404875533723:identity/cargolinkbarbados.com`,
+  sourceArn: `arn:aws:ses:us-east-1:${cfnUserPool.stack.account}:identity/cargolinkbarbados.com`,
 };
 
 // ─── Step Functions: OCR State Machine ───────────────────────────────────────
@@ -87,7 +87,9 @@ const persistResults = new tasks.LambdaInvoke(storageStack, "PersistOCRResults",
     action: "PERSIST",
     "blocks.$": "$.textractResult.Payload.blocks",
     "s3Key.$": "$.s3Key",
+    "s3Bucket.$": "$.s3Bucket",
     "uploadedBy.$": "$.uploadedBy",
+    "shipmentId.$": "$.shipmentId",
   }),
 });
 
@@ -152,10 +154,12 @@ storageBucket.addEventNotification(
 
 // ─── SES: status-notifier email permissions ──────────────────────────────────
 const statusNotifierFn = backend.statusNotifier.resources.lambda as lambda.Function;
+const SES_IDENTITY_ARN = `arn:aws:ses:us-east-1:${backend.auth.resources.cfnResources.cfnUserPool.stack.account}:identity/cargolinkbarbados.com`;
+
 statusNotifierFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["ses:SendEmail", "ses:SendRawEmail"],
-    resources: ["*"],
+    resources: [SES_IDENTITY_ARN],
   })
 );
 statusNotifierFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
@@ -184,7 +188,7 @@ adminCreateCustomerFn.addToRolePolicy(
 adminCreateCustomerFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["ses:SendEmail", "ses:SendRawEmail"],
-    resources: ["*"],
+    resources: [SES_IDENTITY_ARN],
   })
 );
 
@@ -274,7 +278,7 @@ postConfirmationFn.addToRolePolicy(
 postConfirmationFn.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["ses:SendEmail", "ses:SendRawEmail"],
-    resources: ["*"],
+    resources: [SES_IDENTITY_ARN],
   })
 );
 
