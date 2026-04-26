@@ -64,3 +64,8 @@ Thumbs.db
 
 # Supabase (legacy - no longer used)
 .supabase/
+
+# Claude Code worktrees — never commit these (and never let them be staged
+# as gitlinks, which breaks actions/checkout's post-cleanup with "no submodule
+# mapping found" exit 128).
+.claude/worktrees/
