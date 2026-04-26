@@ -229,6 +229,7 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
 
     try {
       let shipmentId: string;
+      const selectedCustomer = customers.find((c) => c.id === formData.customer_id);
 
       if (linkToExisting) {
         // ── Link to existing shipment ──
@@ -259,7 +260,6 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
         const description = [formData.description, extraLines].filter(Boolean).join('\n\n') || undefined;
         const origin = [formData.shipper_city, formData.shipper_state, formData.shipper_country]
           .filter(Boolean).join(', ') || undefined;
-        const selectedCustomer = customers.find((c) => c.id === formData.customer_id);
 
         const { data: shipment, errors: shipmentErrors } = await client.models.Shipment.create({
           trackingNumber: formData.tracking_number,
@@ -291,6 +291,7 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
             dimensionUnit: 'in',
             description: pkg.description || undefined,
             quantity: pkg.pieces_count,
+            customerCognitoSub: selectedCustomer?.cognitoSub ?? undefined,
           })
         )
       );
@@ -302,6 +303,7 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
         location: formData.warehouse_location || 'Miami, FL',
         description: `Warehouse receipt processed${formData.received_by ? ` by ${formData.received_by}` : ''}${formData.warehouse_receipt_number ? ` — WR# ${formData.warehouse_receipt_number}` : ''}`,
         eventTimestamp: new Date().toISOString(),
+        customerCognitoSub: selectedCustomer?.cognitoSub ?? undefined,
       });
 
       toast.success('Warehouse receipt processed successfully');

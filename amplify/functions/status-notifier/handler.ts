@@ -1,5 +1,5 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { emailWrapper, card, button } from "../shared/emailTemplate";
+import { emailWrapper, card, button, escapeHtml } from "../shared/emailTemplate";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
@@ -103,23 +103,23 @@ export const handler = async (event: AppSyncEvent) => {
 
   const html = emailWrapper(`
     <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Shipment Update</p>
-    <h1 style="margin:0 0 20px;font-size:22px;color:#1B2D78;font-weight:800;">${subject}</h1>
-    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Hi <strong>${name}</strong>,</p>
-    <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">${body.replace(/\n/g, "<br>")}</p>
+    <h1 style="margin:0 0 20px;font-size:22px;color:#1B2D78;font-weight:800;">${escapeHtml(subject)}</h1>
+    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">${escapeHtml(body).replace(/\n/g, "<br>")}</p>
 
     ${card(`
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
         <tr>
           <td style="padding:0 0 14px;">
             <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Tracking Number</p>
-            <p style="margin:4px 0 0;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;letter-spacing:0.04em;">${trackingNumber}</p>
+            <p style="margin:4px 0 0;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;letter-spacing:0.04em;">${escapeHtml(trackingNumber)}</p>
           </td>
         </tr>
         <tr>
           <td>
             <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Current Status</p>
             <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#111827;">
-              <span style="display:inline-block;background:#F5C518;color:#1B2D78;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:800;">${statusLabel}</span>
+              <span style="display:inline-block;background:#F5C518;color:#1B2D78;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:800;">${escapeHtml(statusLabel)}</span>
             </p>
           </td>
         </tr>

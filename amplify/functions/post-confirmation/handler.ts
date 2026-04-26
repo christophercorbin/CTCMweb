@@ -5,7 +5,7 @@ import {
   AdminUpdateUserAttributesCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { emailWrapper, card } from "../shared/emailTemplate";
+import { emailWrapper, card, escapeHtml } from "../shared/emailTemplate";
 import { randomUUID } from "crypto";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
@@ -146,15 +146,15 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
         <tr><td style="padding:0 0 12px;border-bottom:1px solid #f3f4f6;">
           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Name</p>
-          <p style="margin:3px 0 0;font-size:16px;color:#111827;font-weight:700;">${displayName}</p>
+          <p style="margin:3px 0 0;font-size:16px;color:#111827;font-weight:700;">${escapeHtml(displayName)}</p>
         </td></tr>
         <tr><td style="padding:12px 0 ${phone_number ? "12px" : "0"};${phone_number ? "border-bottom:1px solid #f3f4f6;" : ""}">
           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Email</p>
-          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${email}</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${escapeHtml(email)}</p>
         </td></tr>
         ${phone_number ? `<tr><td style="padding:12px 0 0;">
           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Phone</p>
-          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${phone_number}</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${escapeHtml(phone_number)}</p>
         </td></tr>` : ""}
       </table>
     `)}
@@ -167,7 +167,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
         Source: SENDER,
         Destination: { ToAddresses: [ADMIN_EMAIL] },
         Message: {
-          Subject: { Data: `New customer registered: ${displayName}`, Charset: "UTF-8" },
+          Subject: { Data: `New customer registered: ${displayName.replace(/[<>"]/g, "")}`, Charset: "UTF-8" },
           Body: {
             Html: { Data: adminHtml, Charset: "UTF-8" },
             Text: {

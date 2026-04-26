@@ -285,6 +285,7 @@ export const AdminShipmentDetails = () => {
         dimensionUnit: 'in',
         description: newPackageForm.description.trim() || undefined,
         quantity: newPackageForm.quantity ? parseInt(newPackageForm.quantity) : 1,
+        customerCognitoSub: customer?.cognitoSub ?? undefined,
       })
       toast.success('Package added')
       setShowAddPackage(false)
@@ -1198,6 +1199,7 @@ export const AdminShipmentDetails = () => {
               currentStatus={shipment.status as ShipmentStatus}
               customerEmail={customer?.email}
               customerName={customer?.name}
+              customerCognitoSub={customer?.cognitoSub}
               onUpdated={fetchData}
             />
           </Card>

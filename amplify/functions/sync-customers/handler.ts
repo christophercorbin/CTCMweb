@@ -27,11 +27,11 @@ async function getUserPoolId(): Promise<string> {
       p.Name?.toLowerCase().includes("ctcm") ||
       p.Name?.toLowerCase().includes("cargolink") ||
       p.Name?.toLowerCase().includes("amplify")
-  ) ?? UserPools?.[0];
+  );
 
   if (!pool?.Id) {
     throw new Error(
-      "Could not discover USER_POOL_ID. Set it as an environment variable."
+      "Could not discover USER_POOL_ID — no matching pool found. Set it as an environment variable."
     );
   }
 

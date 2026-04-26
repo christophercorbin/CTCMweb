@@ -68,9 +68,11 @@ export const AdminDashboard = () => {
     setCreateForCustomerId(null)
   }
 
-  if (error) {
-    toast.error('Failed to load shipments')
-  }
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load shipments')
+    }
+  }, [error])
 
   const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED' && s.status !== 'CANCELLED' && s.status !== 'RETURNED')
   const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
