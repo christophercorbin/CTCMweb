@@ -1,169 +1,137 @@
 # Pre-Deployment Checklist
 
-This document outlines what needs to be verified before the GitHub Actions deployment will work.
+What to verify before pushing changes that should deploy. Deploys run on the
+Amplify Hosting webhook — there is no GitHub Actions deploy job. GitHub Actions
+runs CI gates (`ci.yml`) and security scans (`security.yml`) only.
 
-## ✅ Completed
+## ✅ One-time setup (already done — listed for reference)
 
-1. **TypeScript Errors Fixed** - All 37+ TypeScript errors resolved
-2. **ESLint Configuration Fixed** - Disabled problematic `no-unused-expressions` rule, configured underscore-prefixed vars
-3. **Workflow Files Updated** - All workflows use Node 20, consistent build commands
-4. **Amplify App Created** - App ID: `d3fm03a2oiet1x` in account 404875533723
-5. **AWS OIDC Role Configured** - `arn:aws:iam::404875533723:role/GitHubActionsDeployRole`
-6. **Code Pushed to GitHub** - All fixes committed to `develop` branch
+1. **Amplify App created** — App ID: `d3fm03a2oiet1x` in account 404875533723
+2. **Amplify Hosting connected to GitHub** — `develop` branch, with backend phase enabled in `amplify.yml`
+3. **TypeScript / ESLint configured** — strict mode, `--workspaces --if-present` covers `apps/web` (and `amplify/` for typecheck)
+4. **CI workflows in place** — `.github/workflows/ci.yml` and `security.yml`
 
-## ⚠️ Needs Verification
+## 🔧 Optional secrets
 
-### 1. GitHub Secrets Configuration
+Add these in **GitHub repo → Settings → Secrets and variables → Actions** if
+you want the related feature:
 
-The following secrets must be set in GitHub repository settings:
+| Secret | Used by | What happens without it |
+|--------|---------|-------------------------|
+| `SNYK_TOKEN` | `security.yml` Snyk step | Snyk job is skipped (continue-on-error). CodeQL still runs. |
 
-**Required:**
-- `AMPLIFY_APP_ID` = `d3fm03a2oiet1x`
+Note: `AMPLIFY_APP_ID` and the GitHub OIDC role (`GitHubActionsDeployRole`)
+are no longer used by any workflow. The previous deploy-dev / deploy-prod
+workflows that referenced them have been removed in favor of Amplify Hosting's
+webhook deploy path. The IAM role can stay in AWS without harm, or you can
+clean it up separately.
 
-**Optional (CI will continue without these):**
-- `SNYK_TOKEN` = Your Snyk API token (for security scanning)
+## 📋 Per-change pre-push checklist
 
-**How to set:**
-1. Go to https://github.com/christophercorbin/CTCMweb/settings/secrets/actions
-2. Click "New repository secret"
-3. Add `AMPLIFY_APP_ID` with value `d3fm03a2oiet1x`
+Before pushing to `develop`:
 
-### 2. GitHub Environments
+1. **Lint passes:** `npm run lint` (root)
+2. **Typecheck passes:** `npm run typecheck` (root)
+3. **No `amplify_outputs.json` committed:** it's gitignored; Amplify Hosting regenerates per build
+4. **No real secrets committed:** check `git diff` for AWS keys, tokens, customer data
+5. **Schema or auth changes** — read the AppSync schema diff carefully; field removal can break the frontend (`apps/web/src/lib/amplify.ts` typing) and incorrect auth rules can leak data across customers
 
-The workflows reference two environments that should be configured:
+For backend changes that alter Cognito or DynamoDB shape, also:
 
-**Development Environment:**
-- Name: `development`
-- No approval required
-- Used by: `deploy-dev.yml`
+- Confirm the change does not require a destructive replacement of a stateful
+  resource (UserPool, Table). Amplify Gen 2 will surface this in CloudFormation
+  events but it's easier to catch before push by running `npx ampx sandbox`
+  locally and inspecting the diff.
 
-**Production Environment:**
-- Name: `production`
-- Requires manual approval
-- Approvers: christophercorbin
-- Used by: `deploy-prod.yml`
+## 🚀 Deploy flow
 
-**How to configure:**
-1. Go to https://github.com/christophercorbin/CTCMweb/settings/environments
-2. Create `development` environment (no protection rules needed)
-3. Create `production` environment with required reviewers
+### Push to `develop` → automatic deploy
 
-### 3. AWS Permissions Verification
+1. `git push origin develop`
+2. **GitHub Actions** runs `ci.yml` (lint + typecheck) and `security.yml` (CodeQL on PR — push doesn't trigger CodeQL by default unless the file lists a `push:` trigger)
+3. **Amplify Hosting** detects the push via GitHub webhook and starts a build:
+   - **Backend phase:** `npx ampx pipeline-deploy --branch develop --app-id $AWS_APP_ID` — synthesizes CDK, updates AWS resources, regenerates `amplify_outputs.json`
+   - **Frontend phase:** `npm run build --workspace=apps/web` — Vite production build, deployed to Amplify CDN
+4. CDN cache invalidates automatically
 
-Verify the GitHubActionsDeployRole has permissions for:
-- Amplify (full access for pipeline deploys)
-- CloudFormation (for CDK stack operations)
-- S3 (for Amplify artifacts)
-- Lambda (for function deployments)
-- DynamoDB (for data model)
-- Cognito (for auth)
-- AppSync (for GraphQL API)
-- IAM (for creating service roles)
+GitHub Actions and Amplify Hosting run **in parallel by default**. To make a
+red CI block the Amplify build, see "Gating deploys on green CI" in
+[WORKFLOW_STRATEGY.md](./WORKFLOW_STRATEGY.md#gating-deploys-on-green-ci).
 
-**How to verify:**
-```bash
-aws iam get-role --role-name GitHubActionsDeployRole --profile ctcm-dev
-aws iam list-attached-role-policies --role-name GitHubActionsDeployRole --profile ctcm-dev
-```
+### Push to `main` → production deploy
 
-## 📋 Deployment Workflow
+Same flow, against the `main` branch (production AWS account, when set up).
+There is no manual approval gate — if you want one, configure it in Amplify
+Console → Hosting → Branch settings.
 
-Once the above is verified, the deployment will work as follows:
+## 🔍 Where to look
 
-### Automatic Deployment (develop branch)
-
-1. Push to `develop` branch triggers `deploy-dev.yml`
-2. Workflow runs:
-   - Lint (with warnings allowed)
-   - Typecheck (must pass)
-   - Test (if tests exist)
-   - AWS OIDC authentication
-   - Amplify backend deploy via `ampx pipeline-deploy`
-   - Frontend build check
-3. Amplify Hosting auto-deploys frontend from Git
-
-### Manual Deployment (production)
-
-1. Trigger `deploy-prod.yml` manually from GitHub Actions UI
-2. Workflow runs same checks as dev
-3. **Manual approval required** before deployment
-4. Deploys to production after approval
-
-## 🔍 Monitoring Deployment
-
-### Check GitHub Actions
-https://github.com/christophercorbin/CTCMweb/actions
-
-### Check Amplify Console
-https://us-east-1.console.aws.amazon.com/amplify/home?region=us-east-1#/d3fm03a2oiet1x
-
-### Check CloudFormation Stacks
-```bash
-aws cloudformation list-stacks --region us-east-1 --profile ctcm-dev
-```
-
-### View Amplify Logs
-```bash
-aws amplify get-app --app-id d3fm03a2oiet1x --region us-east-1 --profile ctcm-dev
-```
+| Want to see... | Go to |
+|---------------|-------|
+| CI run results | [GitHub Actions](https://github.com/christophercorbin/CTCMweb/actions) |
+| Amplify build status | [Amplify Console](https://us-east-1.console.aws.amazon.com/amplify/home?region=us-east-1#/d3fm03a2oiet1x) |
+| CloudFormation stack events (deploy errors) | Amplify Console → Build details → backend phase logs |
+| Lambda runtime logs | `aws logs tail /aws/lambda/<function-name> --follow --region us-east-1` |
+| Code Scanning alerts (CodeQL + Snyk) | GitHub repo → Security tab → Code scanning |
 
 ## 🚨 Troubleshooting
 
-### Deployment Fails with "App not found"
-- Verify AMPLIFY_APP_ID secret is set correctly
-- Verify app exists: `aws amplify get-app --app-id d3fm03a2oiet1x --region us-east-1`
+### CI red but I want to deploy anyway
+The Amplify Hosting webhook deploys regardless of CI status by default. If
+you've enabled "Wait for status check to succeed", you can either fix CI or
+disable that setting temporarily. Don't bypass it on production without a
+good reason.
 
-### Deployment Fails with "Access Denied"
-- Verify OIDC trust relationship in GitHubActionsDeployRole
-- Check role has necessary permissions
-- Verify GitHub repository is `christophercorbin/CTCMweb`
+### Amplify backend phase fails
+Most common causes:
+- New IAM permission missing in `backend.ts` for a Lambda
+- `allow.resource()` mismatch between schema and Lambda
+- Cross-stack circular dependency from referencing `userPool.userPoolId` (use a plain string instead)
+- Schema breaking change against an existing branch deploy
 
-### Lint Warnings
-- Warnings are allowed and won't block deployment
-- TypeScript version warning is expected (5.9.3 vs 5.6.0 supported)
-- React refresh warning in AuthContext is acceptable
+Click the failed build → Backend phase log. CloudFormation events at the
+bottom show which resource failed and why.
 
-### Backend Deploy Fails
-- Check CloudFormation stack events for errors
-- Verify all Amplify resources are valid
-- Check Lambda function resource groups are correct
+### Amplify frontend phase fails on import error
+Usually `amplify_outputs.json` shape changed. Compare the build log's emitted
+file with what `apps/web/src/lib/amplify.ts` reads. Schema field removals can
+also surface as TS errors in the frontend.
 
-## 📝 Next Steps After Successful Deployment
+### CodeQL flags an issue
+Open the GitHub Security tab → Code scanning → review the alert. False
+positives can be dismissed with a reason.
 
-1. **Connect Amplify Hosting to GitHub**
-   - Go to Amplify Console → Hosting → Connect branch
-   - Select `develop` branch
-   - Configure build settings (should auto-detect)
+### Snyk SARIF upload skipped
+Expected when `SNYK_TOKEN` isn't configured — the upload step has a
+`hashFiles('snyk.sarif') != ''` guard so it skips silently rather than failing.
 
-2. **Create First Admin User**
-   ```bash
-   aws cognito-idp admin-create-user \
-     --user-pool-id <USER_POOL_ID> \
-     --username admin@ctcm.com \
-     --user-attributes Name=email,Value=admin@ctcm.com Name=email_verified,Value=true \
-     --temporary-password TempPass123! \
-     --region us-east-1
-   
-   aws cognito-idp admin-add-user-to-group \
-     --user-pool-id <USER_POOL_ID> \
-     --username admin@ctcm.com \
-     --group-name admins \
-     --region us-east-1
-   ```
+## 📝 First-time admin user creation
 
-3. **Test the Application**
-   - Visit the Amplify hosting URL
-   - Login with admin credentials
-   - Verify all features work
+Admin accounts can't self-register. Create one via Cognito:
 
-4. **Monitor Costs**
-   - Check AWS Cost Explorer daily
-   - Set up budget alerts at $12 (80% of $15 budget)
-   - Monitor DynamoDB, Lambda, and AppSync usage
+```bash
+USER_POOL_ID=us-east-1_YfQ4BVEry  # develop branch pool
 
-## 📚 Related Documentation
+aws cognito-idp admin-create-user \
+  --user-pool-id $USER_POOL_ID \
+  --username admin@ctcm.com \
+  --temporary-password 'Temp#1234' \
+  --user-attributes Name=email,Value=admin@ctcm.com Name=email_verified,Value=true \
+  --region us-east-1
 
-- [Handoff to Kiro](../HANDOFF_TO_KIRO.md) - Complete deployment guide
-- [Amplify Quick Start](./AMPLIFY_QUICK_START.md) - Amplify Gen 2 setup
-- [Workflow Strategy](./WORKFLOW_STRATEGY.md) - CI/CD strategy
-- [AWS Organization Context](../../.kiro/steering/aws-organization-context.md) - AWS account details
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id $USER_POOL_ID \
+  --username admin@ctcm.com \
+  --group-name admin \
+  --region us-east-1
+```
+
+The user will be prompted to set a permanent password on first login. The
+group name is `admin` (singular) — must match the auth rule in
+`amplify/data/resource.ts`.
+
+## 📚 Related docs
+
+- [Workflow Strategy](./WORKFLOW_STRATEGY.md) — full architecture + gating CI on deploys
+- [Handoff to Kiro](../HANDOFF_TO_KIRO.md) — original Amplify Gen 2 migration handoff
+- [CLAUDE.md](../../CLAUDE.md) — single source of truth for current project state
