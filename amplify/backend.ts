@@ -7,6 +7,7 @@ import { ocrProcessor } from "./functions/ocr-processor/resource";
 import { postConfirmation } from "./functions/post-confirmation/resource";
 import { statusNotifier } from "./functions/status-notifier/resource";
 import { adminCreateCustomer } from "./functions/admin-create-customer/resource";
+import { adminDeleteCustomer } from "./functions/admin-delete-customer/resource";
 import { syncCustomers } from "./functions/sync-customers/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
@@ -25,6 +26,7 @@ const backend = defineBackend({
   postConfirmation,
   statusNotifier,
   adminCreateCustomer,
+  adminDeleteCustomer,
   syncCustomers,
 });
 
@@ -198,6 +200,30 @@ if (process.env.APP_URL) {
 adminCreateCustomerFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
 // GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
 // via allow.resource(adminCreateCustomer) in data/resource.ts.
+// AppSync mutation permissions are also granted automatically by allow.resource().
+
+// ─── adminDeleteCustomer: Cognito delete + AppSync permissions ───────────────
+const adminDeleteCustomerFn = backend.adminDeleteCustomer.resources.lambda as lambda.Function;
+
+// NOTE: Use resources: ["*"] (not userPool.userPoolArn) to avoid a cross-stack
+// CDK token reference from data stack → auth stack, which would create a cycle
+// because auth stack already depends on data stack (postConfirmation trigger).
+adminDeleteCustomerFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: [
+      "cognito-idp:AdminDeleteUser",
+      "cognito-idp:AdminGetUser",
+      "cognito-idp:ListUserPools",
+    ],
+    resources: ["*"],
+  })
+);
+
+if (process.env.USER_POOL_ID) {
+  adminDeleteCustomerFn.addEnvironment("USER_POOL_ID", process.env.USER_POOL_ID);
+}
+// GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
+// via allow.resource(adminDeleteCustomer) in data/resource.ts.
 // AppSync mutation permissions are also granted automatically by allow.resource().
 
 // ─── syncCustomers: Cognito list + AppSync read/write permissions ─────────────

@@ -144,16 +144,28 @@ export const CustomerManagement = ({ onCreateShipment, shipmentCounts }: Custome
 
   const handleDelete = async (customerId?: string) => {
     if (!customerId) return;
-    if (!confirm('Are you sure you want to delete this customer?')) return;
+    if (
+      !confirm(
+        'Delete this customer? This removes their login (Cognito user) AND their database record. This cannot be undone.'
+      )
+    )
+      return;
 
     try {
-      const { errors } = await client.models.Customer.delete({ id: customerId });
+      // Calls adminDeleteCustomer Lambda: removes Cognito user + Customer row.
+      // The previous implementation only removed the DB row, leaving an orphaned
+      // Cognito account behind.
+      const { data: result, errors } = await client.mutations.deleteCustomerWithAccount({
+        customerId,
+      });
       if (errors?.length) throw new Error(errors[0].message);
-      toast.success('Customer deleted');
+      if (!result?.success) throw new Error(result?.message ?? 'Delete failed');
+      toast.success(result.message ?? 'Customer deleted');
       fetchCustomers();
     } catch (error) {
-      toast.error('Failed to delete customer');
-      console.error(error);
+      const msg = error instanceof Error ? error.message : 'Failed to delete customer';
+      toast.error(msg);
+      console.error('[Delete Customer] Failed:', error);
     }
   };
 

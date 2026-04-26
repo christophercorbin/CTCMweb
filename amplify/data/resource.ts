@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { ocrProcessor } from "../functions/ocr-processor/resource";
 import { statusNotifier } from "../functions/status-notifier/resource";
 import { adminCreateCustomer } from "../functions/admin-create-customer/resource";
+import { adminDeleteCustomer } from "../functions/admin-delete-customer/resource";
 import { syncCustomers } from "../functions/sync-customers/resource";
 
 const schema = a
@@ -219,6 +220,20 @@ const schema = a
       )
       .authorization((allow) => [allow.group("admin")])
       .handler(a.handler.function(adminCreateCustomer)),
+    // ─── Custom mutation: admin deletes Cognito user + Customer record ─────────
+    deleteCustomerWithAccount: a
+      .mutation()
+      .arguments({
+        customerId: a.string().required(),
+      })
+      .returns(
+        a.customType({
+          success: a.boolean(),
+          message: a.string(),
+        })
+      )
+      .authorization((allow) => [allow.group("admin")])
+      .handler(a.handler.function(adminDeleteCustomer)),
     // ─── Custom mutation: sync missing Customer records from Cognito ──────────
     // Also (optionally) refresh stored skybox addresses on all existing records
     // by passing `refreshAddresses: true`.
@@ -243,6 +258,7 @@ const schema = a
     allow.resource(ocrProcessor),
     allow.resource(syncCustomers),
     allow.resource(adminCreateCustomer),
+    allow.resource(adminDeleteCustomer),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;
