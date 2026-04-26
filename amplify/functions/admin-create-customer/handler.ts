@@ -51,9 +51,15 @@ async function getUserPoolId(): Promise<string> {
   return cachedUserPoolId;
 }
 
-// ── Temp password generator (cryptographically secure) ───────────────────────
+// ── Temp password generator (cryptographically secure, unbiased) ─────────────
+/** Rejection sampling: returns a uniformly random integer in [0, max). */
 function secureRandomIndex(max: number): number {
-  return randomBytes(1)[0] % max;
+  const limit = Math.floor(256 / max) * max; // largest multiple of max <= 256
+  let value: number;
+  do {
+    value = randomBytes(1)[0];
+  } while (value >= limit);
+  return value % max;
 }
 
 function generateTempPassword(): string {
@@ -74,10 +80,9 @@ function generateTempPassword(): string {
     all[secureRandomIndex(all.length)],
   ];
 
-  // Fisher-Yates shuffle with secure randomness
-  const shuffleBytes = randomBytes(chars.length);
+  // Fisher-Yates shuffle with unbiased secure randomness
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = shuffleBytes[i] % (i + 1);
+    const j = secureRandomIndex(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");

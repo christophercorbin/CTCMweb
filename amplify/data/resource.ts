@@ -116,11 +116,12 @@ const schema = a
         // OCR-sourced fields
         ocrRawText: a.string(),
         ocrConfidence: a.float(),
+        customerCognitoSub: a.string(), // set by admin so customers can read their packages
         // Relationships
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
       .authorization((allow) => [
-        allow.ownerDefinedIn("shipmentId").to(["read"]),
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
         allow.group("admin"),
       ]),
 
