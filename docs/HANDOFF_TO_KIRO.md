@@ -80,11 +80,14 @@ CTCMweb/
 │       └── pages/                   ← Core pages migrated to Amplify Data client
 │
 ├── .github/workflows/
-│   ├── ci.yml                        ← Node 20, lint/typecheck/test/dep-scan/build
-│   ├── deploy-dev.yml                ← OIDC → ampx pipeline-deploy (develop branch)
-│   └── deploy-prod.yml               ← Manual approval → ampx pipeline-deploy (main)
+│   ├── ci.yml                        ← Node 20, lint + typecheck (PR + push)
+│   └── security.yml                  ← CodeQL + Snyk + npm audit (PR + Sunday cron)
 │
-└── amplify.yml                       ← Amplify Hosting build spec
+└── amplify.yml                       ← Amplify Hosting build spec — backend phase
+                                        runs `ampx pipeline-deploy`, frontend phase
+                                        runs `vite build`. Webhook-driven, no GHA
+                                        deploy job (was: deploy-dev.yml/deploy-prod.yml,
+                                        removed since they only duplicated CI).
 ```
 
 ---
@@ -205,14 +208,17 @@ The user will be prompted to set a permanent password on first login.
 
 ---
 
-### Step 5 — Add GitHub Secrets
+### Step 5 — Add GitHub Secrets (optional)
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-| Secret | Value | Where to find it |
-|--------|-------|-----------------|
-| `AMPLIFY_APP_ID` | e.g. `d1abc23xyz` | Amplify Console → App settings → General |
-| `SNYK_TOKEN` | Snyk API token | snyk.io account (optional — CI won't fail without it) |
+| Secret | Used by | What happens without it |
+|--------|---------|-------------------------|
+| `SNYK_TOKEN` | `security.yml` Snyk job | Snyk skips silently; CodeQL still runs |
+
+`AMPLIFY_APP_ID` is no longer needed — it was used by the removed
+`deploy-dev.yml` / `deploy-prod.yml` workflows. Amplify Hosting's webhook
+provides `AWS_APP_ID` automatically inside the `amplify.yml` build environment.
 
 ---
 
@@ -234,20 +240,25 @@ git commit -m "feat: Amplify Gen 2 — replace Postgres/CDK/Supabase with AppSyn
 git push origin develop
 ```
 
-`deploy-dev.yml` runs:
-1. Lint + typecheck + test
-2. AWS OIDC auth (role `GitHubActionsDeployRole`)
-3. `npx ampx pipeline-deploy --branch develop --app-id $AMPLIFY_APP_ID` — deploys backend + generates outputs
-4. Frontend build check
+Two things run in parallel:
 
-Amplify Hosting then auto-deploys the frontend from the git-connected branch.
+1. **GitHub Actions** runs `ci.yml` (lint + typecheck) and `security.yml`
+   (CodeQL on PR — push doesn't trigger CodeQL by default).
+2. **Amplify Hosting** detects the push via webhook and runs `amplify.yml`:
+   - Backend phase: `npx ampx pipeline-deploy --branch develop --app-id $AWS_APP_ID` — deploys CDK stacks, regenerates `amplify_outputs.json`
+   - Frontend phase: `npm run build --workspace=apps/web` — Vite build, deployed to CDN
+
+To make CI failures block the Amplify build, configure
+"Wait for status check to succeed" in Amplify Console → Hosting → Branch settings.
 
 ---
 
 ### Step 8 — Production deploy
 
-When ready, merge `develop` → `main` and trigger `deploy-prod.yml` via workflow_dispatch.
-It requires manual approval from `christophercorbin` via a GitHub Issue before proceeding.
+When ready, merge `develop` → `main`. Amplify Hosting deploys `main` to the
+production environment via the same webhook + `amplify.yml` flow. Add a manual
+approval gate in Amplify Console → Hosting → Branch settings if you want one
+(there is no GitHub Actions deploy workflow to gate against anymore).
 
 ---
 
@@ -375,6 +386,6 @@ aws logs tail /aws/lambda/ctcm-ocr-processor --follow --region us-east-1
 | Auth helpers | `apps/web/src/lib/cognito.ts` |
 | Auth context | `apps/web/src/contexts/AuthContext.tsx` |
 | Admin route guard | `apps/web/src/routes/ProtectedRoute.tsx` |
-| CI pipeline | `.github/workflows/ci.yml` |
-| Dev deploy pipeline | `.github/workflows/deploy-dev.yml` |
-| Amplify Hosting build spec | `amplify.yml` |
+| CI pipeline (lint + typecheck) | `.github/workflows/ci.yml` |
+| Security scans (CodeQL + Snyk) | `.github/workflows/security.yml` |
+| Amplify Hosting build spec (where deploys happen) | `amplify.yml` |

@@ -2,181 +2,185 @@
 
 ## Overview
 
-This document explains the CI/CD workflow strategy for the CTCM project using AWS Amplify Hosting and GitHub Actions.
+CTCM uses **AWS Amplify Hosting** for deploys and **GitHub Actions** for quality
+gates only. There is no separate CI-driven backend deploy — Amplify Hosting's
+GitHub webhook handles both backend (`ampx pipeline-deploy`) and frontend
+(`vite build`) via `amplify.yml` in the repo root.
 
 ## Architecture
 
-### Frontend Deployment (AWS Amplify)
-- **Hosting**: AWS Amplify Hosting
-- **Build**: Automatic builds triggered by GitHub pushes
-- **Deployment**: Automatic deployment after successful build
-- **CDN**: Built-in CloudFront distribution managed by Amplify
-- **Environment Variables**: Injected by Amplify from CDK stack outputs
+```
+                                    GitHub push
+                                         │
+                  ┌──────────────────────┴──────────────────────┐
+                  ▼                                             ▼
+      GitHub Actions (CI gates)                Amplify Hosting webhook
+      ┌─────────────────────┐                  ┌─────────────────────┐
+      │ ci.yml              │                  │ amplify.yml         │
+      │   • lint            │                  │   backend phase:    │
+      │   • typecheck       │                  │     ampx pipeline-  │
+      │                     │                  │     deploy          │
+      │ security.yml        │                  │   frontend phase:   │
+      │   • CodeQL          │                  │     vite build      │
+      │   • Snyk            │                  │                     │
+      │   • npm audit       │                  │ → DynamoDB / Cognito│
+      └─────────────────────┘                  │ → AppSync / S3      │
+                                                │ → CDN              │
+                                                └─────────────────────┘
+```
 
-### Backend Deployment (GitHub Actions + CDK)
-- **Infrastructure**: AWS CDK deployed via GitHub Actions
-- **API**: Lambda functions, API Gateway, RDS, etc.
-- **Deployment**: Manual trigger via GitHub Actions workflows
+**Both run in parallel on every push.** GitHub Actions does not gate Amplify
+Hosting by default — see "Gating deploys on green CI" below if you want CI
+failures to block the deploy.
 
-## Branch Strategy
+## Branch strategy
 
-### `develop` Branch (Development Environment)
-- **Purpose**: Active development and testing
-- **AWS Account**: 404875533723 (CTCM Dev)
-- **Amplify**: Automatically deploys frontend from `develop` branch
-- **GitHub Actions**: Deploys backend infrastructure on push to `develop`
-- **Workflow**: `.github/workflows/deploy-dev.yml`
+### `develop` — development environment
+- **AWS account:** 404875533723 (CTCM Dev)
+- **Amplify App:** `d3fm03a2oiet1x` · branch `develop`
+- **URL:** `https://develop.d1yo6c4008x99n.amplifyapp.com`
+- **Deploys on:** every push to `develop`
+- **CI gates:** `ci.yml` (lint + typecheck), `security.yml` (CodeQL + Snyk on PR)
 
-### `main` Branch (Production Environment)
-- **Purpose**: Production-ready code (future)
-- **AWS Account**: TBD (Production account not yet created)
-- **Amplify**: Will deploy frontend from `main` branch (when prod account exists)
-- **GitHub Actions**: Disabled until production account is created
-- **Workflow**: `.github/workflows/deploy-prod.yml` (currently disabled)
+### `main` — production environment
+- **Status:** Connected to Amplify Hosting; production AWS account TBD
+- **Deploys on:** every push to `main` (Amplify Hosting webhook)
+- **CI gates:** same as develop
 
-## Workflow Details
+## Workflows
 
-### CI Workflow (`.github/workflows/ci.yml`)
-**Triggers**: Push or PR to `main` or `develop`
+### `.github/workflows/ci.yml` — quality gates
 
-**Jobs**:
-1. **Lint**: ESLint checks
-2. **Type Check**: TypeScript compilation checks
-3. **Test**: Unit and integration tests
-4. **Security Scan**: npm audit and Snyk
-5. **Build**: Build all workspaces (types, utils, api, web, infra)
+**Triggers:** PR + push to `main` or `develop`
 
-**Purpose**: Ensure code quality before deployment
+**Jobs:**
+1. **Lint** — `npm run lint --workspaces --if-present` (currently runs ESLint on `apps/web`; the `amplify/` workspace has no lint script and is silently skipped)
+2. **Type Check** — `npm run typecheck --workspaces --if-present`. Stubs `amplify_outputs.json` so the static import in `apps/web/src/lib/amplify.ts` resolves. Covers both `apps/web` and `amplify/` (Lambda TS errors surface here instead of in the slow `pipeline-deploy` step.)
 
-### Deploy to Development (`.github/workflows/deploy-dev.yml`)
-**Triggers**: Push to `develop` branch or manual dispatch
+### `.github/workflows/security.yml` — security scans
 
-**Steps**:
-1. Install dependencies
-2. Build shared packages (@ctcm/types, @ctcm/utils)
-3. Run linting, type checking, tests
-4. Build all workspaces
-5. Configure AWS credentials (OIDC)
-6. Deploy CDK infrastructure (backend only)
+**Triggers:** PR, weekly Sunday cron, manual dispatch
 
-**What it DOES deploy**:
-- ✅ Network Stack (VPC, Security Groups)
-- ✅ Auth Stack (Cognito)
-- ✅ Data Stack (RDS, S3 buckets)
-- ✅ API Stack (Lambda, API Gateway)
-- ✅ Amplify Stack (Amplify App configuration)
-- ✅ OCR Stack (Textract, Step Functions)
-- ✅ Observability Stack (CloudWatch)
+**Jobs:**
+1. **CodeQL Analysis** — matrix over `javascript` and `typescript`. Runs on every PR (catches issues in the diff) plus weekly (catches newly disclosed issues in already-merged code).
+2. **Dependency Scan** — `npm audit --audit-level=high` (informational) + Snyk with SARIF upload to GitHub Code Scanning. Snyk requires the `SNYK_TOKEN` repo secret; the SARIF upload step skips silently if the file isn't produced (no token, no scan).
 
-**What it DOES NOT deploy**:
-- ❌ Frontend code (Amplify handles this automatically)
+### `amplify.yml` — Amplify Hosting build spec
 
-### Deploy to Production (`.github/workflows/deploy-prod.yml`)
-**Status**: Currently DISABLED
+Lives at the repo root. Two phases:
 
-**Reason**: Production AWS account not yet created
+```yaml
+backend:
+  phases:
+    build:
+      commands:
+        - npm ci --cache .npm --prefer-offline
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci --cache .npm --prefer-offline
+    build:
+      commands:
+        - npm run build --workspace=apps/web
+  artifacts:
+    baseDirectory: apps/web/dist
+    files:
+      - '**/*'
+```
 
-**When to enable**:
-1. Create production AWS account
-2. Set up GitHub OIDC role in production account
-3. Update `AWS_ACCOUNT_ID` in workflow
-4. Uncomment the `push: branches: [main]` trigger
-5. Configure Amplify to deploy from `main` branch
+The backend phase deploys via Amplify Gen 2's CDK pipeline. The frontend phase
+builds Vite output and serves it from Amplify's CDN.
 
-## AWS Amplify Deployment Flow
+## Deploys
 
-### How Amplify Works
-1. **GitHub Integration**: Amplify connects directly to your GitHub repository
-2. **Automatic Builds**: When you push to `develop` (or `main` for prod), Amplify:
-   - Detects the push via webhook
-   - Runs the build commands from the buildSpec in CDK
-   - Builds the frontend (`npm run build` in `apps/web`)
-   - Deploys to Amplify hosting
-   - Invalidates CDN cache automatically
-3. **Environment Variables**: Amplify injects environment variables from CDK:
-   - `VITE_API_URL`
-   - `VITE_COGNITO_USER_POOL_ID`
-   - `VITE_COGNITO_CLIENT_ID`
-   - `VITE_AWS_REGION`
+### Backend changes (Lambdas, schema, auth, storage)
 
-### Viewing Amplify Deployments
-- **Console**: https://console.aws.amazon.com/amplify/home?region=us-east-1
-- **App Name**: ctcm-web
-- **Branch**: develop (for dev environment)
+1. Edit files under `amplify/`
+2. Push to `develop`
+3. Amplify Hosting picks up the push and runs `amplify.yml`'s backend phase
+4. `ampx pipeline-deploy` synthesizes CDK and updates AWS resources
+5. New `amplify_outputs.json` is generated and used by the frontend phase
 
-## Deployment Process
+### Frontend-only changes (React app)
 
-### For Backend Changes (API, Database, Infrastructure)
-1. Make changes to backend code
-2. Commit and push to `develop` branch
-3. GitHub Actions workflow runs automatically
-4. CDK deploys infrastructure changes
-5. Amplify automatically rebuilds frontend (if env vars changed)
+1. Edit files under `apps/web/`
+2. Push to `develop`
+3. Amplify Hosting builds and deploys; backend phase is a no-op if no AWS
+   resources changed (still runs but completes quickly)
 
-### For Frontend Changes (React App)
-1. Make changes to frontend code in `apps/web`
-2. Commit and push to `develop` branch
-3. Amplify automatically detects the push
-4. Amplify builds and deploys the frontend
-5. No GitHub Actions workflow needed!
+### Full-stack changes
 
-### For Full Stack Changes
-1. Make changes to both frontend and backend
-2. Commit and push to `develop` branch
-3. GitHub Actions deploys backend infrastructure
-4. Amplify automatically deploys frontend
-5. Both deployments happen in parallel
+Same flow — Amplify Hosting handles both phases sequentially in one build.
+
+## Gating deploys on green CI
+
+By default a red CI does **not** block the Amplify Hosting build. To gate
+deploys on green CI:
+
+1. Open Amplify Console → your app → **Hosting → Build settings → Branch settings**
+2. Find the develop (and main) branch
+3. Enable **"Wait for status check to succeed before building"**
+4. Pick the `Lint` and `Type Check` checks from `ci.yml`
+
+This setting makes Amplify Hosting wait for those status checks to be green
+before starting the backend phase.
+
+## Local development
+
+| Task | Command |
+|------|---------|
+| Provision sandbox AWS resources | `npx ampx sandbox` (in repo root or `npm run sandbox`) |
+| Run frontend dev server | `npm run dev --workspace=apps/web` |
+| Tear down sandbox | `npx ampx sandbox delete` |
+| Lint everything | `npm run lint` |
+| Typecheck everything | `npm run typecheck` |
+
+`ampx sandbox` generates `amplify_outputs.json` at the repo root. This file is
+gitignored and is regenerated for each deploy by `pipeline-deploy`.
 
 ## Troubleshooting
 
-### Frontend not updating?
-- Check Amplify console for build status
-- Verify the correct branch is connected
-- Check build logs in Amplify console
+### Amplify Hosting build fails at backend phase
+- Open Amplify Console → app → branch → Build details → click the failing build
+- Backend phase logs show CloudFormation events. Most failures here are
+  permission errors (missing IAM grant in `backend.ts`) or schema/auth conflicts.
 
-### Backend deployment failing?
-- Check GitHub Actions workflow logs
-- Verify AWS credentials are configured
-- Check CDK stack outputs
+### Frontend builds but app errors at runtime
+- Check `amplify_outputs.json` was regenerated — Amplify Console build log
+  should show `Successfully wrote .../amplify_outputs.json`
+- If the frontend imports a field that no longer exists in the schema,
+  typecheck would have caught it in CI. If it didn't, the stub
+  `{"version":"1"}` may be hiding the issue.
 
-### Environment variables not working?
-- Verify they're set in the Amplify stack (CDK)
-- Check Amplify console > App Settings > Environment variables
-- Redeploy the Amplify stack if you changed env vars
+### CI fails on typecheck for a Lambda file
+- Run locally: `cd amplify && npm run typecheck`
+- The amplify workspace has no lint script, so ESLint won't catch issues there;
+  rely on TS strict mode for now.
 
-## Cost Optimization
+### Snyk SARIF upload fails
+- The upload step is guarded by `hashFiles('snyk.sarif') != ''` — if the
+  Snyk scan didn't run (no `SNYK_TOKEN`), the upload skips silently.
+- If `SNYK_TOKEN` is set but upload still fails, check the Snyk job's args
+  include `--sarif-file-output=snyk.sarif`.
 
-### What Amplify Provides
-- ✅ Hosting (no S3 bucket needed)
-- ✅ CDN (no separate CloudFront needed)
-- ✅ SSL certificate (automatic)
-- ✅ Build pipeline (no CodeBuild needed)
-- ✅ Atomic deployments with rollback
+## Cost notes
 
-### Cost Estimate
-- **Amplify Hosting**: $0.01/GB served + $0.01/build minute
-- **Typical dev usage**: ~$1-2/month
-- **Savings**: No separate S3, CloudFront, CodeBuild costs
+Amplify Hosting includes hosting, CDN, SSL, build minutes in a single
+unified bill. Typical dev usage runs ~$1–2/month.
 
-## Future Enhancements
+## Future enhancements
 
-### When Production Account is Created
-1. Create new AWS account for production
-2. Set up GitHub OIDC role in prod account
-3. Create separate Amplify app for production
-4. Enable prod deployment workflow
-5. Configure branch protection rules
-6. Add manual approval for prod deployments
-
-### Potential Improvements
-- Add Slack/SNS notifications for deployments
-- Add deployment status badges to README
-- Add automated rollback on failure
-- Add blue/green deployments for API
-- Add canary deployments for frontend
+- Add Vitest + a real `test` script to `apps/web/package.json` (currently
+  `npm run test` is a no-op everywhere)
+- Add an ESLint config for the `amplify/` workspace so Lambda code gets linted
+- Add a `cdk diff`-equivalent step on PRs to preview infrastructure changes
+  before merging (catches accidental UserPool replacements, table deletions)
+- Add Slack/SNS deploy notifications (Amplify Hosting → App settings → Notifications)
 
 ## References
 
-- [AWS Amplify Hosting Documentation](https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html)
-- [GitHub Actions OIDC with AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
-- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
+- [AWS Amplify Hosting](https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html)
+- [Amplify Gen 2 pipeline-deploy](https://docs.amplify.aws/react/deploy-and-host/fullstack-branching/branch-deployments/)
+- [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
