@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
-import { Package, Plus, Trash2, Save, Link, PlusCircle } from 'lucide-react';
+import { Package, Plus, Trash2, Save, Link, PlusCircle, ChevronDown, X } from 'lucide-react';
 import { Card, Button, Input, Select, Textarea, DocumentScanner } from '../components';
 import toast from 'react-hot-toast';
 import { PackageType } from '../types';
@@ -79,6 +79,33 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Customer combobox state
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const customerComboRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (customerComboRef.current && !customerComboRef.current.contains(e.target as Node)) {
+        setCustomerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const sortedCustomers = useMemo(
+    () => customers.slice().sort((a, b) => a.name.localeCompare(b.name)),
+    [customers]
+  );
+
+  const filteredCustomerOptions = customerQuery.trim()
+    ? sortedCustomers.filter((c) => {
+        const q = customerQuery.toLowerCase();
+        return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+      })
+    : sortedCustomers;
 
   // Link-to-existing state
   const [linkToExisting, setLinkToExisting] = useState(false);
@@ -433,15 +460,81 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
-                <Select
-                  value={formData.customer_id}
-                  onChange={(e) => handleInputChange('customer_id', e.target.value)}
-                  options={[
-                    { value: '', label: customers.length ? 'Select customer...' : 'No customers yet — add one first' },
-                    ...customers.map((c) => ({ value: c.id, label: `${c.name} (${c.email})` })),
-                  ]}
-                  required
-                />
+                <div ref={customerComboRef} className="relative">
+                  <div className={`flex items-center border rounded-lg overflow-hidden transition-shadow ${
+                    customerOpen ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                  }`}>
+                    <input
+                      type="text"
+                      className="flex-1 px-3 py-2 text-sm outline-none bg-white placeholder-gray-400"
+                      placeholder={customers.length ? 'Search by name or email…' : 'Loading customers…'}
+                      value={customerQuery}
+                      onChange={(e) => {
+                        setCustomerQuery(e.target.value);
+                        setCustomerOpen(true);
+                        if (!e.target.value) handleInputChange('customer_id', '');
+                      }}
+                      onFocus={() => setCustomerOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setCustomerOpen(false);
+                        if (e.key === 'Enter' && filteredCustomerOptions.length > 0) {
+                          e.preventDefault();
+                          const c = filteredCustomerOptions[0];
+                          handleInputChange('customer_id', c.id);
+                          setCustomerQuery(`${c.name} — ${c.email}`);
+                          setCustomerOpen(false);
+                        }
+                      }}
+                    />
+                    {formData.customer_id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange('customer_id', '');
+                          setCustomerQuery('');
+                          setCustomerOpen(false);
+                        }}
+                        className="px-2 text-gray-400 hover:text-gray-600"
+                        tabIndex={-1}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                    <span className="px-2 text-gray-400 pointer-events-none">
+                      <ChevronDown className="w-4 h-4" />
+                    </span>
+                  </div>
+
+                  {customerOpen && customers.length > 0 && (
+                    <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                      {filteredCustomerOptions.length === 0 ? (
+                        <li className="px-4 py-3 text-sm text-gray-400">No customers match "{customerQuery}"</li>
+                      ) : (
+                        filteredCustomerOptions.map((c) => (
+                          <li
+                            key={c.id}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleInputChange('customer_id', c.id);
+                              setCustomerQuery(`${c.name} — ${c.email}`);
+                              setCustomerOpen(false);
+                            }}
+                            className={`px-4 py-2.5 text-sm cursor-pointer flex items-center justify-between group ${
+                              c.id === formData.customer_id
+                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                : 'text-gray-800 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span>{c.name}</span>
+                            <span className={`text-xs ${c.id === formData.customer_id ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                              {c.email}
+                            </span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Type *</label>
