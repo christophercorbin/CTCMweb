@@ -77,6 +77,24 @@ const DEFAULT_BODIES: Record<string, string> = {
     "Your package has been delayed. We sincerely apologize for the inconvenience and will keep you updated as soon as possible.",
 };
 
+// Admin instruction email templates
+const ADMIN_INSTRUCTION_SUBJECTS: Record<string, string> = {
+  ADMIN_SHIP: "Your shipment has been released for delivery",
+  ADMIN_HOLD: "Your shipment has been placed on hold",
+};
+
+const ADMIN_INSTRUCTION_BODIES: Record<string, string> = {
+  ADMIN_SHIP:
+    "Our team has released your shipment for delivery on your behalf. Your cargo is now cleared and will be processed for the next available shipment to Barbados.",
+  ADMIN_HOLD:
+    "Our team has placed your shipment on hold at the warehouse on your behalf. Your cargo will remain securely stored until further notice. Please contact us if you have any questions.",
+};
+
+const ADMIN_INSTRUCTION_HEADINGS: Record<string, string> = {
+  ADMIN_SHIP: "Shipment Released",
+  ADMIN_HOLD: "Shipment On Hold",
+};
+
 interface AppSyncEvent {
   arguments: {
     shipmentId: string;
@@ -85,24 +103,40 @@ interface AppSyncEvent {
     trackingNumber: string;
     status: string;
     customMessage?: string;
+    notificationType?: string;
   };
 }
 
 export const handler = async (event: AppSyncEvent) => {
-  const { customerEmail, customerName, trackingNumber, status, customMessage } =
+  const { customerEmail, customerName, trackingNumber, status, customMessage, notificationType } =
     event.arguments;
 
   const name = customerName ?? "Valued Customer";
-  const statusLabel = STATUS_LABELS[status] ?? status;
-  const subject =
-    DEFAULT_SUBJECTS[status] ?? `Shipment update: ${statusLabel}`;
-  const defaultBody = DEFAULT_BODIES[status] ?? `Your shipment status has been updated to: ${statusLabel}.`;
-  const body = customMessage?.trim() || defaultBody;
+  const isAdminInstruction = notificationType === "ADMIN_SHIP" || notificationType === "ADMIN_HOLD";
 
+  let subject: string;
+  let body: string;
+  let heading: string;
+
+  if (isAdminInstruction && notificationType) {
+    subject = customMessage?.trim()
+      ? `${ADMIN_INSTRUCTION_SUBJECTS[notificationType]}: ${customMessage.trim().slice(0, 60)}`
+      : ADMIN_INSTRUCTION_SUBJECTS[notificationType];
+    body = customMessage?.trim() || ADMIN_INSTRUCTION_BODIES[notificationType];
+    heading = ADMIN_INSTRUCTION_HEADINGS[notificationType];
+  } else {
+    const statusLabel = STATUS_LABELS[status] ?? status;
+    subject = DEFAULT_SUBJECTS[status] ?? `Shipment update: ${statusLabel}`;
+    const defaultBody = DEFAULT_BODIES[status] ?? `Your shipment status has been updated to: ${statusLabel}.`;
+    body = customMessage?.trim() || defaultBody;
+    heading = "Shipment Update";
+  }
+
+  const statusLabel = STATUS_LABELS[status] ?? status;
   const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 
   const html = emailWrapper(`
-    <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Shipment Update</p>
+    <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(heading)}</p>
     <h1 style="margin:0 0 20px;font-size:22px;color:#1B2D78;font-weight:800;">${escapeHtml(subject)}</h1>
     <p style="margin:0 0 16px;font-size:16px;color:#374151;">Hi <strong>${escapeHtml(name)}</strong>,</p>
     <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">${escapeHtml(body).replace(/\n/g, "<br>")}</p>

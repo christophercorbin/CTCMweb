@@ -81,8 +81,10 @@ const schema = a
         // Set to the customer's Cognito sub so admin-created shipments
         // are visible to the customer via allow.ownerDefinedIn below
         customerCognitoSub: a.string(),
-        // Customer's shipping instruction — set by customer after warehouse notification
+        // Customer's shipping instruction — set by customer or admin after warehouse notification
         customerInstruction: a.ref("ShipmentInstruction"),
+        // Who set the instruction: "CUSTOMER" or "ADMIN"
+        instructionSetBy: a.string(),
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         packages: a.hasMany("Package", "shipmentId"),
@@ -199,6 +201,8 @@ const schema = a
         trackingNumber: a.string().required(),
         status: a.string().required(),
         customMessage: a.string(),
+        // "STATUS_UPDATE" (default) | "ADMIN_SHIP" | "ADMIN_HOLD"
+        notificationType: a.string(),
       })
       .returns(a.customType({ success: a.boolean() }))
       .authorization((allow) => [allow.group("admin")])

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle } from 'lucide-react'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle, Bell } from 'lucide-react'
 import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
 import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
+import { ConvertPreAlertModal } from './admin/ConvertPreAlertModal'
 import { ShipmentStatus } from '../types'
 import { SHIPMENT_STATUS_OPTIONS } from '../constants/shipmentStatuses'
 import { useShipments } from '../hooks/useShipments'
@@ -13,6 +14,9 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 
 const client = generateClient<Schema>()
+
+// Statuses where admins can set a ship/hold instruction
+const INSTRUCTION_ELIGIBLE_STATUSES = new Set(['PENDING', 'MIAMI_WAREHOUSE', 'AT_WAREHOUSE'])
 
 type DynamoShipment = Schema['Shipment']['type']
 type AppCustomer = Schema['Customer']['type']
@@ -68,29 +72,86 @@ export const AdminDashboard = () => {
     setCreateForCustomerId(null)
   }
 
+  // Quick ship/hold action state: tracks which shipment ID is being updated
+  const [instructionBusy, setInstructionBusy] = useState<string | null>(null)
+
+  // Pre-alert convert modal state
+  const [convertTarget, setConvertTarget] = useState<DynamoShipment | null>(null)
+
+  const handleQuickInstruction = async (
+    shipment: DynamoShipment,
+    instruction: 'SHIP' | 'HOLD'
+  ) => {
+    if (instructionBusy) return
+    setInstructionBusy(shipment.id)
+    try {
+      await client.models.Shipment.update({
+        id: shipment.id,
+        customerInstruction: instruction,
+        instructionSetBy: 'ADMIN',
+      })
+      await client.models.ShipmentEvent.create({
+        shipmentId: shipment.id,
+        status: shipment.status as Schema['ShipmentEvent']['type']['status'],
+        description:
+          instruction === 'SHIP'
+            ? 'Admin released shipment for delivery on behalf of customer'
+            : 'Admin placed shipment on hold on behalf of customer',
+        eventTimestamp: new Date().toISOString(),
+        createdBy: 'ADMIN',
+        customerCognitoSub: shipment.customerCognitoSub ?? undefined,
+      })
+      const customer = customerList.find((c) => c.id === shipment.customerId)
+      if (customer?.email) {
+        await client.mutations.sendStatusNotification({
+          shipmentId: shipment.id,
+          customerEmail: customer.email,
+          customerName: customer.name,
+          trackingNumber: shipment.trackingNumber,
+          status: shipment.status,
+          notificationType: instruction === 'SHIP' ? 'ADMIN_SHIP' : 'ADMIN_HOLD',
+        })
+      }
+      toast.success(
+        instruction === 'SHIP'
+          ? `${shipment.trackingNumber} released — customer notified`
+          : `${shipment.trackingNumber} placed on hold — customer notified`
+      )
+    } catch {
+      toast.error('Failed to set instruction')
+    } finally {
+      setInstructionBusy(null)
+    }
+  }
+
   useEffect(() => {
     if (error) {
       toast.error('Failed to load shipments')
     }
   }, [error])
 
-  const activeShipments = shipments.filter((s) => s.status !== 'DELIVERED' && s.status !== 'CANCELLED' && s.status !== 'RETURNED')
-  const customsShipments = shipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
-  const delayedShipments = shipments.filter((s) => s.status === 'RETURNED')
-  const heldShipments = shipments.filter((s) => s.customerInstruction === 'HOLD')
+  // Admin-entered shipments: customerCognitoSub is set (admin linked the record to a customer)
+  // Customer pre-alerts: customerCognitoSub is null (customer created it themselves)
+  const adminShipments = useMemo(() => shipments.filter((s) => !!s.customerCognitoSub), [shipments])
+  const preAlerts = useMemo(() => shipments.filter((s) => !s.customerCognitoSub), [shipments])
+
+  const activeShipments = adminShipments.filter((s) => s.status !== 'DELIVERED' && s.status !== 'CANCELLED' && s.status !== 'RETURNED')
+  const customsShipments = adminShipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
+  const delayedShipments = adminShipments.filter((s) => s.status === 'RETURNED')
+  const heldShipments = adminShipments.filter((s) => s.customerInstruction === 'HOLD')
 
   // Total shipment count per customerId — passed to CustomerManagement for card badges
   const shipmentCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    shipments.forEach((s) => {
+    adminShipments.forEach((s) => {
       counts[s.customerId] = (counts[s.customerId] ?? 0) + 1
     })
     return counts
-  }, [shipments])
+  }, [adminShipments])
 
   const filteredShipments = useMemo(() => {
     const q = search.toLowerCase()
-    return shipments
+    return adminShipments
       .filter((s) => statusFilter === '' || s.status === statusFilter)
       .filter((s) => typeFilter === '' || s.type === typeFilter)
       .filter((s) => {
@@ -108,7 +169,16 @@ export const AdminDashboard = () => {
         const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
         return bTime - aTime
       })
-  }, [shipments, statusFilter, typeFilter, search, customerMap])
+  }, [adminShipments, statusFilter, typeFilter, search, customerMap])
+
+  const filteredPreAlerts = useMemo(() => {
+    const q = search.toLowerCase()
+    if (!q) return preAlerts
+    return preAlerts.filter((s) => {
+      const customerName = customerMap[s.customerId]?.toLowerCase() ?? ''
+      return s.trackingNumber.toLowerCase().includes(q) || customerName.includes(q)
+    })
+  }, [preAlerts, search, customerMap])
 
   const MetricCard = ({
     icon: Icon,
@@ -370,14 +440,108 @@ export const AdminDashboard = () => {
                             : '-'}
                         </td>
                         <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => navigate(`/admin/shipments/${shipment.id}`)}
+                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </button>
+                            {INSTRUCTION_ELIGIBLE_STATUSES.has(shipment.status) && (
+                              <>
+                                <button
+                                  onClick={() => handleQuickInstruction(shipment, 'SHIP')}
+                                  disabled={instructionBusy === shipment.id || shipment.customerInstruction === 'SHIP'}
+                                  title="Release for delivery"
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                                    shipment.customerInstruction === 'SHIP'
+                                      ? 'bg-blue-100 text-blue-700 cursor-default'
+                                      : 'bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-40'
+                                  }`}
+                                >
+                                  <Truck className="w-3 h-3" />
+                                  {instructionBusy === shipment.id && shipment.customerInstruction !== 'SHIP' ? '…' : 'Ship'}
+                                </button>
+                                <button
+                                  onClick={() => handleQuickInstruction(shipment, 'HOLD')}
+                                  disabled={instructionBusy === shipment.id || shipment.customerInstruction === 'HOLD'}
+                                  title="Place on hold"
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                                    shipment.customerInstruction === 'HOLD'
+                                      ? 'bg-amber-100 text-amber-700 cursor-default'
+                                      : 'bg-white border border-amber-200 text-amber-600 hover:bg-amber-50 disabled:opacity-40'
+                                  }`}
+                                >
+                                  <PauseCircle className="w-3 h-3" />
+                                  {instructionBusy === shipment.id && shipment.customerInstruction !== 'HOLD' ? '…' : 'Hold'}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
+          {/* ── Pre-Alerts ── */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-indigo-500" />
+                <h2 className="text-xl font-bold text-gray-900">Customer Pre-Alerts</h2>
+                {preAlerts.length > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                    {preAlerts.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">Shipments entered by customers — not yet managed by CTCM</p>
+            </div>
+
+            {loading ? (
+              <LoadingSkeleton />
+            ) : filteredPreAlerts.length === 0 ? (
+              <EmptyState
+                title="No pre-alerts"
+                message={search ? 'No pre-alerts match your search' : 'Customers have not submitted any pre-alerts yet'}
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-gray-200 bg-gray-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Customer</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Type</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Submitted</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredPreAlerts.map((pa) => (
+                      <tr key={pa.id} className="hover:bg-indigo-50/40 transition-colors">
+                        <td className="px-4 py-3 font-medium text-gray-900">{pa.trackingNumber}</td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {customerMap[pa.customerId] ?? <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{pa.type}</td>
+                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{pa.description ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          {pa.createdAt ? new Date(pa.createdAt).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="px-4 py-3">
                           <button
-                            onClick={() =>
-                              navigate(`/admin/shipments/${shipment.id}`)
-                            }
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
+                            onClick={() => setConvertTarget(pa)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                           >
-                            <Eye className="w-4 h-4" />
-                            View
+                            <Package className="w-3.5 h-3.5" />
+                            Convert to Shipment
                           </button>
                         </td>
                       </tr>
@@ -395,6 +559,15 @@ export const AdminDashboard = () => {
           customers={customerList}
           preselectedCustomerId={createForCustomerId}
           onClose={closeCreateModal}
+        />
+      )}
+
+      {convertTarget && (
+        <ConvertPreAlertModal
+          preAlert={convertTarget}
+          customerName={customerMap[convertTarget.customerId] ?? 'Unknown Customer'}
+          customerCognitoSub={customerList.find((c) => c.id === convertTarget.customerId)?.cognitoSub ?? null}
+          onClose={() => setConvertTarget(null)}
         />
       )}
     </div>
