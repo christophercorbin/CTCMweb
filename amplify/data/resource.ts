@@ -85,6 +85,8 @@ const schema = a
         customerInstruction: a.ref("ShipmentInstruction"),
         // Who set the instruction: "CUSTOMER" or "ADMIN"
         instructionSetBy: a.string(),
+        // Who created this record: "CUSTOMER" (pre-alert) or "ADMIN" (staff-entered)
+        shipmentSource: a.string(),
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         packages: a.hasMany("Package", "shipmentId"),

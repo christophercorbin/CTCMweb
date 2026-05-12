@@ -94,6 +94,7 @@ export const CreateShipment = () => {
         status: 'PENDING',
         description: data.description,
         customerId,
+        shipmentSource: 'CUSTOMER',
       })
 
       if (errors || !shipment) {

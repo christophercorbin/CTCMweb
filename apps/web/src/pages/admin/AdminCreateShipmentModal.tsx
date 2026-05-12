@@ -161,6 +161,7 @@ export const AdminCreateShipmentModal = ({
         // Critical: lets the customer see this admin-created shipment via
         // allow.ownerDefinedIn("customerCognitoSub")
         customerCognitoSub: customer.cognitoSub ?? undefined,
+        shipmentSource: 'ADMIN',
       })
 
       if (gqlErrors?.length || !shipment) {

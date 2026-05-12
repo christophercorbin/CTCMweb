@@ -130,10 +130,19 @@ export const AdminDashboard = () => {
     }
   }, [error])
 
-  // Admin-entered shipments: customerCognitoSub is set (admin linked the record to a customer)
-  // Customer pre-alerts: customerCognitoSub is null (customer created it themselves)
-  const adminShipments = useMemo(() => shipments.filter((s) => !!s.customerCognitoSub), [shipments])
-  const preAlerts = useMemo(() => shipments.filter((s) => !s.customerCognitoSub), [shipments])
+  // Pre-alerts: customer-submitted, not yet processed by admin (no customerCognitoSub).
+  //   - New records: shipmentSource='CUSTOMER' and !customerCognitoSub
+  //   - Legacy records (before shipmentSource field): !shipmentSource and !customerCognitoSub
+  // Once admin processes a pre-alert, customerCognitoSub is set → moves to Active Shipments.
+  const preAlerts = useMemo(
+    () => shipments.filter((s) => !s.customerCognitoSub && (s.shipmentSource === 'CUSTOMER' || !s.shipmentSource)),
+    [shipments]
+  )
+  // Active shipments: admin-created, OR processed pre-alerts (customerCognitoSub now set).
+  const adminShipments = useMemo(
+    () => shipments.filter((s) => !!s.customerCognitoSub || s.shipmentSource === 'ADMIN'),
+    [shipments]
+  )
 
   const activeShipments = adminShipments.filter((s) => s.status !== 'DELIVERED' && s.status !== 'CANCELLED' && s.status !== 'RETURNED')
   const customsShipments = adminShipments.filter((s) => s.status === 'CUSTOMS_HOLD' || s.status === 'BARBADOS_CUSTOMS')
