@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle, Bell } from 'lucide-react'
+import { Eye, Package, AlertCircle, Clock, CheckCircle2, Users, PauseCircle, Warehouse, Truck, HelpCircle, Bell, Trash2 } from 'lucide-react'
 import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../components'
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
@@ -77,6 +77,36 @@ export const AdminDashboard = () => {
 
   // Pre-alert convert modal state
   const [convertTarget, setConvertTarget] = useState<DynamoShipment | null>(null)
+
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<DynamoShipment | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDeleteShipment = async (shipment: DynamoShipment) => {
+    setDeletingId(shipment.id)
+    try {
+      // Cascade-delete all child records first
+      const [pkgs, evts, charges, invs] = await Promise.all([
+        client.models.Package.list({ filter: { shipmentId: { eq: shipment.id } } }),
+        client.models.ShipmentEvent.list({ filter: { shipmentId: { eq: shipment.id } } }),
+        client.models.ShipmentCharge.list({ filter: { shipmentId: { eq: shipment.id } } }),
+        client.models.Invoice.list({ filter: { shipmentId: { eq: shipment.id } } }),
+      ])
+      await Promise.all([
+        ...pkgs.data.map(p => client.models.Package.delete({ id: p.id })),
+        ...evts.data.map(e => client.models.ShipmentEvent.delete({ id: e.id })),
+        ...charges.data.map(c => client.models.ShipmentCharge.delete({ id: c.id })),
+        ...invs.data.map(i => client.models.Invoice.delete({ id: i.id })),
+      ])
+      await client.models.Shipment.delete({ id: shipment.id })
+      toast.success(`${shipment.trackingNumber} deleted`)
+      setDeleteTarget(null)
+    } catch {
+      toast.error('Failed to delete shipment')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const handleQuickInstruction = async (
     shipment: DynamoShipment,
@@ -337,13 +367,23 @@ export const AdminDashboard = () => {
                         {pa.createdAt ? new Date(pa.createdAt).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => setConvertTarget(pa)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                        >
-                          <Package className="w-3.5 h-3.5" />
-                          Process Receipt
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setConvertTarget(pa)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                          >
+                            <Package className="w-3.5 h-3.5" />
+                            Process Receipt
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(pa)}
+                            title="Delete pre-alert"
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-semibold text-red-500 hover:bg-red-50 border border-red-200 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -568,6 +608,14 @@ export const AdminDashboard = () => {
                                 </button>
                               </>
                             )}
+                            <button
+                              onClick={() => setDeleteTarget(shipment)}
+                              title="Delete shipment"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-red-500 hover:bg-red-50 border border-red-200 transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -597,6 +645,42 @@ export const AdminDashboard = () => {
           customerEmail={customerList.find((c) => c.id === convertTarget.customerId)?.email ?? ''}
           onClose={() => setConvertTarget(null)}
         />
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Delete shipment?</h3>
+                <p className="text-sm text-gray-500 font-mono">{deleteTarget.trackingNumber}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              This will permanently delete the shipment and all associated packages, charges, events, and invoices. This cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={!!deletingId}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteShipment(deleteTarget)}
+                disabled={!!deletingId}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deletingId ? 'Deleting…' : 'Yes, delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

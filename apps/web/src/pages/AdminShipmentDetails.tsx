@@ -205,9 +205,14 @@ export const AdminShipmentDetails = () => {
     if (!shipment) return
     setDeletingShipment(true)
     try {
+      // Fetch charges separately (not in local state)
+      const { data: charges } = await client.models.ShipmentCharge.list({
+        filter: { shipmentId: { eq: shipment.id } },
+      })
       await Promise.all([
         ...packages.map(p => client.models.Package.delete({ id: p.id })),
         ...events.map(e => client.models.ShipmentEvent.delete({ id: e.id })),
+        ...charges.map(c => client.models.ShipmentCharge.delete({ id: c.id })),
         ...invoices.map(i => client.models.Invoice.delete({ id: i.id })),
       ])
       await client.models.Shipment.delete({ id: shipment.id })
