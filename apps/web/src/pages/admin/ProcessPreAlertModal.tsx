@@ -61,12 +61,14 @@ export const ProcessPreAlertModal = ({
       const description = descriptionParts.join('\n') || undefined
 
       // Promote pre-alert to admin-managed shipment + set to MIAMI_WAREHOUSE
+      // shipmentSource='ADMIN' is what moves it out of Pre-Alerts into Active Shipments
       await client.models.Shipment.update({
         id: preAlert.id,
         trackingNumber: trackingNumber.trim(),
         type: shipmentType,
         status: 'MIAMI_WAREHOUSE',
-        customerCognitoSub,               // ← this is what promotes it out of pre-alerts
+        shipmentSource: 'ADMIN',
+        customerCognitoSub,
         origin: origin.trim() || undefined,
         destination: destination.trim() || undefined,
         estimatedDelivery: estimatedDelivery

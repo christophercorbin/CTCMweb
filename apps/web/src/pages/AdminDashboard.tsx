@@ -130,17 +130,19 @@ export const AdminDashboard = () => {
     }
   }, [error])
 
-  // Pre-alerts: customer-submitted, not yet processed by admin (no customerCognitoSub).
-  //   - New records: shipmentSource='CUSTOMER' and !customerCognitoSub
-  //   - Legacy records (before shipmentSource field): !shipmentSource and !customerCognitoSub
-  // Once admin processes a pre-alert, customerCognitoSub is set → moves to Active Shipments.
+  // Pre-alerts: customer-submitted shipments, identified by shipmentSource='CUSTOMER'.
+  // Amplify auto-populates customerCognitoSub for ALL records regardless of who creates them,
+  // so we cannot use that field as a discriminator. shipmentSource is the only reliable signal.
+  // When an admin processes a pre-alert via ProcessPreAlertModal, it sets shipmentSource='ADMIN'
+  // which moves the record out of pre-alerts and into Active Shipments.
   const preAlerts = useMemo(
-    () => shipments.filter((s) => !s.customerCognitoSub && (s.shipmentSource === 'CUSTOMER' || !s.shipmentSource)),
+    () => shipments.filter((s) => s.shipmentSource === 'CUSTOMER'),
     [shipments]
   )
-  // Active shipments: admin-created, OR processed pre-alerts (customerCognitoSub now set).
+  // Active shipments: explicitly admin-created/processed (shipmentSource='ADMIN') or legacy records
+  // (no shipmentSource — predates the field, treated as admin-managed).
   const adminShipments = useMemo(
-    () => shipments.filter((s) => !!s.customerCognitoSub || s.shipmentSource === 'ADMIN'),
+    () => shipments.filter((s) => s.shipmentSource !== 'CUSTOMER'),
     [shipments]
   )
 
