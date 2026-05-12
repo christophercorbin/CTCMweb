@@ -6,7 +6,7 @@ import { Input, Select, LoadingSkeleton, EmptyState, Badge, Card } from '../comp
 import { CustomerManagement } from '../components/CustomerManagement'
 import { WarehouseReceiptIntake } from './WarehouseReceiptIntake'
 import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
-import { ConvertPreAlertModal } from './admin/ConvertPreAlertModal'
+import { ProcessPreAlertModal } from './admin/ProcessPreAlertModal'
 import { ShipmentStatus } from '../types'
 import { SHIPMENT_STATUS_OPTIONS } from '../constants/shipmentStatuses'
 import { useShipments } from '../hooks/useShipments'
@@ -20,7 +20,7 @@ const INSTRUCTION_ELIGIBLE_STATUSES = new Set(['PENDING', 'MIAMI_WAREHOUSE', 'AT
 
 type DynamoShipment = Schema['Shipment']['type']
 type AppCustomer = Schema['Customer']['type']
-type AdminTab = 'shipments' | 'customers' | 'receipts'
+type AdminTab = 'shipments' | 'prealerts' | 'customers' | 'receipts'
 
 // Prepend "All Statuses" to the constants-driven option list
 const statusOptions = [
@@ -232,6 +232,22 @@ export const AdminDashboard = () => {
           Shipments
         </button>
         <button
+          onClick={() => setActiveTab('prealerts')}
+          className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative ${
+            activeTab === 'prealerts'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Bell className="w-5 h-5" />
+          Pre-Alerts
+          {preAlerts.length > 0 && (
+            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+              {preAlerts.length}
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab('customers')}
           className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative ${
             activeTab === 'customers'
@@ -262,6 +278,69 @@ export const AdminDashboard = () => {
           onCreateShipment={(c) => openCreateModal(c.id)}
           shipmentCounts={shipmentCounts}
         />
+      ) : activeTab === 'prealerts' ? (
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-xl font-bold text-gray-900">Customer Pre-Alerts</h2>
+              {preAlerts.length > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                  {preAlerts.length}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500">Customers have pre-alerted these shipments — process them once the warehouse receipt arrives</p>
+          </div>
+
+          {loading ? (
+            <LoadingSkeleton />
+          ) : filteredPreAlerts.length === 0 ? (
+            <EmptyState
+              title="No pre-alerts"
+              message={search ? 'No pre-alerts match your search' : 'No customers have submitted pre-alerts yet'}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Customer</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Type</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Submitted</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredPreAlerts.map((pa) => (
+                    <tr key={pa.id} className="hover:bg-indigo-50/40 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900 font-mono">{pa.trackingNumber}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {customerMap[pa.customerId] ?? <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{pa.type}</td>
+                      <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{pa.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {pa.createdAt ? new Date(pa.createdAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setConvertTarget(pa)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                          Process Receipt
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -488,69 +567,6 @@ export const AdminDashboard = () => {
             )}
           </Card>
 
-          {/* ── Pre-Alerts ── */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-xl font-bold text-gray-900">Customer Pre-Alerts</h2>
-                {preAlerts.length > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
-                    {preAlerts.length}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500">Shipments entered by customers — not yet managed by CTCM</p>
-            </div>
-
-            {loading ? (
-              <LoadingSkeleton />
-            ) : filteredPreAlerts.length === 0 ? (
-              <EmptyState
-                title="No pre-alerts"
-                message={search ? 'No pre-alerts match your search' : 'Customers have not submitted any pre-alerts yet'}
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-gray-200 bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Tracking #</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Customer</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Type</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Submitted</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredPreAlerts.map((pa) => (
-                      <tr key={pa.id} className="hover:bg-indigo-50/40 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">{pa.trackingNumber}</td>
-                        <td className="px-4 py-3 text-gray-700">
-                          {customerMap[pa.customerId] ?? <span className="text-gray-300">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{pa.type}</td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{pa.description ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">
-                          {pa.createdAt ? new Date(pa.createdAt).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => setConvertTarget(pa)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                          >
-                            <Package className="w-3.5 h-3.5" />
-                            Convert to Shipment
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
         </div>
       )}
 
@@ -563,10 +579,11 @@ export const AdminDashboard = () => {
       )}
 
       {convertTarget && (
-        <ConvertPreAlertModal
+        <ProcessPreAlertModal
           preAlert={convertTarget}
           customerName={customerMap[convertTarget.customerId] ?? 'Unknown Customer'}
           customerCognitoSub={customerList.find((c) => c.id === convertTarget.customerId)?.cognitoSub ?? null}
+          customerEmail={customerList.find((c) => c.id === convertTarget.customerId)?.email ?? ''}
           onClose={() => setConvertTarget(null)}
         />
       )}
