@@ -30,6 +30,7 @@ interface StatusUpdatePanelProps {
   currentStatus: ShipmentStatus
   customerEmail: string | null | undefined
   customerName: string | null | undefined
+  customerCognitoSub: string | null | undefined
   onUpdated: () => void
 }
 
@@ -39,6 +40,7 @@ export const StatusUpdatePanel = ({
   currentStatus,
   customerEmail,
   customerName,
+  customerCognitoSub,
   onUpdated,
 }: StatusUpdatePanelProps) => {
   const [selectedStatus, setSelectedStatus] = useState<ShipmentStatus>(currentStatus)
@@ -72,6 +74,7 @@ export const StatusUpdatePanel = ({
         status: selectedStatus,
         description: eventNote,
         eventTimestamp: new Date().toISOString(),
+        customerCognitoSub: customerCognitoSub ?? undefined,
       })
 
       if (notifyCustomer && customerEmail) {

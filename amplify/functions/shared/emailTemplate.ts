@@ -8,6 +8,16 @@
 const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 const LOGO_URL = `${APP_URL}/logos/logo-color-stacked.png`;
 
+/** Escape user-controlled strings before interpolating into HTML */
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -70,8 +80,8 @@ export function infoRow(label: string, value: string): string {
   return `
   <tr>
     <td style="padding:6px 0;border-bottom:1px solid #f3f4f6;">
-      <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${label}</p>
-      <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${value}</p>
+      <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</p>
+      <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${escapeHtml(value)}</p>
     </td>
   </tr>`;
 }
@@ -91,10 +101,10 @@ export function button(label: string, url: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:24px 0;">
     <tr>
       <td align="center">
-        <a href="${url}"
+        <a href="${escapeHtml(url)}"
           style="display:inline-block;background:#1B2D78;color:#ffffff;font-size:15px;font-weight:700;
                  text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:0.02em;">
-          ${label} &rarr;
+          ${escapeHtml(label)} &rarr;
         </a>
       </td>
     </tr>

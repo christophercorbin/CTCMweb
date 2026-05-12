@@ -25,17 +25,16 @@ async function getUserPoolId(): Promise<string> {
     new ListUserPoolsCommand({ MaxResults: 60 })
   );
 
-  const pool =
-    UserPools?.find(
-      (p) =>
-        p.Name?.toLowerCase().includes("ctcm") ||
-        p.Name?.toLowerCase().includes("cargolink") ||
-        p.Name?.toLowerCase().includes("amplify")
-    ) ?? UserPools?.[0];
+  const pool = UserPools?.find(
+    (p) =>
+      p.Name?.toLowerCase().includes("ctcm") ||
+      p.Name?.toLowerCase().includes("cargolink") ||
+      p.Name?.toLowerCase().includes("amplify")
+  );
 
   if (!pool?.Id) {
     throw new Error(
-      "Could not discover USER_POOL_ID. Set it as an environment variable."
+      "Could not discover USER_POOL_ID — no matching pool found. Set it as an environment variable."
     );
   }
 

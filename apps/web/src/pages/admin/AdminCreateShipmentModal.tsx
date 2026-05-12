@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { ChevronDown, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../../amplify/data/resource'
@@ -79,6 +80,7 @@ export const AdminCreateShipmentModal = ({
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -91,6 +93,51 @@ export const AdminCreateShipmentModal = ({
   const selectedCustomerId = watch('customerId')
   const selectedType = watch('type')
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId)
+
+  // ── Customer combobox state ────────────────────────────────────────
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const comboRef = useRef<HTMLDivElement>(null)
+
+  // Sync display text when preselectedCustomerId resolves after customers load
+  useEffect(() => {
+    if (preselectedCustomerId && customers.length > 0) {
+      const c = customers.find((c) => c.id === preselectedCustomerId)
+      if (c) setQuery(`${c.name} — ${c.email}`)
+    }
+  }, [preselectedCustomerId, customers])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const sortedCustomers = customers.slice().sort((a, b) => a.name.localeCompare(b.name))
+
+  const filteredCustomers = query.trim()
+    ? sortedCustomers.filter((c) => {
+        const q = query.toLowerCase()
+        return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
+      })
+    : sortedCustomers
+
+  const selectCustomer = useCallback((c: AppCustomer, onChange: (v: string) => void) => {
+    onChange(c.id)
+    setQuery(`${c.name} — ${c.email}`)
+    setOpen(false)
+  }, [])
+
+  const clearCustomer = useCallback((onChange: (v: string) => void) => {
+    onChange('')
+    setQuery('')
+    setOpen(false)
+  }, [])
 
   const onSubmit = async (data: FormData) => {
     const customer = customers.find((c) => c.id === data.customerId)
@@ -114,6 +161,7 @@ export const AdminCreateShipmentModal = ({
         // Critical: lets the customer see this admin-created shipment via
         // allow.ownerDefinedIn("customerCognitoSub")
         customerCognitoSub: customer.cognitoSub ?? undefined,
+        shipmentSource: 'ADMIN',
       })
 
       if (gqlErrors?.length || !shipment) {
@@ -130,14 +178,6 @@ export const AdminCreateShipmentModal = ({
     }
   }
 
-  const customerOptions = [
-    { value: '', label: loadingCustomers ? 'Loading customers…' : 'Select a customer…' },
-    ...customers
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((c) => ({ value: c.id, label: `${c.name} — ${c.email}` })),
-  ]
-
   const typeOptions = [
     { value: 'AIR', label: '✈ Air Freight' },
     { value: 'SEA', label: '🚢 Sea Freight' },
@@ -147,14 +187,83 @@ export const AdminCreateShipmentModal = ({
     <Modal isOpen={true} onClose={onClose} title="Create Shipment for Customer" size="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-        {/* ── Customer picker ── */}
-        <Select
-          label="Customer"
-          options={customerOptions}
-          error={errors.customerId?.message}
-          disabled={loadingCustomers}
-          {...register('customerId')}
-        />
+        {/* ── Customer combobox ── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+          <Controller
+            name="customerId"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <div ref={comboRef} className="relative">
+                <div className={`flex items-center border rounded-lg overflow-hidden transition-shadow ${
+                  errors.customerId ? 'border-red-400' : open ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                }`}>
+                  <input
+                    type="text"
+                    className="flex-1 px-3 py-2 text-sm outline-none bg-white placeholder-gray-400"
+                    placeholder={loadingCustomers ? 'Loading customers…' : 'Search by name or email…'}
+                    disabled={loadingCustomers}
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value)
+                      setOpen(true)
+                      if (!e.target.value) onChange('')
+                    }}
+                    onFocus={() => setOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setOpen(false)
+                      if (e.key === 'Enter' && filteredCustomers.length > 0) {
+                        e.preventDefault()
+                        selectCustomer(filteredCustomers[0], onChange)
+                      }
+                    }}
+                  />
+                  {value && (
+                    <button
+                      type="button"
+                      onClick={() => clearCustomer(onChange)}
+                      className="px-2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  <span className="px-2 text-gray-400 pointer-events-none">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
+
+                {open && !loadingCustomers && (
+                  <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                    {filteredCustomers.length === 0 ? (
+                      <li className="px-4 py-3 text-sm text-gray-400">No customers match "{query}"</li>
+                    ) : (
+                      filteredCustomers.map((c) => (
+                        <li
+                          key={c.id}
+                          onMouseDown={(e) => { e.preventDefault(); selectCustomer(c, onChange) }}
+                          className={`px-4 py-2.5 text-sm cursor-pointer flex items-center justify-between group ${
+                            c.id === value
+                              ? 'bg-blue-50 text-blue-700 font-medium'
+                              : 'text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span>{c.name}</span>
+                          <span className={`text-xs ${c.id === value ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                            {c.email}
+                          </span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
+          />
+          {errors.customerId && (
+            <p className="mt-1 text-xs text-red-500">{errors.customerId.message}</p>
+          )}
+        </div>
 
         {/* Show the selected customer's relevant skybox address as a hint */}
         {selectedCustomer && (

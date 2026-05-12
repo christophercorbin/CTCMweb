@@ -81,8 +81,12 @@ const schema = a
         // Set to the customer's Cognito sub so admin-created shipments
         // are visible to the customer via allow.ownerDefinedIn below
         customerCognitoSub: a.string(),
-        // Customer's shipping instruction — set by customer after warehouse notification
+        // Customer's shipping instruction — set by customer or admin after warehouse notification
         customerInstruction: a.ref("ShipmentInstruction"),
+        // Who set the instruction: "CUSTOMER" or "ADMIN"
+        instructionSetBy: a.string(),
+        // Who created this record: "CUSTOMER" (pre-alert) or "ADMIN" (staff-entered)
+        shipmentSource: a.string(),
         // Relationships
         customer: a.belongsTo("Customer", "customerId"),
         packages: a.hasMany("Package", "shipmentId"),
@@ -116,10 +120,14 @@ const schema = a
         // OCR-sourced fields
         ocrRawText: a.string(),
         ocrConfidence: a.float(),
+        customerCognitoSub: a.string(), // set by admin so customers can read their packages
         // Relationships
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
+        allow.group("admin"),
+      ]),
 
     // ─── ShipmentCharge ─────────────────────────────────────────────
     ShipmentCharge: a
@@ -133,8 +141,7 @@ const schema = a
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
       .authorization((allow) => [
-        allow.owner(),
-        allow.ownerDefinedIn("customerCognitoSub"),
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
         allow.group("admin"),
       ]),
 
@@ -147,12 +154,16 @@ const schema = a
         description: a.string(),
         eventTimestamp: a.datetime().required(),
         createdBy: a.string(), // Cognito sub of creator (admin)
+        customerCognitoSub: a.string(), // set by admin so customers can read their events
         shipment: a.belongsTo("Shipment", "shipmentId"),
       })
       .secondaryIndexes((index) => [
         index("shipmentId").sortKeys(["eventTimestamp"]), // ordered timeline
       ])
-      .authorization((allow) => [allow.owner(), allow.group("admin")]),
+      .authorization((allow) => [
+        allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
+        allow.group("admin"),
+      ]),
 
     // ─── Invoice ─────────────────────────────────────────────────────
     Invoice: a
@@ -192,6 +203,8 @@ const schema = a
         trackingNumber: a.string().required(),
         status: a.string().required(),
         customMessage: a.string(),
+        // "STATUS_UPDATE" (default) | "ADMIN_SHIP" | "ADMIN_HOLD"
+        notificationType: a.string(),
       })
       .returns(a.customType({ success: a.boolean() }))
       .authorization((allow) => [allow.group("admin")])

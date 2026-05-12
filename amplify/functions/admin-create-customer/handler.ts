@@ -6,8 +6,8 @@ import {
   ListUserPoolsCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { randomUUID } from "crypto";
-import { emailWrapper, card, button } from "../shared/emailTemplate";
+import { randomUUID, randomBytes } from "crypto";
+import { emailWrapper, card, button, escapeHtml } from "../shared/emailTemplate";
 
 const cognito = new CognitoIdentityProviderClient({});
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
@@ -38,11 +38,11 @@ async function getUserPoolId(): Promise<string> {
       p.Name?.toLowerCase().includes("ctcm") ||
       p.Name?.toLowerCase().includes("cargolink") ||
       p.Name?.toLowerCase().includes("amplify")
-  ) ?? UserPools?.[0]; // fallback to first pool in account/region
+  );
 
   if (!pool?.Id) {
     throw new Error(
-      "Could not discover USER_POOL_ID. Set it as an environment variable."
+      "Could not discover USER_POOL_ID — no matching pool found. Set it as an environment variable."
     );
   }
 
@@ -51,7 +51,17 @@ async function getUserPoolId(): Promise<string> {
   return cachedUserPoolId;
 }
 
-// ── Temp password generator ───────────────────────────────────────────────────
+// ── Temp password generator (cryptographically secure, unbiased) ─────────────
+/** Rejection sampling: returns a uniformly random integer in [0, max). */
+function secureRandomIndex(max: number): number {
+  const limit = Math.floor(256 / max) * max; // largest multiple of max <= 256
+  let value: number;
+  do {
+    value = randomBytes(1)[0];
+  } while (value >= limit);
+  return value % max;
+}
+
 function generateTempPassword(): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghjkmnpqrstuvwxyz";
@@ -60,19 +70,19 @@ function generateTempPassword(): string {
   const all = upper + lower + digits + special;
 
   const chars = [
-    upper[Math.floor(Math.random() * upper.length)],
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
-    all[Math.floor(Math.random() * all.length)],
+    upper[secureRandomIndex(upper.length)],
+    upper[secureRandomIndex(upper.length)],
+    lower[secureRandomIndex(lower.length)],
+    lower[secureRandomIndex(lower.length)],
+    digits[secureRandomIndex(digits.length)],
+    digits[secureRandomIndex(digits.length)],
+    special[secureRandomIndex(special.length)],
+    all[secureRandomIndex(all.length)],
   ];
 
-  // Fisher-Yates shuffle
+  // Fisher-Yates shuffle with unbiased secure randomness
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandomIndex(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");
@@ -147,12 +157,12 @@ async function sendWelcomeEmail(opts: {
 
   const formatAddress = (addr?: string) =>
     addr
-      ? addr.split("\n").map((l) => `<p style="margin:2px 0;font-family:monospace;font-size:13px;color:#374151;">${l}</p>`).join("")
+      ? addr.split("\n").map((l) => `<p style="margin:2px 0;font-family:monospace;font-size:13px;color:#374151;">${escapeHtml(l)}</p>`).join("")
       : "<p style='color:#9ca3af;font-size:13px;'>Not set</p>";
 
   const html = emailWrapper(`
     <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Welcome</p>
-    <h1 style="margin:0 0 16px;font-size:24px;color:#1B2D78;font-weight:800;">Your account is ready, ${name.split(" ")[0]}!</h1>
+    <h1 style="margin:0 0 16px;font-size:24px;color:#1B2D78;font-weight:800;">Your account is ready, ${escapeHtml(name.split(" ")[0])}!</h1>
     <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">
       Welcome to <strong>CargoLink Barbados</strong>. Your account has been set up and you're ready to start shipping.
       Log in below to access your dashboard and track your shipments.
@@ -163,11 +173,11 @@ async function sendWelcomeEmail(opts: {
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
         <tr><td style="padding:6px 0;border-bottom:1px solid #f3f4f6;">
           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Email</p>
-          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${email}</p>
+          <p style="margin:3px 0 0;font-size:15px;color:#111827;font-weight:600;">${escapeHtml(email)}</p>
         </td></tr>
         <tr><td style="padding:10px 0 0;">
           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Temporary Password</p>
-          <p style="margin:6px 0 0;display:inline-block;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;background:#eff6ff;padding:8px 16px;border-radius:6px;letter-spacing:0.1em;">${tempPassword}</p>
+          <p style="margin:6px 0 0;display:inline-block;font-family:monospace;font-size:18px;font-weight:800;color:#1B2D78;background:#eff6ff;padding:8px 16px;border-radius:6px;letter-spacing:0.1em;">${escapeHtml(tempPassword)}</p>
           <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;">You will be asked to set a new password on your first login.</p>
         </td></tr>
       </table>

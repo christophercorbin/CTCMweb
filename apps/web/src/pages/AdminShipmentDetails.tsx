@@ -74,6 +74,9 @@ export const AdminShipmentDetails = () => {
   const [confirmDeleteShipment, setConfirmDeleteShipment] = useState(false)
   const [deletingShipment, setDeletingShipment] = useState(false)
 
+  // Admin ship/hold instruction state
+  const [settingInstruction, setSettingInstruction] = useState(false)
+
   // Package state
   const [packages, setPackages] = useState<Schema['Package']['type'][]>([])
   const [editingPackageId, setEditingPackageId] = useState<string | null>(null)
@@ -202,9 +205,14 @@ export const AdminShipmentDetails = () => {
     if (!shipment) return
     setDeletingShipment(true)
     try {
+      // Fetch charges separately (not in local state)
+      const { data: charges } = await client.models.ShipmentCharge.list({
+        filter: { shipmentId: { eq: shipment.id } },
+      })
       await Promise.all([
         ...packages.map(p => client.models.Package.delete({ id: p.id })),
         ...events.map(e => client.models.ShipmentEvent.delete({ id: e.id })),
+        ...charges.map(c => client.models.ShipmentCharge.delete({ id: c.id })),
         ...invoices.map(i => client.models.Invoice.delete({ id: i.id })),
       ])
       await client.models.Shipment.delete({ id: shipment.id })
@@ -214,6 +222,63 @@ export const AdminShipmentDetails = () => {
       toast.error('Failed to delete shipment')
     } finally {
       setDeletingShipment(false)
+    }
+  }
+
+  // ── Admin ship/hold instruction handler ───────────────────────────
+
+  const handleAdminSetInstruction = async (instruction: 'SHIP' | 'HOLD') => {
+    if (!shipment || !customer) return
+    setSettingInstruction(true)
+    try {
+      // 1. Update the shipment record
+      const { data: updated } = await client.models.Shipment.update({
+        id: shipment.id,
+        customerInstruction: instruction,
+        instructionSetBy: 'ADMIN',
+      })
+      setShipment(updated)
+
+      // 2. Log a shipment event for the audit trail
+      const eventDescription =
+        instruction === 'SHIP'
+          ? 'Admin released shipment for delivery on behalf of customer'
+          : 'Admin placed shipment on hold on behalf of customer'
+      const newEvent = await client.models.ShipmentEvent.create({
+        shipmentId: shipment.id,
+        status: shipment.status as Schema['ShipmentEvent']['type']['status'],
+        description: eventDescription,
+        eventTimestamp: new Date().toISOString(),
+        createdBy: 'ADMIN',
+        customerCognitoSub: shipment.customerCognitoSub ?? undefined,
+      })
+      if (newEvent.data) {
+        setEvents(prev =>
+          [newEvent.data!, ...prev].sort(
+            (a, b) => new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
+          )
+        )
+      }
+
+      // 3. Send customer email notification
+      await client.mutations.sendStatusNotification({
+        shipmentId: shipment.id,
+        customerEmail: customer.email,
+        customerName: customer.name,
+        trackingNumber: shipment.trackingNumber,
+        status: shipment.status,
+        notificationType: instruction === 'SHIP' ? 'ADMIN_SHIP' : 'ADMIN_HOLD',
+      })
+
+      toast.success(
+        instruction === 'SHIP'
+          ? 'Shipment released — customer notified'
+          : 'Shipment placed on hold — customer notified'
+      )
+    } catch {
+      toast.error('Failed to set instruction')
+    } finally {
+      setSettingInstruction(false)
     }
   }
 
@@ -285,6 +350,7 @@ export const AdminShipmentDetails = () => {
         dimensionUnit: 'in',
         description: newPackageForm.description.trim() || undefined,
         quantity: newPackageForm.quantity ? parseInt(newPackageForm.quantity) : 1,
+        customerCognitoSub: customer?.cognitoSub ?? undefined,
       })
       toast.success('Package added')
       setShowAddPackage(false)
@@ -641,39 +707,73 @@ export const AdminShipmentDetails = () => {
                   )}
                 </div>
 
-                {/* Always show customer instruction status when shipment is at a decision point */}
+                {/* Ship / Hold — visible whenever a decision exists or shipment is at a decision point */}
                 {(shipment.customerInstruction ||
                   shipment.status === 'MIAMI_WAREHOUSE' ||
                   shipment.status === 'AT_WAREHOUSE' ||
                   shipment.status === 'PENDING') && (
-                  <div className={`flex items-center gap-3 rounded-lg px-4 py-3 mb-4 ${
+                  <div className={`rounded-lg px-4 py-3 mb-4 ${
                     shipment.customerInstruction === 'HOLD'
                       ? 'bg-amber-50 border border-amber-200'
                       : shipment.customerInstruction === 'SHIP'
                       ? 'bg-blue-50 border border-blue-200'
                       : 'bg-gray-50 border border-gray-200'
                   }`}>
-                    {shipment.customerInstruction === 'HOLD'
-                      ? <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      : shipment.customerInstruction === 'SHIP'
-                      ? <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                      : <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    }
-                    <div>
-                      <p className={`text-sm font-semibold ${
-                        shipment.customerInstruction === 'HOLD' ? 'text-amber-800' :
-                        shipment.customerInstruction === 'SHIP' ? 'text-blue-800' :
-                        'text-gray-600'
-                      }`}>
-                        {shipment.customerInstruction === 'HOLD'
-                          ? 'Customer instruction: Hold at warehouse'
-                          : shipment.customerInstruction === 'SHIP'
-                          ? 'Customer instruction: Ship to Barbados'
-                          : 'Awaiting customer decision'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {shipment.customerInstruction ? 'Set by customer' : 'Customer has not yet selected Ship or Hold'}
-                      </p>
+                    {/* Current instruction status */}
+                    <div className="flex items-center gap-3 mb-3">
+                      {shipment.customerInstruction === 'HOLD'
+                        ? <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        : shipment.customerInstruction === 'SHIP'
+                        ? <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        : <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      }
+                      <div>
+                        <p className={`text-sm font-semibold ${
+                          shipment.customerInstruction === 'HOLD' ? 'text-amber-800' :
+                          shipment.customerInstruction === 'SHIP' ? 'text-blue-800' :
+                          'text-gray-600'
+                        }`}>
+                          {shipment.customerInstruction === 'HOLD'
+                            ? 'Hold at warehouse'
+                            : shipment.customerInstruction === 'SHIP'
+                            ? 'Release for delivery'
+                            : 'No instruction set'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {shipment.customerInstruction
+                            ? (shipment.instructionSetBy === 'ADMIN' ? 'Set by admin' : 'Set by customer')
+                            : 'Neither admin nor customer has set an instruction'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Admin action buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleAdminSetInstruction('SHIP')}
+                        disabled={settingInstruction || shipment.customerInstruction === 'SHIP'}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                          shipment.customerInstruction === 'SHIP'
+                            ? 'bg-blue-600 text-white cursor-default'
+                            : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50'
+                        }`}
+                      >
+                        <Truck className="w-3.5 h-3.5" />
+                        {settingInstruction && shipment.customerInstruction !== 'SHIP' ? 'Releasing…' : 'Release'}
+                      </button>
+                      <button
+                        onClick={() => handleAdminSetInstruction('HOLD')}
+                        disabled={settingInstruction || shipment.customerInstruction === 'HOLD'}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                          shipment.customerInstruction === 'HOLD'
+                            ? 'bg-amber-500 text-white cursor-default'
+                            : 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-50'
+                        }`}
+                      >
+                        <PauseCircle className="w-3.5 h-3.5" />
+                        {settingInstruction && shipment.customerInstruction !== 'HOLD' ? 'Holding…' : 'Hold'}
+                      </button>
+                      <span className="text-xs text-gray-400 ml-1">Customer will be notified by email</span>
                     </div>
                   </div>
                 )}
@@ -1198,6 +1298,7 @@ export const AdminShipmentDetails = () => {
               currentStatus={shipment.status as ShipmentStatus}
               customerEmail={customer?.email}
               customerName={customer?.name}
+              customerCognitoSub={customer?.cognitoSub}
               onUpdated={fetchData}
             />
           </Card>
