@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2, FileText, Download } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Truck, PauseCircle, CheckCircle2, FileText, Download, Trash2 } from 'lucide-react'
 import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../components'
 import { generateClient } from 'aws-amplify/data'
-import { uploadData, getUrl } from 'aws-amplify/storage'
+import { uploadData, getUrl, remove } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
 import { TrackingItem, ShipmentStatus } from '../types'
 import { statusLabel } from '../constants/shipmentStatuses'
@@ -20,6 +20,7 @@ export const ShipmentDetails = () => {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [settingInstruction, setSettingInstruction] = useState(false)
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -91,6 +92,25 @@ export const ShipmentDetails = () => {
       window.open(url.toString(), '_blank')
     } catch {
       toast.error('Failed to open document')
+    }
+  }
+
+  const handleDeleteInvoice = async (inv: Schema['Invoice']['type']) => {
+    setDeletingInvoiceId(inv.id)
+    try {
+      // Remove from S3 if we have a key
+      if (inv.s3Key) {
+        await remove({ path: inv.s3Key }).catch(() => {
+          // S3 delete failure is non-fatal — record still gets removed
+        })
+      }
+      await client.models.Invoice.delete({ id: inv.id })
+      setInvoices((prev) => prev.filter((i) => i.id !== inv.id))
+      toast.success('Invoice removed')
+    } catch {
+      toast.error('Failed to remove invoice')
+    } finally {
+      setDeletingInvoiceId(null)
     }
   }
 
@@ -359,15 +379,30 @@ export const ShipmentDetails = () => {
                         </p>
                       </div>
                     </div>
-                    {inv.s3Key && (
-                      <button
-                        onClick={() => handleDownload(inv.s3Key!)}
-                        className="flex-shrink-0 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium ml-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        View
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {inv.s3Key && (
+                        <button
+                          onClick={() => handleDownload(inv.s3Key!)}
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          View
+                        </button>
+                      )}
+                      {inv.notes === 'Order receipt' && (
+                        <button
+                          onClick={() => handleDeleteInvoice(inv)}
+                          disabled={deletingInvoiceId === inv.id}
+                          title="Remove this invoice"
+                          className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-40"
+                        >
+                          {deletingInvoiceId === inv.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
