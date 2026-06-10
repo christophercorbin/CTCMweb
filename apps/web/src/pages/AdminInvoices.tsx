@@ -32,6 +32,8 @@ export const AdminInvoices = () => {
   const navigate = useNavigate()
 
   const [invoices, setInvoices] = useState<AppSyncInvoice[]>([])
+  const [legacyReceipts, setLegacyReceipts] = useState<AppSyncInvoice[]>([])
+  const [migrating, setMigrating] = useState(false)
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -46,9 +48,13 @@ export const AdminInvoices = () => {
       const { data: invList, errors } = await client.models.Invoice.list()
       if (errors?.length) throw new Error(errors[0].message)
 
-      const allInvoices = [...(invList ?? [])].sort(
+      const sorted = [...(invList ?? [])].sort(
         (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
       )
+      // Legacy customer order receipts were stored as $0 DRAFT Invoice records.
+      // Keep them out of the invoice list/stats; offer one-click migration below.
+      const allInvoices = sorted.filter(i => i.notes !== 'Order receipt')
+      setLegacyReceipts(sorted.filter(i => i.notes === 'Order receipt'))
       setInvoices(allInvoices)
 
       // Fetch customer names
@@ -136,6 +142,46 @@ export const AdminInvoices = () => {
     }
   }
 
+  /**
+   * One-time migration: move legacy "Order receipt" Invoice records into the
+   * dedicated ShipmentDocument model, then delete the Invoice record.
+   * Receipts without a shipmentId can't be migrated and are skipped.
+   */
+  const handleMigrateReceipts = async () => {
+    setMigrating(true)
+    let migrated = 0
+    let skipped = 0
+    let failed = 0
+    for (const rcpt of legacyReceipts) {
+      if (!rcpt.shipmentId || !rcpt.s3Key) { skipped++; continue }
+      try {
+        const { errors } = await client.models.ShipmentDocument.create({
+          shipmentId: rcpt.shipmentId,
+          customerId: rcpt.customerId,
+          s3Key: rcpt.s3Key,
+          fileName: rcpt.s3Key.split('/').pop() ?? 'receipt.pdf',
+          contentType: 'application/pdf',
+          docType: 'ORDER_RECEIPT',
+          uploadedBy: 'CUSTOMER',
+          customerCognitoSub: rcpt.customerCognitoSub ?? undefined,
+        })
+        if (errors?.length) throw new Error(errors[0].message)
+        await client.models.Invoice.delete({ id: rcpt.id })
+        migrated++
+      } catch (err) {
+        console.error('Failed to migrate receipt', rcpt.id, err)
+        failed++
+      }
+    }
+    setMigrating(false)
+    if (failed > 0) {
+      toast.error(`Migrated ${migrated}, failed ${failed}${skipped ? `, skipped ${skipped}` : ''}`)
+    } else {
+      toast.success(`Migrated ${migrated} receipt${migrated === 1 ? '' : 's'}${skipped ? ` (${skipped} skipped — no shipment)` : ''}`)
+    }
+    fetchData()
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -143,6 +189,24 @@ export const AdminInvoices = () => {
         <h1 className="text-2xl font-bold text-gray-900">Invoice Management</h1>
         <p className="text-gray-500 text-sm mt-1">All customer invoices across every shipment</p>
       </div>
+
+      {/* ── Legacy receipt migration banner ── */}
+      {legacyReceipts.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 border border-amber-200 bg-amber-50 rounded-lg px-4 py-3">
+          <p className="text-sm text-amber-800 flex-1">
+            <span className="font-semibold">{legacyReceipts.length} customer receipt{legacyReceipts.length === 1 ? '' : 's'}</span>{' '}
+            {legacyReceipts.length === 1 ? 'is' : 'are'} stored as legacy invoice records. They've been
+            hidden from this list — migrate them to the new documents system so they appear on their shipments.
+          </p>
+          <button
+            onClick={handleMigrateReceipts}
+            disabled={migrating}
+            className="shrink-0 px-4 py-2 text-sm font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
+          >
+            {migrating ? 'Migrating…' : 'Migrate now'}
+          </button>
+        </div>
+      )}
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

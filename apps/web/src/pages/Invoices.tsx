@@ -37,9 +37,13 @@ export const Invoices = () => {
 
       const { data, errors } = await client.models.Invoice.list();
       if (errors?.length) throw new Error(errors[0].message);
-      const sorted = [...(data ?? [])].sort(
-        (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-      );
+      const sorted = [...(data ?? [])]
+        // Legacy uploaded receipts ($0 DRAFT records) live on the shipment
+        // details page, not the invoice list
+        .filter((inv) => inv.notes !== 'Order receipt')
+        .sort(
+          (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+        );
       setInvoices(sorted);
     } catch (error) {
       console.error('Unexpected error:', error);

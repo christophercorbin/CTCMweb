@@ -100,6 +100,7 @@ const schema = a
         charges: a.hasMany("ShipmentCharge", "shipmentId"),
         events: a.hasMany("ShipmentEvent", "shipmentId"),
         invoices: a.hasMany("Invoice", "shipmentId"),
+        documents: a.hasMany("ShipmentDocument", "shipmentId"),
       })
       .secondaryIndexes((index) => [
         index("trackingNumber"), // access pattern: lookup by tracking #
@@ -169,6 +170,30 @@ const schema = a
       ])
       .authorization((allow) => [
         allow.ownerDefinedIn("customerCognitoSub").to(["read"]),
+        allow.group("admin"),
+      ]),
+
+    // ─── ShipmentDocument (customer/admin file attachments) ──────────
+    // Replaces the legacy pattern of storing customer order receipts as
+    // $0 DRAFT Invoice records (notes='Order receipt').
+    ShipmentDocument: a
+      .model({
+        shipmentId: a.id().required(),
+        customerId: a.id(),
+        s3Key: a.string().required(),
+        fileName: a.string().required(),
+        contentType: a.string(),
+        sizeBytes: a.integer(),
+        // "ORDER_RECEIPT" (customer purchase receipt) — room for future types
+        docType: a.string().required(),
+        uploadedBy: a.string(), // "CUSTOMER" | "ADMIN"
+        customerCognitoSub: a.string(), // so customers can read admin-added docs
+        shipment: a.belongsTo("Shipment", "shipmentId"),
+      })
+      .secondaryIndexes((index) => [index("shipmentId")])
+      .authorization((allow) => [
+        allow.owner(),                              // customer-uploaded docs
+        allow.ownerDefinedIn("customerCognitoSub"), // admin-added docs readable by customer
         allow.group("admin"),
       ]),
 

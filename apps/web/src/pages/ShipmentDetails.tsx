@@ -11,16 +11,27 @@ import { statusLabel } from '../constants/shipmentStatuses'
 
 const client = generateClient<Schema>()
 
+// Receipts can be PDFs or photos/screenshots
+const ALLOWED_DOC_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+]
+
 export const ShipmentDetails = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [shipment, setShipment] = useState<Schema['Shipment']['type'] | null>(null)
   const [events, setEvents] = useState<Schema['ShipmentEvent']['type'][]>([])
   const [invoices, setInvoices] = useState<Schema['Invoice']['type'][]>([])
+  const [documents, setDocuments] = useState<Schema['ShipmentDocument']['type'][]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [settingInstruction, setSettingInstruction] = useState(false)
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null)
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -32,12 +43,14 @@ export const ShipmentDetails = () => {
         setShipment(data)
 
         if (data) {
-          const [{ data: eventList }, { data: invoiceList }] = await Promise.all([
+          const [{ data: eventList }, { data: invoiceList }, { data: docList }] = await Promise.all([
             client.models.ShipmentEvent.list({ filter: { shipmentId: { eq: data.id } } }),
             client.models.Invoice.list({ filter: { shipmentId: { eq: data.id } } }),
+            client.models.ShipmentDocument.list({ filter: { shipmentId: { eq: data.id } } }),
           ])
           setEvents(eventList ?? [])
           setInvoices(invoiceList ?? [])
+          setDocuments(docList ?? [])
         }
       } catch {
         toast.error('Failed to load shipment details')
@@ -114,42 +127,58 @@ export const ShipmentDetails = () => {
     }
   }
 
-  const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !id || !shipment) return
 
-    if (!file.type.includes('pdf')) {
-      toast.error('Only PDF files are allowed')
+    if (!ALLOWED_DOC_TYPES.includes(file.type)) {
+      toast.error('Only PDF and image files are allowed')
       return
     }
 
     setUploading(true)
     try {
       const result = await uploadData({
-        path: ({ identityId }) => `documents/${identityId}/invoices/${id}/${file.name}`,
+        path: ({ identityId }) => `documents/${identityId}/shipments/${id}/${Date.now()}-${file.name}`,
         data: file,
-        options: { contentType: 'application/pdf' },
+        options: { contentType: file.type },
       }).result
 
-      // Save to Invoice table so admins and customer can see/download it
-      const { data: newInvoice } = await client.models.Invoice.create({
-        customerId: shipment.customerId,
+      const { data: newDoc } = await client.models.ShipmentDocument.create({
         shipmentId: shipment.id,
-        invoiceNumber: `RCPT-${shipment.trackingNumber}-${Date.now()}`,
-        totalAmount: 0,
-        status: 'DRAFT',
+        customerId: shipment.customerId,
         s3Key: result.path,
-        trackingNumber: shipment.trackingNumber,
-        notes: 'Order receipt',
+        fileName: file.name,
+        contentType: file.type,
+        sizeBytes: file.size,
+        docType: 'ORDER_RECEIPT',
+        uploadedBy: 'CUSTOMER',
+        customerCognitoSub: shipment.customerCognitoSub ?? undefined,
       })
-      if (newInvoice) setInvoices((prev) => [...prev, newInvoice])
+      if (newDoc) setDocuments((prev) => [...prev, newDoc])
 
-      toast.success('Invoice uploaded successfully')
+      toast.success('Receipt uploaded successfully')
     } catch {
-      toast.error('Failed to upload invoice')
+      toast.error('Failed to upload receipt')
     } finally {
       setUploading(false)
       e.target.value = ''
+    }
+  }
+
+  const handleDeleteDocument = async (doc: Schema['ShipmentDocument']['type']) => {
+    setDeletingDocId(doc.id)
+    try {
+      await remove({ path: doc.s3Key }).catch(() => {
+        // S3 delete failure is non-fatal — record still gets removed
+      })
+      await client.models.ShipmentDocument.delete({ id: doc.id })
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+      toast.success('Receipt removed')
+    } catch {
+      toast.error('Failed to remove receipt')
+    } finally {
+      setDeletingDocId(null)
     }
   }
 
@@ -335,16 +364,16 @@ export const ShipmentDetails = () => {
           )}
 
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Invoices</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Receipts & Documents</h2>
             <p className="text-xs text-gray-500 mb-4">
-              Upload the store receipt for this shipment (e.g. Amazon, Shopify order confirmation). This is required for customs processing.
+              Upload the store receipt for this shipment (e.g. Amazon, Shopify order confirmation) — PDF or a photo/screenshot. This is required for customs processing.
             </p>
 
             <label className="block mb-4">
               <input
                 type="file"
-                accept=".pdf"
-                onChange={handleInvoiceUpload}
+                accept="application/pdf,image/jpeg,image/png,image/webp,image/heic"
+                onChange={handleDocumentUpload}
                 disabled={uploading}
                 className="hidden"
               />
@@ -355,27 +384,55 @@ export const ShipmentDetails = () => {
               >
                 {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Invoice (PDF)
+                Upload Receipt (PDF or image)
               </span>
             </label>
 
-            {invoices.length > 0 ? (
+            {documents.length > 0 || invoices.some((inv) => inv.notes === 'Order receipt') ? (
               <div className="space-y-2">
-                {invoices.map((inv) => (
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.contentType?.startsWith('image/') ? 'Image' : 'PDF'} ·{' '}
+                          {new Date(doc.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <button
+                        onClick={() => handleDownload(doc.s3Key)}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDocument(doc)}
+                        disabled={deletingDocId === doc.id}
+                        title="Remove this receipt"
+                        className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-40"
+                      >
+                        {deletingDocId === doc.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Trash2 className="w-3.5 h-3.5" />
+                        }
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {/* Legacy receipts stored as Invoice records (pre-migration) */}
+                {invoices.filter((inv) => inv.notes === 'Order receipt').map((inv) => (
                   <div key={inv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3 min-w-0">
                       <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {inv.notes === 'Order receipt' ? 'Invoice' : inv.invoiceNumber}
-                        </p>
+                        <p className="text-sm font-medium text-gray-900 truncate">Receipt</p>
                         <p className="text-xs text-gray-500">
-                          {inv.notes === 'Order receipt'
-                            ? 'Your invoice'
-                            : inv.totalAmount
-                              ? `$${inv.totalAmount.toFixed(2)}`
-                              : 'Document'}{' '}
-                          · {new Date(inv.createdAt).toLocaleDateString()}
+                          PDF · {new Date(inv.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -389,27 +446,56 @@ export const ShipmentDetails = () => {
                           View
                         </button>
                       )}
-                      {inv.notes === 'Order receipt' && (
-                        <button
-                          onClick={() => handleDeleteInvoice(inv)}
-                          disabled={deletingInvoiceId === inv.id}
-                          title="Remove this invoice"
-                          className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-40"
-                        >
-                          {deletingInvoiceId === inv.id
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            : <Trash2 className="w-3.5 h-3.5" />
-                          }
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDeleteInvoice(inv)}
+                        disabled={deletingInvoiceId === inv.id}
+                        title="Remove this receipt"
+                        className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-40"
+                      >
+                        {deletingInvoiceId === inv.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Trash2 className="w-3.5 h-3.5" />
+                        }
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No invoices uploaded yet.</p>
+              <p className="text-sm text-gray-500">No receipts uploaded yet.</p>
             )}
           </Card>
+
+          {invoices.some((inv) => inv.notes !== 'Order receipt') && (
+            <Card>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Invoices</h2>
+              <div className="space-y-2">
+                {invoices.filter((inv) => inv.notes !== 'Order receipt').map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{inv.invoiceNumber}</p>
+                        <p className="text-xs text-gray-500">
+                          {inv.totalAmount ? `$${inv.totalAmount.toFixed(2)}` : 'Document'} ·{' '}
+                          {new Date(inv.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    {inv.s3Key && (
+                      <button
+                        onClick={() => handleDownload(inv.s3Key!)}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium flex-shrink-0 ml-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        View
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>  {/* end right column */}
       </div>
     </div>

@@ -218,9 +218,13 @@ npx ampx generate outputs     # Regenerate amplify_outputs.json from deployed sa
 **Monitoring:**
 - CloudWatch error alarms on every Lambda + OCR Step Functions failures → SNS `AlertsTopic` (dedicated `alerting` stack, no cross-stack cycles) → email to `ALERT_EMAIL` env var (default christopher@cargolinkbarbados.com). Subscription must be confirmed once via the AWS email. Alarms also send recovery (OK) notices.
 
+**Documents:**
+- Customer receipt/document uploads (PDF + images) on pre-alert creation and shipment details, stored in the dedicated `ShipmentDocument` model (S3 path `documents/{identityId}/shipments/{shipmentId}/`)
+- Admin "Customer Receipts" section on shipment details reads `ShipmentDocument` (plus legacy records)
+- Legacy migration: customer receipts were previously stored as $0 DRAFT `Invoice` records (`notes='Order receipt'`). Both invoice pages filter these out; `/admin/invoices` shows a one-click "Migrate now" banner that converts them to `ShipmentDocument` records
+
 ### Known Gaps / Not Yet Built
 
-- Customer-side document uploads (receipts, invoices)
 - Full OCR result persistence UI
 - Delivery confirmation workflow
 - Customer invoice payments
