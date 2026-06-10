@@ -9,7 +9,13 @@ import { statusNotifier } from "./functions/status-notifier/resource";
 import { adminCreateCustomer } from "./functions/admin-create-customer/resource";
 import { adminDeleteCustomer } from "./functions/admin-delete-customer/resource";
 import { syncCustomers } from "./functions/sync-customers/resource";
+import { broadcastEmail } from "./functions/broadcast-email/resource";
+import { unsubscribe } from "./functions/unsubscribe/resource";
+import { sesEvents } from "./functions/ses-events/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as snsSubscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import * as cr from "aws-cdk-lib/custom-resources";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -28,6 +34,9 @@ const backend = defineBackend({
   adminCreateCustomer,
   adminDeleteCustomer,
   syncCustomers,
+  broadcastEmail,
+  unsubscribe,
+  sesEvents,
 });
 
 // ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
@@ -165,6 +174,87 @@ statusNotifierFn.addToRolePolicy(
 statusNotifierFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
 if (process.env.APP_URL) {
   statusNotifierFn.addEnvironment("APP_URL", process.env.APP_URL);
+}
+
+// ─── broadcastEmail: SES + async self-invoke permissions ─────────────────────
+const broadcastEmailFn = backend.broadcastEmail.resources.lambda as lambda.Function;
+
+broadcastEmailFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: [SES_IDENTITY_ARN],
+  })
+);
+// The mutation invocation re-invokes the same function asynchronously to do the
+// actual sending so the AppSync call returns immediately. resources: ["*"] avoids
+// a self-referencing CFN dependency between the function and its own role policy.
+broadcastEmailFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["lambda:InvokeFunction"],
+    resources: ["*"],
+  })
+);
+broadcastEmailFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
+if (process.env.APP_URL) {
+  broadcastEmailFn.addEnvironment("APP_URL", process.env.APP_URL);
+}
+// GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
+// via allow.resource(broadcastEmail) in data/resource.ts.
+// AppSync query permissions (listCustomers) are also granted automatically.
+
+// ─── unsubscribe: public function URL + shared HMAC secret ───────────────────
+// UNSUBSCRIBE_SECRET signs the customerId in unsubscribe links. Set it as a
+// branch env var in the Amplify Console for production; the fallback default
+// in the handlers keeps sandbox working.
+const unsubscribeFn = backend.unsubscribe.resources.lambda as lambda.Function;
+const unsubscribeUrl = unsubscribeFn.addFunctionUrl({
+  authType: lambda.FunctionUrlAuthType.NONE,
+});
+if (process.env.UNSUBSCRIBE_SECRET) {
+  unsubscribeFn.addEnvironment("UNSUBSCRIBE_SECRET", process.env.UNSUBSCRIBE_SECRET);
+  broadcastEmailFn.addEnvironment("UNSUBSCRIBE_SECRET", process.env.UNSUBSCRIBE_SECRET);
+}
+// Both functions live in the data stack, so this reference creates no cycle.
+broadcastEmailFn.addEnvironment("UNSUBSCRIBE_URL", unsubscribeUrl.url);
+
+// ─── sesEvents: SES bounce/complaint notifications → SNS → Lambda ────────────
+const sesEventsFn = backend.sesEvents.resources.lambda as lambda.Function;
+const sesNotificationsTopic = new sns.Topic(sesEventsFn.stack, "SesNotificationsTopic", {
+  displayName: "CargoLink SES bounce and complaint notifications",
+});
+sesNotificationsTopic.addSubscription(
+  new snsSubscriptions.LambdaSubscription(sesEventsFn)
+);
+
+// Point the SES identity's Bounce + Complaint notifications at the topic.
+// The identity (cargolinkbarbados.com) is account-level and already required
+// for sending, so it exists in every environment that can send email.
+for (const notificationType of ["Bounce", "Complaint"] as const) {
+  new cr.AwsCustomResource(sesEventsFn.stack, `Ses${notificationType}Notification`, {
+    onCreate: {
+      service: "SES",
+      action: "setIdentityNotificationTopic",
+      parameters: {
+        Identity: "cargolinkbarbados.com",
+        NotificationType: notificationType,
+        SnsTopic: sesNotificationsTopic.topicArn,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`ses-${notificationType.toLowerCase()}-notification`),
+    },
+    onUpdate: {
+      service: "SES",
+      action: "setIdentityNotificationTopic",
+      parameters: {
+        Identity: "cargolinkbarbados.com",
+        NotificationType: notificationType,
+        SnsTopic: sesNotificationsTopic.topicArn,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`ses-${notificationType.toLowerCase()}-notification`),
+    },
+    policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+      resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+    }),
+  });
 }
 
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────

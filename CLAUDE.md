@@ -200,19 +200,23 @@ npx ampx generate outputs     # Regenerate amplify_outputs.json from deployed sa
 - Status updates with automated SES email notifications
 - Admin invoices (`/admin/invoices`)
 - Warehouse receipt intake (`/admin/warehouse-receipt`) — OCR via Textract
+- Email broadcast (`/admin/broadcast`) — branded announcement emails to all/selected customers with live preview, test send, async background sending, and broadcast history (`Broadcast` model)
 
 **Auth:**
 - `USER_PASSWORD_AUTH` explicitly enabled on Cognito App Client
 - New-password challenge handled in Login for admin-created (FORCE_CHANGE_PASSWORD) accounts
 - `UserNotConfirmedException` → redirects to `/confirm?email=...`
+- Forgot password flow (`/forgot-password`) — request code + confirm new password, linked from Login
 
 **Email (SES):**
 - Status notification emails via `statusNotifier` Lambda
 - Welcome email on admin-created accounts via `adminCreateCustomer` Lambda
+- Broadcast emails via `broadcastEmail` Lambda (async self-invoke fan-out, SES rate-limited batches of 10/sec)
+- Unsubscribe: HMAC-tokenized link in broadcasts → public `unsubscribe` Lambda function URL → sets `Customer.emailOptOut` (reason UNSUBSCRIBED). Shared secret: `UNSUBSCRIBE_SECRET` env var (set in Amplify Console for prod; insecure dev fallback in code)
+- Bounce/complaint handling: SES identity notifications (wired via CDK custom resource) → SNS topic → `sesEvents` Lambda → flags `Customer.emailOptOut` (reason BOUNCED/COMPLAINT). Broadcasts skip opted-out customers; transactional email unaffected
 
 ### Known Gaps / Not Yet Built
 
-- Forgot password flow (`/forgot-password`)
 - Customer-side document uploads (receipts, invoices)
 - Full OCR result persistence UI
 - Delivery confirmation workflow
