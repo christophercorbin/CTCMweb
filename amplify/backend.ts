@@ -16,6 +16,8 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as snsSubscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as cr from "aws-cdk-lib/custom-resources";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as cwActions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -382,5 +384,62 @@ postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "christophercorbin24@gma
 // AppSync DescribeGraphqlApi or reading from SSM. We grant broad appsync:*
 // and ssm:GetParameter permissions, and the Lambda handler falls back to
 // looking up the endpoint dynamically if AMPLIFY_DATA_GRAPHQL_ENDPOINT is unset.
+
+// ─── Error alerting: CloudWatch alarms → SNS → email ─────────────────────────
+// The alerts topic lives in its OWN stack so every other stack can reference it
+// without creating circular dependencies (the alerting stack depends on nothing).
+const alertingStack = backend.createStack("alerting");
+const alertsTopic = new sns.Topic(alertingStack, "AlertsTopic", {
+  displayName: "CargoLink error alerts",
+});
+// Change ALERT_EMAIL (or set it as an Amplify Console env var) to your inbox.
+// AWS sends a one-time "Confirm subscription" email — click it or no alerts arrive.
+const ALERT_EMAIL = process.env.ALERT_EMAIL ?? "christophercorbin24@gmail.com";
+alertsTopic.addSubscription(new snsSubscriptions.EmailSubscription(ALERT_EMAIL));
+
+// One error alarm per Lambda. Each alarm is created in the Lambda's own stack
+// (alarm → topic is the only cross-stack reference, and it points at the
+// dependency-free alerting stack — no cycles).
+const monitoredFunctions: Record<string, lambda.Function> = {
+  OcrTrigger: ocrTriggerLambda,
+  OcrProcessor: ocrProcessorFn,
+  PostConfirmation: postConfirmationFn,
+  StatusNotifier: statusNotifierFn,
+  AdminCreateCustomer: adminCreateCustomerFn,
+  AdminDeleteCustomer: adminDeleteCustomerFn,
+  SyncCustomers: syncCustomersFn,
+  BroadcastEmail: broadcastEmailFn,
+  Unsubscribe: unsubscribeFn,
+  SesEvents: sesEventsFn,
+};
+
+for (const [name, fn] of Object.entries(monitoredFunctions)) {
+  const alarm = new cloudwatch.Alarm(fn.stack, `${name}ErrorAlarm`, {
+    alarmDescription: `${name} Lambda reported errors — check CloudWatch logs`,
+    metric: fn.metricErrors({ period: Duration.minutes(5), statistic: "Sum" }),
+    threshold: 1,
+    evaluationPeriods: 1,
+    comparisonOperator:
+      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+    treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+  });
+  alarm.addAlarmAction(new cwActions.SnsAction(alertsTopic));
+  alarm.addOkAction(new cwActions.SnsAction(alertsTopic)); // recovery notice
+}
+
+// OCR Step Functions workflow failures
+const ocrFailureAlarm = new cloudwatch.Alarm(storageStack, "OcrWorkflowFailedAlarm", {
+  alarmDescription: "OCR Step Functions workflow failed — check execution history",
+  metric: ocrStateMachine.metricFailed({
+    period: Duration.minutes(5),
+    statistic: "Sum",
+  }),
+  threshold: 1,
+  evaluationPeriods: 1,
+  comparisonOperator:
+    cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+  treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+});
+ocrFailureAlarm.addAlarmAction(new cwActions.SnsAction(alertsTopic));
 
 export default backend;
