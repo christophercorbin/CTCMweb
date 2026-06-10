@@ -394,7 +394,7 @@ const alertsTopic = new sns.Topic(alertingStack, "AlertsTopic", {
 });
 // Change ALERT_EMAIL (or set it as an Amplify Console env var) to your inbox.
 // AWS sends a one-time "Confirm subscription" email — click it or no alerts arrive.
-const ALERT_EMAIL = process.env.ALERT_EMAIL ?? "christophercorbin24@gmail.com";
+const ALERT_EMAIL = process.env.ALERT_EMAIL ?? "christopher@cargolinkbarbados.com";
 alertsTopic.addSubscription(new snsSubscriptions.EmailSubscription(ALERT_EMAIL));
 
 // One error alarm per Lambda. Each alarm is created in the Lambda's own stack

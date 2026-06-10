@@ -216,7 +216,7 @@ npx ampx generate outputs     # Regenerate amplify_outputs.json from deployed sa
 - Bounce/complaint handling: SES identity notifications (wired via CDK custom resource) → SNS topic → `sesEvents` Lambda → flags `Customer.emailOptOut` (reason BOUNCED/COMPLAINT). Broadcasts skip opted-out customers; transactional email unaffected
 
 **Monitoring:**
-- CloudWatch error alarms on every Lambda + OCR Step Functions failures → SNS `AlertsTopic` (dedicated `alerting` stack, no cross-stack cycles) → email to `ALERT_EMAIL` env var (default christophercorbin24@gmail.com). Subscription must be confirmed once via the AWS email. Alarms also send recovery (OK) notices.
+- CloudWatch error alarms on every Lambda + OCR Step Functions failures → SNS `AlertsTopic` (dedicated `alerting` stack, no cross-stack cycles) → email to `ALERT_EMAIL` env var (default christopher@cargolinkbarbados.com). Subscription must be confirmed once via the AWS email. Alarms also send recovery (OK) notices.
 
 ### Known Gaps / Not Yet Built
 
