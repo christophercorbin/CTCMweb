@@ -4,7 +4,7 @@ import type { Schema } from '../../../../amplify/data/resource';
 import toast from 'react-hot-toast';
 import { Megaphone, Send, FlaskConical, Users, UserCheck, Search, History, CheckCircle2, AlertTriangle, Loader2, XCircle } from 'lucide-react';
 import { Button, Input, Card, Textarea, Modal, LoadingSkeleton } from '../components';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 
 const client = generateClient<Schema>();
 
