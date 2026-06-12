@@ -26,16 +26,28 @@ const shippingTypeOptions = [
   { value: 'SEA', label: 'Sea Freight' },
 ]
 
+// Receipts can be PDFs or photos/screenshots
+const ALLOWED_DOC_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+]
+const isAllowedDoc = (f: File) => ALLOWED_DOC_TYPES.includes(f.type)
+
 export const CreateShipment = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [customerId, setCustomerId] = useState<string | null>(null)
+  const [customerSub, setCustomerSub] = useState<string | null>(null)
   const [customerLoading, setCustomerLoading] = useState(true)
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([])
 
   useEffect(() => {
     fetchUserAttributes()
       .then(async (attrs) => {
+        if (attrs['sub']) setCustomerSub(attrs['sub'])
         // 1. custom:customerId set by post-confirmation Lambda (self-registered users)
         const cid = attrs['custom:customerId']
         if (cid) { setCustomerId(cid); return }
@@ -72,9 +84,9 @@ export const CreateShipment = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
-    const pdfFiles = files.filter((f) => f.type === 'application/pdf')
-    if (pdfFiles.length !== files.length) toast.error('Only PDF files are allowed')
-    setInvoiceFiles((prev) => [...prev, ...pdfFiles])
+    const allowed = files.filter(isAllowedDoc)
+    if (allowed.length !== files.length) toast.error('Only PDF and image files are allowed')
+    setInvoiceFiles((prev) => [...prev, ...allowed])
   }
 
   const removeFile = (index: number) => {
@@ -107,19 +119,20 @@ export const CreateShipment = () => {
           invoiceFiles.map(async (file) => {
             const result = await uploadData({
               path: ({ identityId }) =>
-                `documents/${identityId}/invoices/${shipment.id}/${file.name}`,
+                `documents/${identityId}/shipments/${shipment.id}/${Date.now()}-${file.name}`,
               data: file,
-              options: { contentType: 'application/pdf' },
+              options: { contentType: file.type },
             }).result
-            await client.models.Invoice.create({
-              customerId,
+            await client.models.ShipmentDocument.create({
               shipmentId: shipment.id,
-              invoiceNumber: `RCPT-${shipment.trackingNumber}-${Date.now()}`,
-              totalAmount: 0,
-              status: 'DRAFT',
+              customerId,
               s3Key: result.path,
-              trackingNumber: shipment.trackingNumber,
-              notes: 'Order receipt',
+              fileName: file.name,
+              contentType: file.type,
+              sizeBytes: file.size,
+              docType: 'ORDER_RECEIPT',
+              uploadedBy: 'CUSTOMER',
+              customerCognitoSub: customerSub ?? undefined,
             })
           })
         )
@@ -186,13 +199,14 @@ export const CreateShipment = () => {
                 Invoice(s)
               </label>
               <p className="text-xs text-gray-400 mt-0.5">
-                Upload your store invoice (Amazon, Shopify, etc.) for customs processing. PDF only.
+                Upload your store invoice or receipt (Amazon, Shopify, etc.) for customs processing.
+                PDF or photo/screenshot.
               </p>
             </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,image/jpeg,image/png,image/webp,image/heic"
                 multiple
                 onChange={handleFileSelect}
                 className="hidden"
@@ -200,8 +214,8 @@ export const CreateShipment = () => {
               />
               <label htmlFor="invoice-upload" className="cursor-pointer flex flex-col items-center">
                 <Upload className="w-10 h-10 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600">Click to upload invoice(s)</span>
-                <span className="text-xs text-gray-500 mt-1">PDF files only</span>
+                <span className="text-sm text-gray-600">Click to upload invoice(s) or receipt(s)</span>
+                <span className="text-xs text-gray-500 mt-1">PDF or images (JPG, PNG)</span>
               </label>
             </div>
 

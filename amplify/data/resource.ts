@@ -4,6 +4,9 @@ import { statusNotifier } from "../functions/status-notifier/resource";
 import { adminCreateCustomer } from "../functions/admin-create-customer/resource";
 import { adminDeleteCustomer } from "../functions/admin-delete-customer/resource";
 import { syncCustomers } from "../functions/sync-customers/resource";
+import { broadcastEmail } from "../functions/broadcast-email/resource";
+import { unsubscribe } from "../functions/unsubscribe/resource";
+import { sesEvents } from "../functions/ses-events/resource";
 
 const schema = a
   .schema({
@@ -52,6 +55,10 @@ const schema = a
         airSkyboxAddress: a.string(),
         seaSkyboxAddress: a.string(),
         cognitoSub: a.string(), // set by post-confirmation trigger
+        // Marketing email preferences — set by unsubscribe link or SES bounce/complaint handler.
+        // Broadcasts skip customers with emailOptOut=true; transactional email is unaffected.
+        emailOptOut: a.boolean(),
+        emailOptOutReason: a.string(), // "UNSUBSCRIBED" | "BOUNCED" | "COMPLAINT"
         // Relationships
         shipments: a.hasMany("Shipment", "customerId"),
         invoices: a.hasMany("Invoice", "customerId"),
@@ -93,6 +100,7 @@ const schema = a
         charges: a.hasMany("ShipmentCharge", "shipmentId"),
         events: a.hasMany("ShipmentEvent", "shipmentId"),
         invoices: a.hasMany("Invoice", "shipmentId"),
+        documents: a.hasMany("ShipmentDocument", "shipmentId"),
       })
       .secondaryIndexes((index) => [
         index("trackingNumber"), // access pattern: lookup by tracking #
@@ -165,6 +173,30 @@ const schema = a
         allow.group("admin"),
       ]),
 
+    // ─── ShipmentDocument (customer/admin file attachments) ──────────
+    // Replaces the legacy pattern of storing customer order receipts as
+    // $0 DRAFT Invoice records (notes='Order receipt').
+    ShipmentDocument: a
+      .model({
+        shipmentId: a.id().required(),
+        customerId: a.id(),
+        s3Key: a.string().required(),
+        fileName: a.string().required(),
+        contentType: a.string(),
+        sizeBytes: a.integer(),
+        // "ORDER_RECEIPT" (customer purchase receipt) — room for future types
+        docType: a.string().required(),
+        uploadedBy: a.string(), // "CUSTOMER" | "ADMIN"
+        customerCognitoSub: a.string(), // so customers can read admin-added docs
+        shipment: a.belongsTo("Shipment", "shipmentId"),
+      })
+      .secondaryIndexes((index) => [index("shipmentId")])
+      .authorization((allow) => [
+        allow.owner(),                              // customer-uploaded docs
+        allow.ownerDefinedIn("customerCognitoSub"), // admin-added docs readable by customer
+        allow.group("admin"),
+      ]),
+
     // ─── Invoice ─────────────────────────────────────────────────────
     Invoice: a
       .model({
@@ -193,6 +225,23 @@ const schema = a
         allow.ownerDefinedIn("customerCognitoSub"),
         allow.group("admin"),
       ]),
+    // ─── Broadcast (email broadcast history) ─────────────────────────
+    Broadcast: a
+      .model({
+        subject: a.string().required(),
+        message: a.string().required(),
+        buttonLabel: a.string(),
+        buttonUrl: a.string(),
+        recipientCount: a.integer(),
+        sentCount: a.integer(),
+        failedCount: a.integer(),
+        // "SENDING" | "SENT" | "SENT_WITH_ERRORS" | "FAILED"
+        status: a.string().required(),
+        sentBy: a.string(), // admin email
+        completedAt: a.datetime(),
+      })
+      .authorization((allow) => [allow.group("admin")]),
+
     // ─── Custom mutation: send status notification email ─────────────
     sendStatusNotification: a
       .mutation()
@@ -265,6 +314,33 @@ const schema = a
       )
       .authorization((allow) => [allow.group("admin")])
       .handler(a.handler.function(syncCustomers)),
+    // ─── Custom mutation: admin broadcasts a branded email to customers ────────
+    // Omit customerIds to send to ALL customers. Pass testEmail to send a
+    // single [TEST] email to that address instead of broadcasting.
+    // Sending is asynchronous: the mutation validates, creates a Broadcast
+    // history record, kicks off background sending, and returns immediately.
+    // Customers with emailOptOut=true are skipped automatically.
+    sendBroadcastEmail: a
+      .mutation()
+      .arguments({
+        subject: a.string().required(),
+        message: a.string().required(),
+        buttonLabel: a.string(),
+        buttonUrl: a.string(),
+        customerIds: a.string().array(),
+        testEmail: a.string(),
+        sentBy: a.string(), // admin email, recorded on the Broadcast record
+      })
+      .returns(
+        a.customType({
+          success: a.boolean(),
+          recipientCount: a.integer(),
+          broadcastId: a.string(),
+          message: a.string(),
+        })
+      )
+      .authorization((allow) => [allow.group("admin")])
+      .handler(a.handler.function(broadcastEmail)),
   })
   .authorization((allow) => [
     allow.authenticated(),
@@ -272,6 +348,9 @@ const schema = a
     allow.resource(syncCustomers),
     allow.resource(adminCreateCustomer),
     allow.resource(adminDeleteCustomer),
+    allow.resource(broadcastEmail),
+    allow.resource(unsubscribe),
+    allow.resource(sesEvents),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;

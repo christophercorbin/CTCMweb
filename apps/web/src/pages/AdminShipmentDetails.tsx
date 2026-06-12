@@ -90,6 +90,7 @@ export const AdminShipmentDetails = () => {
 
   // Invoice state
   const [invoices, setInvoices] = useState<Schema['Invoice']['type'][]>([])
+  const [shipmentDocs, setShipmentDocs] = useState<Schema['ShipmentDocument']['type'][]>([])
   const [showInvoiceForm, setShowInvoiceForm] = useState(false)
   const [creatingInvoice, setCreatingInvoice] = useState(false)
   const [invoiceNumber, setInvoiceNumber] = useState('')
@@ -143,6 +144,11 @@ export const AdminShipmentDetails = () => {
           filter: { shipmentId: { eq: s.id } },
         })
         setInvoices(invoiceList ?? [])
+
+        const { data: docList } = await client.models.ShipmentDocument.list({
+          filter: { shipmentId: { eq: s.id } },
+        })
+        setShipmentDocs(docList ?? [])
       }
     } catch {
       toast.error('Failed to load shipment details')
@@ -1014,24 +1020,45 @@ export const AdminShipmentDetails = () => {
             )}
           </Card>
 
-          {/* ── Invoices card ── */}
+          {/* ── Customer receipts card ── */}
           {(() => {
-            const receipts = invoices.filter(inv => inv.notes === 'Order receipt')
+            const legacyReceipts = invoices.filter(inv => inv.notes === 'Order receipt')
+            const totalDocs = shipmentDocs.length + legacyReceipts.length
             return (
               <Card>
                 <div className="mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Invoices</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Invoices uploaded by the customer for customs processing</p>
+                  <h2 className="text-lg font-bold text-gray-900">Customer Receipts</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Receipts and documents uploaded by the customer for customs processing</p>
                 </div>
-                {receipts.length > 0 ? (
+                {totalDocs > 0 ? (
                   <div className="space-y-2">
-                    {receipts.map((rcpt, i) => (
+                    {shipmentDocs.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{doc.fileName}</p>
+                            <p className="text-xs text-gray-500">
+                              {doc.contentType?.startsWith('image/') ? 'Image' : 'PDF'} · Uploaded{' '}
+                              {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDownloadInvoice(doc.s3Key)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" /> View
+                        </button>
+                      </div>
+                    ))}
+                    {legacyReceipts.map((rcpt, i) => (
                       <div key={rcpt.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
                         <div className="flex items-center gap-3 min-w-0">
                           <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-gray-900">
-                              Invoice {receipts.length > 1 ? `#${i + 1}` : ''}
+                              Receipt {legacyReceipts.length > 1 ? `#${i + 1}` : ''}
                             </p>
                             <p className="text-xs text-gray-500">
                               Uploaded {new Date(rcpt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1043,7 +1070,7 @@ export const AdminShipmentDetails = () => {
                             onClick={() => handleDownloadInvoice(rcpt.s3Key!)}
                             className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
                           >
-                            <Download className="w-3.5 h-3.5" /> View Invoice
+                            <Download className="w-3.5 h-3.5" /> View
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400 italic">No file</span>
@@ -1052,7 +1079,7 @@ export const AdminShipmentDetails = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 text-center py-5">No invoices uploaded yet</p>
+                  <p className="text-sm text-gray-400 text-center py-5">No receipts uploaded yet</p>
                 )}
               </Card>
             )

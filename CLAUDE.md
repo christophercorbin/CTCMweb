@@ -200,20 +200,31 @@ npx ampx generate outputs     # Regenerate amplify_outputs.json from deployed sa
 - Status updates with automated SES email notifications
 - Admin invoices (`/admin/invoices`)
 - Warehouse receipt intake (`/admin/warehouse-receipt`) — OCR via Textract
+- Email broadcast (`/admin/broadcast`) — branded announcement emails to all/selected customers with live preview, test send, async background sending, and broadcast history (`Broadcast` model)
 
 **Auth:**
 - `USER_PASSWORD_AUTH` explicitly enabled on Cognito App Client
 - New-password challenge handled in Login for admin-created (FORCE_CHANGE_PASSWORD) accounts
 - `UserNotConfirmedException` → redirects to `/confirm?email=...`
+- Forgot password flow (`/forgot-password`) — request code + confirm new password, linked from Login
 
 **Email (SES):**
 - Status notification emails via `statusNotifier` Lambda
 - Welcome email on admin-created accounts via `adminCreateCustomer` Lambda
+- Broadcast emails via `broadcastEmail` Lambda (async self-invoke fan-out, SES rate-limited batches of 10/sec)
+- Unsubscribe: HMAC-tokenized link in broadcasts → public `unsubscribe` Lambda function URL → sets `Customer.emailOptOut` (reason UNSUBSCRIBED). Shared secret: `UNSUBSCRIBE_SECRET` env var (set in Amplify Console for prod; insecure dev fallback in code)
+- Bounce/complaint handling: SES identity notifications (wired via CDK custom resource) → SNS topic → `sesEvents` Lambda → flags `Customer.emailOptOut` (reason BOUNCED/COMPLAINT). Broadcasts skip opted-out customers; transactional email unaffected
+
+**Monitoring:**
+- CloudWatch error alarms on every Lambda + OCR Step Functions failures → SNS `AlertsTopic` (dedicated `alerting` stack, no cross-stack cycles) → email to `ALERT_EMAIL` env var (default christopher@cargolinkbarbados.com). Subscription must be confirmed once via the AWS email. Alarms also send recovery (OK) notices.
+
+**Documents:**
+- Customer receipt/document uploads (PDF + images) on pre-alert creation and shipment details, stored in the dedicated `ShipmentDocument` model (S3 path `documents/{identityId}/shipments/{shipmentId}/`)
+- Admin "Customer Receipts" section on shipment details reads `ShipmentDocument` (plus legacy records)
+- Legacy migration: customer receipts were previously stored as $0 DRAFT `Invoice` records (`notes='Order receipt'`). Both invoice pages filter these out; `/admin/invoices` shows a one-click "Migrate now" banner that converts them to `ShipmentDocument` records
 
 ### Known Gaps / Not Yet Built
 
-- Forgot password flow (`/forgot-password`)
-- Customer-side document uploads (receipts, invoices)
 - Full OCR result persistence UI
 - Delivery confirmation workflow
 - Customer invoice payments

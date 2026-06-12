@@ -17,6 +17,7 @@ import { AdminCustomers } from './pages/AdminCustomers'
 import { AdminCustomerDetail } from './pages/AdminCustomerDetail'
 import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
 import { AdminInvoices } from './pages/AdminInvoices'
+import { AdminBroadcast } from './pages/AdminBroadcast'
 import { PendingPackages } from './pages/PendingPackages'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
 import { ForgotPassword } from './pages/ForgotPassword'
@@ -155,6 +156,17 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AuthenticatedLayout>
                 <AdminInvoices />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/broadcast"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <AdminBroadcast />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

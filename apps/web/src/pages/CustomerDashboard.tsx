@@ -4,7 +4,7 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 import {
   Plus, Search, Eye, Package, Truck, CheckCircle,
-  FileText, MapPin, Phone, ChevronRight, ArrowRight, Upload, Warehouse, X, PauseCircle, Copy, Check,
+  FileText, MapPin, Phone, ChevronRight, Upload, Warehouse, X, PauseCircle, Copy, Check, Trash2,
 } from 'lucide-react'
 import { uploadData } from 'aws-amplify/storage'
 import toast from 'react-hot-toast'
@@ -68,6 +68,29 @@ export const CustomerDashboard = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState<'air' | 'sea' | null>(null)
+
+  // Pre-alert delete state
+  const [deleteTarget, setDeleteTarget] = useState<Schema['Shipment']['type'] | null>(null)
+  const [deletingShipment, setDeletingShipment] = useState(false)
+
+  const handleDeletePreAlert = async () => {
+    if (!deleteTarget) return
+    setDeletingShipment(true)
+    try {
+      // Remove any invoices the customer uploaded against this pre-alert
+      const { data: invs } = await client.models.Invoice.list({
+        filter: { shipmentId: { eq: deleteTarget.id } },
+      })
+      await Promise.all(invs.map(i => client.models.Invoice.delete({ id: i.id })))
+      await client.models.Shipment.delete({ id: deleteTarget.id })
+      toast.success('Pre-alert deleted')
+      setDeleteTarget(null)
+    } catch {
+      toast.error('Failed to delete pre-alert')
+    } finally {
+      setDeletingShipment(false)
+    }
+  }
 
   const handleCopy = (text: string, type: 'air' | 'sea') => {
     navigator.clipboard.writeText(text).then(() => {
@@ -288,7 +311,7 @@ export const CustomerDashboard = () => {
                   <thead>
                     <tr className="bg-gray-50 text-left">
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Tracking #</th>
-                      <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Origin → Barbados</th>
+                      <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">WR#</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Status</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Type</th>
                       <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Est. Delivery</th>
@@ -306,11 +329,7 @@ export const CustomerDashboard = () => {
                           <span className="font-mono font-medium text-gray-900 text-xs">{s.trackingNumber}</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="inline-flex items-center gap-1.5 text-gray-700">
-                            <span className="truncate max-w-[90px]">{s.origin ?? '—'}</span>
-                            <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="truncate max-w-[90px]">{s.destination ?? 'Barbados, BB'}</span>
-                          </span>
+                          <span className="font-mono text-xs text-gray-700">{s.warehouseReceiptNumber ?? '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -342,10 +361,21 @@ export const CustomerDashboard = () => {
                             : <span className="text-gray-300">TBD</span>}
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-xs">
-                            <Eye className="w-3.5 h-3.5" />
-                            View
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-xs">
+                              <Eye className="w-3.5 h-3.5" />
+                              View
+                            </span>
+                            {s.shipmentSource === 'CUSTOMER' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDeleteTarget(s) }}
+                                title="Delete pre-alert"
+                                className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -541,6 +571,42 @@ export const CustomerDashboard = () => {
                 className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-2.5 rounded-lg text-sm transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete pre-alert confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Delete pre-alert?</h3>
+                <p className="text-sm text-gray-500 font-mono">{deleteTarget.trackingNumber}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              This will permanently remove this pre-alert and any invoices you uploaded for it. Once deleted it cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deletingShipment}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePreAlert}
+                disabled={deletingShipment}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deletingShipment ? 'Deleting…' : 'Yes, delete'}
               </button>
             </div>
           </div>

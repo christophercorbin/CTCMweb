@@ -9,7 +9,15 @@ import { statusNotifier } from "./functions/status-notifier/resource";
 import { adminCreateCustomer } from "./functions/admin-create-customer/resource";
 import { adminDeleteCustomer } from "./functions/admin-delete-customer/resource";
 import { syncCustomers } from "./functions/sync-customers/resource";
+import { broadcastEmail } from "./functions/broadcast-email/resource";
+import { unsubscribe } from "./functions/unsubscribe/resource";
+import { sesEvents } from "./functions/ses-events/resource";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as snsSubscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import * as cr from "aws-cdk-lib/custom-resources";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as cwActions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -28,6 +36,9 @@ const backend = defineBackend({
   adminCreateCustomer,
   adminDeleteCustomer,
   syncCustomers,
+  broadcastEmail,
+  unsubscribe,
+  sesEvents,
 });
 
 // ─── Cognito App Client: enable USER_PASSWORD_AUTH ───────────────────────────
@@ -167,6 +178,87 @@ if (process.env.APP_URL) {
   statusNotifierFn.addEnvironment("APP_URL", process.env.APP_URL);
 }
 
+// ─── broadcastEmail: SES + async self-invoke permissions ─────────────────────
+const broadcastEmailFn = backend.broadcastEmail.resources.lambda as lambda.Function;
+
+broadcastEmailFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: [SES_IDENTITY_ARN],
+  })
+);
+// The mutation invocation re-invokes the same function asynchronously to do the
+// actual sending so the AppSync call returns immediately. resources: ["*"] avoids
+// a self-referencing CFN dependency between the function and its own role policy.
+broadcastEmailFn.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["lambda:InvokeFunction"],
+    resources: ["*"],
+  })
+);
+broadcastEmailFn.addEnvironment("SENDER_EMAIL", "info@cargolinkbarbados.com");
+if (process.env.APP_URL) {
+  broadcastEmailFn.addEnvironment("APP_URL", process.env.APP_URL);
+}
+// GRAPHQL_API_ENDPOINT is auto-injected as AMPLIFY_DATA_GRAPHQL_ENDPOINT
+// via allow.resource(broadcastEmail) in data/resource.ts.
+// AppSync query permissions (listCustomers) are also granted automatically.
+
+// ─── unsubscribe: public function URL + shared HMAC secret ───────────────────
+// UNSUBSCRIBE_SECRET signs the customerId in unsubscribe links. Set it as a
+// branch env var in the Amplify Console for production; the fallback default
+// in the handlers keeps sandbox working.
+const unsubscribeFn = backend.unsubscribe.resources.lambda as lambda.Function;
+const unsubscribeUrl = unsubscribeFn.addFunctionUrl({
+  authType: lambda.FunctionUrlAuthType.NONE,
+});
+if (process.env.UNSUBSCRIBE_SECRET) {
+  unsubscribeFn.addEnvironment("UNSUBSCRIBE_SECRET", process.env.UNSUBSCRIBE_SECRET);
+  broadcastEmailFn.addEnvironment("UNSUBSCRIBE_SECRET", process.env.UNSUBSCRIBE_SECRET);
+}
+// Both functions live in the data stack, so this reference creates no cycle.
+broadcastEmailFn.addEnvironment("UNSUBSCRIBE_URL", unsubscribeUrl.url);
+
+// ─── sesEvents: SES bounce/complaint notifications → SNS → Lambda ────────────
+const sesEventsFn = backend.sesEvents.resources.lambda as lambda.Function;
+const sesNotificationsTopic = new sns.Topic(sesEventsFn.stack, "SesNotificationsTopic", {
+  displayName: "CargoLink SES bounce and complaint notifications",
+});
+sesNotificationsTopic.addSubscription(
+  new snsSubscriptions.LambdaSubscription(sesEventsFn)
+);
+
+// Point the SES identity's Bounce + Complaint notifications at the topic.
+// The identity (cargolinkbarbados.com) is account-level and already required
+// for sending, so it exists in every environment that can send email.
+for (const notificationType of ["Bounce", "Complaint"] as const) {
+  new cr.AwsCustomResource(sesEventsFn.stack, `Ses${notificationType}Notification`, {
+    onCreate: {
+      service: "SES",
+      action: "setIdentityNotificationTopic",
+      parameters: {
+        Identity: "cargolinkbarbados.com",
+        NotificationType: notificationType,
+        SnsTopic: sesNotificationsTopic.topicArn,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`ses-${notificationType.toLowerCase()}-notification`),
+    },
+    onUpdate: {
+      service: "SES",
+      action: "setIdentityNotificationTopic",
+      parameters: {
+        Identity: "cargolinkbarbados.com",
+        NotificationType: notificationType,
+        SnsTopic: sesNotificationsTopic.topicArn,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`ses-${notificationType.toLowerCase()}-notification`),
+    },
+    policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+      resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+    }),
+  });
+}
+
 // ─── adminCreateCustomer: Cognito + SES + AppSync permissions ────────────────
 const adminCreateCustomerFn = backend.adminCreateCustomer.resources.lambda as lambda.Function;
 
@@ -292,5 +384,62 @@ postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "christophercorbin24@gma
 // AppSync DescribeGraphqlApi or reading from SSM. We grant broad appsync:*
 // and ssm:GetParameter permissions, and the Lambda handler falls back to
 // looking up the endpoint dynamically if AMPLIFY_DATA_GRAPHQL_ENDPOINT is unset.
+
+// ─── Error alerting: CloudWatch alarms → SNS → email ─────────────────────────
+// The alerts topic lives in its OWN stack so every other stack can reference it
+// without creating circular dependencies (the alerting stack depends on nothing).
+const alertingStack = backend.createStack("alerting");
+const alertsTopic = new sns.Topic(alertingStack, "AlertsTopic", {
+  displayName: "CargoLink error alerts",
+});
+// Change ALERT_EMAIL (or set it as an Amplify Console env var) to your inbox.
+// AWS sends a one-time "Confirm subscription" email — click it or no alerts arrive.
+const ALERT_EMAIL = process.env.ALERT_EMAIL ?? "christopher@cargolinkbarbados.com";
+alertsTopic.addSubscription(new snsSubscriptions.EmailSubscription(ALERT_EMAIL));
+
+// One error alarm per Lambda. Each alarm is created in the Lambda's own stack
+// (alarm → topic is the only cross-stack reference, and it points at the
+// dependency-free alerting stack — no cycles).
+const monitoredFunctions: Record<string, lambda.Function> = {
+  OcrTrigger: ocrTriggerLambda,
+  OcrProcessor: ocrProcessorFn,
+  PostConfirmation: postConfirmationFn,
+  StatusNotifier: statusNotifierFn,
+  AdminCreateCustomer: adminCreateCustomerFn,
+  AdminDeleteCustomer: adminDeleteCustomerFn,
+  SyncCustomers: syncCustomersFn,
+  BroadcastEmail: broadcastEmailFn,
+  Unsubscribe: unsubscribeFn,
+  SesEvents: sesEventsFn,
+};
+
+for (const [name, fn] of Object.entries(monitoredFunctions)) {
+  const alarm = new cloudwatch.Alarm(fn.stack, `${name}ErrorAlarm`, {
+    alarmDescription: `${name} Lambda reported errors — check CloudWatch logs`,
+    metric: fn.metricErrors({ period: Duration.minutes(5), statistic: "Sum" }),
+    threshold: 1,
+    evaluationPeriods: 1,
+    comparisonOperator:
+      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+    treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+  });
+  alarm.addAlarmAction(new cwActions.SnsAction(alertsTopic));
+  alarm.addOkAction(new cwActions.SnsAction(alertsTopic)); // recovery notice
+}
+
+// OCR Step Functions workflow failures
+const ocrFailureAlarm = new cloudwatch.Alarm(storageStack, "OcrWorkflowFailedAlarm", {
+  alarmDescription: "OCR Step Functions workflow failed — check execution history",
+  metric: ocrStateMachine.metricFailed({
+    period: Duration.minutes(5),
+    statistic: "Sum",
+  }),
+  threshold: 1,
+  evaluationPeriods: 1,
+  comparisonOperator:
+    cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+  treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+});
+ocrFailureAlarm.addAlarmAction(new cwActions.SnsAction(alertsTopic));
 
 export default backend;
