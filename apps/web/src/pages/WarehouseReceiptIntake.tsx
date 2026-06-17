@@ -143,9 +143,15 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
 
   const fetchCustomers = async () => {
     try {
-      const { data, errors } = await client.models.Customer.list();
-      if (errors?.length) throw new Error(errors[0].message);
-      setCustomers(data.map((c) => ({ id: c.id, name: c.name, email: c.email, cognitoSub: c.cognitoSub })));
+      const allItems: Array<{ id: string; name: string; email: string; cognitoSub: string | null }> = [];
+      let cursor: string | undefined;
+      do {
+        const { data, errors, nextToken } = await client.models.Customer.list({ limit: 1000, nextToken: cursor });
+        if (errors?.length) throw new Error(errors[0].message);
+        allItems.push(...data.map((c) => ({ id: c.id, name: c.name, email: c.email, cognitoSub: c.cognitoSub })));
+        cursor = nextToken ?? undefined;
+      } while (cursor);
+      setCustomers(allItems);
     } catch (error) {
       toast.error('Failed to load customers');
       console.error(error);

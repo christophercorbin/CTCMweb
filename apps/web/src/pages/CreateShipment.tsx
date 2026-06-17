@@ -54,7 +54,8 @@ export const CreateShipment = () => {
 
         // 2. Customer.list() — works when allow.owner() or allow.ownerDefinedIn("cognitoSub") match
         // Also now works for admin-created accounts via allow.ownerDefinedIn("email")
-        const { data } = await client.models.Customer.list()
+        // limit:1000 so auth-filtered records aren't hidden by AppSync's 100-item scan page
+        const { data } = await client.models.Customer.list({ limit: 1000 })
         if (data?.[0]) { setCustomerId(data[0].id); return }
 
         // 3. Explicit email filter — belt-and-suspenders for edge cases
@@ -67,7 +68,7 @@ export const CreateShipment = () => {
         }
       })
       .catch(() => {
-        client.models.Customer.list().then(({ data }) => {
+        client.models.Customer.list({ limit: 1000 }).then(({ data }) => {
           if (data?.[0]) setCustomerId(data[0].id)
         })
       })
