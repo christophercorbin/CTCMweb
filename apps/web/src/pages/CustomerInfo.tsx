@@ -148,7 +148,7 @@ export const CustomerInfo = () => {
   const fetchCustomerInfo = async () => {
     try {
       setLoading(true);
-      const { data, errors } = await client.models.Customer.list();
+      const { data, errors } = await client.models.Customer.list({ limit: 1000 });
 
       if (errors?.length) {
         console.error('[CustomerInfo] AppSync errors:', errors);

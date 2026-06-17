@@ -103,7 +103,7 @@ export const CustomerDashboard = () => {
 
   // Fetch this customer's skybox addresses and invoices
   useEffect(() => {
-    client.models.Customer.list().then(({ data }) => {
+    client.models.Customer.list({ limit: 1000 }).then(({ data }) => {
       if (data.length) setSkybox({ air: data[0].airSkyboxAddress, sea: data[0].seaSkyboxAddress })
     }).catch(() => {})
 
