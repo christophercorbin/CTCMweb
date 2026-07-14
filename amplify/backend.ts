@@ -374,9 +374,9 @@ postConfirmationFn.addToRolePolicy(
   })
 );
 
-// Admin notification email — change ADMIN_NOTIFY_EMAIL to your preferred inbox
+// Admin notification email — ADMIN_NOTIFY_EMAIL is a comma-separated recipient list
 postConfirmationFn.addEnvironment("SENDER_EMAIL",       "info@cargolinkbarbados.com");
-postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "christophercorbin24@gmail.com");
+postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "info@cargolinkbarbados.com,christophercorbin24@gmail.com");
 
 // IMPORTANT: Cannot use CDK tokens from data stack here because data already
 // depends on auth (UserPool) — any auth→data reference creates a cycle.
