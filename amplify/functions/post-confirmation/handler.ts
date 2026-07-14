@@ -6,11 +6,13 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { emailWrapper, card, escapeHtml } from "../shared/emailTemplate";
+import { parseRecipients } from "../shared/recipients";
 import { randomUUID } from "crypto";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 const SENDER       = process.env.SENDER_EMAIL       ?? "info@cargolinkbarbados.com";
-const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "info@cargolinkbarbados.com";
+// ADMIN_NOTIFY_EMAIL may be a comma-separated list of recipients.
+const ADMIN_EMAILS = parseRecipients(process.env.ADMIN_NOTIFY_EMAIL);
 
 // Mirror the address templates from CustomerManagement.tsx / sync-customers/handler.ts
 const buildAirAddress = (name: string) =>
@@ -165,7 +167,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
     await ses.send(
       new SendEmailCommand({
         Source: SENDER,
-        Destination: { ToAddresses: [ADMIN_EMAIL] },
+        Destination: { ToAddresses: ADMIN_EMAILS },
         Message: {
           Subject: { Data: `New customer registered: ${displayName.replace(/[<>"]/g, "")}`, Charset: "UTF-8" },
           Body: {
@@ -178,7 +180,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
         },
       })
     );
-    console.log(`Admin notification sent to ${ADMIN_EMAIL} for new customer ${email}`);
+    console.log(`Admin notification sent to ${ADMIN_EMAILS.join(", ")} for new customer ${email}`);
   } catch (sesErr) {
     console.error("Failed to send admin notification email:", sesErr);
     // Do NOT throw — this is non-critical

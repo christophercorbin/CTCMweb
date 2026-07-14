@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Upload, X, FileText } from 'lucide-react'
+import { ArrowLeft, Upload, X, FileText, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Textarea, Card, Select } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData } from 'aws-amplify/storage'
@@ -38,7 +38,8 @@ const isAllowedDoc = (f: File) => ALLOWED_DOC_TYPES.includes(f.type)
 
 export const CreateShipment = () => {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
+  const submitting = submitStatus === 'submitting'
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [customerSub, setCustomerSub] = useState<string | null>(null)
   const [customerLoading, setCustomerLoading] = useState(true)
@@ -99,7 +100,7 @@ export const CreateShipment = () => {
       toast.error('Customer record not found — please try again')
       return
     }
-    setLoading(true)
+    setSubmitStatus('submitting')
     try {
       const { data: shipment, errors } = await client.models.Shipment.create({
         trackingNumber: data.trackingNumber,
@@ -139,19 +140,21 @@ export const CreateShipment = () => {
         )
         const anyFailed = uploadResults.some((r) => r.status === 'rejected')
         if (anyFailed) {
-          toast('Shipment created — some receipts failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
+          toast('Pre-alert created — some invoices failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
         } else {
-          toast.success('Shipment created successfully')
+          toast.success('Pre-alert submitted — invoice(s) uploaded successfully')
         }
       } else {
-        toast.success('Shipment created successfully')
+        toast.success('Pre-alert submitted successfully')
       }
 
-      setTimeout(() => navigate('/dashboard'), 500)
+      // Show the confirmed state on the button before redirecting so it's clear
+      // the submission (and any invoice uploads) succeeded.
+      setSubmitStatus('success')
+      setTimeout(() => navigate('/dashboard'), 1200)
     } catch {
-      toast.error('Failed to create shipment')
-    } finally {
-      setLoading(false)
+      toast.error('Failed to submit pre-alert')
+      setSubmitStatus('idle')
     }
   }
 
@@ -257,8 +260,20 @@ export const CreateShipment = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" loading={loading || customerLoading} disabled={customerLoading}>
-              {customerLoading ? 'Loading…' : 'Submit Pre-Alert'}
+            <Button
+              type="submit"
+              loading={submitting || customerLoading}
+              disabled={customerLoading || submitStatus === 'success'}
+              icon={submitStatus === 'success' ? CheckCircle2 : undefined}
+              className={submitStatus === 'success' ? 'bg-green-600 hover:bg-green-600' : ''}
+            >
+              {customerLoading
+                ? 'Loading…'
+                : submitting
+                ? 'Submitting…'
+                : submitStatus === 'success'
+                ? 'Pre-Alert submitted'
+                : 'Submit Pre-Alert'}
             </Button>
           </div>
         </form>

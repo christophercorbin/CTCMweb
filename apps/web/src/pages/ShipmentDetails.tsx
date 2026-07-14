@@ -28,7 +28,8 @@ export const ShipmentDetails = () => {
   const [invoices, setInvoices] = useState<Schema['Invoice']['type'][]>([])
   const [documents, setDocuments] = useState<Schema['ShipmentDocument']['type'][]>([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
+  const uploading = uploadStatus === 'uploading'
   const [settingInstruction, setSettingInstruction] = useState(false)
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null)
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
@@ -136,7 +137,7 @@ export const ShipmentDetails = () => {
       return
     }
 
-    setUploading(true)
+    setUploadStatus('uploading')
     try {
       const result = await uploadData({
         path: ({ identityId }) => `documents/${identityId}/shipments/${id}/${Date.now()}-${file.name}`,
@@ -158,10 +159,13 @@ export const ShipmentDetails = () => {
       if (newDoc) setDocuments((prev) => [...prev, newDoc])
 
       toast.success('Receipt uploaded successfully')
+      setUploadStatus('success')
+      // Keep the confirmed state visible, then reset so another file can be added.
+      window.setTimeout(() => setUploadStatus('idle'), 4000)
     } catch {
       toast.error('Failed to upload receipt')
+      setUploadStatus('idle')
     } finally {
-      setUploading(false)
       e.target.value = ''
     }
   }
@@ -378,13 +382,30 @@ export const ShipmentDetails = () => {
                 className="hidden"
               />
               <span
-                className={`inline-flex items-center justify-center font-medium rounded-lg transition-colors w-full cursor-pointer ${
-                  uploading ? 'opacity-50 cursor-not-allowed' : ''
-                } bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 text-base`}
+                className={`inline-flex items-center justify-center font-medium rounded-lg transition-colors w-full px-4 py-2 text-base ${
+                  uploadStatus === 'uploading'
+                    ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-800'
+                    : uploadStatus === 'success'
+                    ? 'cursor-pointer bg-green-100 text-green-800 hover:bg-green-200'
+                    : 'cursor-pointer bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
               >
-                {uploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Receipt (PDF or image)
+                {uploadStatus === 'uploading' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading…
+                  </>
+                ) : uploadStatus === 'success' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Uploaded successfully — add another?
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Receipt (PDF or image)
+                  </>
+                )}
               </span>
             </label>
 
