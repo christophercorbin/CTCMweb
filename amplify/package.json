@@ -7,14 +7,15 @@
     "sandbox": "ampx sandbox",
     "deploy": "ampx deploy",
     "delete-sandbox": "ampx sandbox delete",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@aws-amplify/backend": "^1.0.0",
     "@aws-amplify/backend-cli": "^1.0.0",
     "@aws-crypto/sha256-js": "^5.2.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
     "@aws-sdk/client-appsync": "^3.0.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
     "@aws-sdk/client-sfn": "^3.0.0",
     "@aws-sdk/client-textract": "^3.0.0",
     "@aws-sdk/credential-providers": "^3.0.0",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^2.1.9"
   }
 }

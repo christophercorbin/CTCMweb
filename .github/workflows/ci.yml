@@ -36,3 +36,18 @@ jobs:
       # (Lambda TS errors surface here instead of in the expensive pipeline-deploy).
       - run: echo '{"version":"1"}' > amplify_outputs.json
       - run: npm run typecheck --workspaces --if-present
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      # Stub the gitignored, per-branch amplify_outputs.json so component tests
+      # that transitively import apps/web/src/lib/amplify.ts can resolve it.
+      - run: echo '{"version":"1"}' > amplify_outputs.json
+      # Runs Vitest in every workspace that defines a "test" script
+      # (apps/web via jsdom + Testing Library, amplify via node).
+      - run: npm run test --workspaces --if-present
