@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run lint --workspaces --if-present
 
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       # amplify_outputs.json is gitignored (generated per-branch by Amplify
       # Hosting). Stub it so the static import in apps/web/src/lib/amplify.ts
@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       # Stub the gitignored, per-branch amplify_outputs.json so component tests
       # that transitively import apps/web/src/lib/amplify.ts can resolve it.
