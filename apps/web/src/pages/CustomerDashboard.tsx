@@ -7,6 +7,7 @@ import {
   FileText, MapPin, Phone, ChevronRight, Upload, Warehouse, X, PauseCircle, Copy, Check, Trash2,
 } from 'lucide-react'
 import { uploadData } from 'aws-amplify/storage'
+import { fetchAuthSession } from 'aws-amplify/auth'
 import toast from 'react-hot-toast'
 import { LoadingSkeleton, EmptyState } from '../components'
 import { useShipments } from '../hooks/useShipments'
@@ -103,8 +104,22 @@ export const CustomerDashboard = () => {
 
   // Fetch this customer's skybox addresses and invoices
   useEffect(() => {
-    client.models.Customer.list({ limit: 1000 }).then(({ data }) => {
-      if (data.length) setSkybox({ air: data[0].airSkyboxAddress, sea: data[0].seaSkyboxAddress })
+    client.models.Customer.list({ limit: 1000 }).then(async ({ data }) => {
+      if (!data.length) return
+      const me = data[0]
+      setSkybox({ air: me.airSkyboxAddress, sea: me.seaSkyboxAddress })
+
+      // Backfill the Cognito identity id. S3 keys are scoped by identity id, so
+      // admins cannot write a customer-readable invoice PDF without it. Only the
+      // customer's own session can resolve this value, so it is captured here.
+      if (!me.identityId) {
+        try {
+          const { identityId } = await fetchAuthSession()
+          if (identityId) await client.models.Customer.update({ id: me.id, identityId })
+        } catch {
+          // non-fatal — retried on next dashboard load
+        }
+      }
     }).catch(() => {})
 
     client.models.Invoice.list().then(({ data }) => {
