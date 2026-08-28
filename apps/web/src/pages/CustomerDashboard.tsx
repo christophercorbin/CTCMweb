@@ -67,6 +67,7 @@ export const CustomerDashboard = () => {
   const [skybox, setSkybox] = useState<{ air?: string | null; sea?: string | null } | null>(null)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadShipmentId, setUploadShipmentId] = useState('')
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState<'air' | 'sea' | null>(null)
 
@@ -122,10 +123,31 @@ export const CustomerDashboard = () => {
       }
     }).catch(() => {})
 
-    client.models.Invoice.list().then(({ data }) => {
-      const ids = new Set(data.filter((inv) => inv.shipmentId).map((inv) => inv.shipmentId!))
+    // The "Upload invoice" prompt must clear once a document exists for a
+    // shipment. Customer receipts live in ShipmentDocument now; pre-migration
+    // ones are still Invoice rows, so both are counted. Both lists are
+    // paginated: a single page caps at 100 items, which would leave shipments
+    // beyond that page looking permanently un-invoiced.
+    const collectShipmentIds = async () => {
+      const ids = new Set<string>()
+
+      let invCursor: string | undefined
+      do {
+        const { data, nextToken } = await client.models.Invoice.list({ limit: 1000, nextToken: invCursor })
+        data?.forEach((inv) => { if (inv.shipmentId) ids.add(inv.shipmentId) })
+        invCursor = nextToken ?? undefined
+      } while (invCursor)
+
+      let docCursor: string | undefined
+      do {
+        const { data, nextToken } = await client.models.ShipmentDocument.list({ limit: 1000, nextToken: docCursor })
+        data?.forEach((doc) => { if (doc.shipmentId) ids.add(doc.shipmentId) })
+        docCursor = nextToken ?? undefined
+      } while (docCursor)
+
       setShipmentIdsWithInvoices(ids)
-    }).catch(() => {})
+    }
+    collectShipmentIds().catch(() => {})
   }, [])
 
   // MIAMI_WAREHOUSE and AT_WAREHOUSE are excluded — package hasn't started moving yet
@@ -160,18 +182,46 @@ export const CustomerDashboard = () => {
 
   const handleUploadInvoice = async () => {
     if (!uploadFile) { toast.error('Please select a file'); return }
+    if (!uploadShipmentId) { toast.error('Please choose which shipment this invoice is for'); return }
+
+    const shipment = shipments.find((s) => s.id === uploadShipmentId)
+    if (!shipment) { toast.error('That shipment is no longer available'); return }
+
     setUploading(true)
     try {
       const timestamp = Date.now()
       const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      await uploadData({
-        path: ({ identityId }) => `documents/${identityId}/invoices/${timestamp}-${safeName}`,
+
+      // Scoped under the shipment so the key matches the per-shipment upload
+      // path in ShipmentDetails and stays inside the customer's own prefix.
+      const { path } = await uploadData({
+        path: ({ identityId }) =>
+          `documents/${identityId}/shipments/${uploadShipmentId}/${timestamp}-${safeName}`,
         data: uploadFile,
         options: { contentType: uploadFile.type || 'application/pdf' },
       }).result
+
+      // The S3 object alone is invisible to staff — the ShipmentDocument row is
+      // what puts this invoice on the shipment for admins. Without it the file
+      // is orphaned in the bucket forever.
+      const { errors } = await client.models.ShipmentDocument.create({
+        shipmentId: uploadShipmentId,
+        customerId: shipment.customerId,
+        s3Key: path,
+        fileName: uploadFile.name,
+        contentType: uploadFile.type || 'application/pdf',
+        sizeBytes: uploadFile.size,
+        docType: 'ORDER_RECEIPT',
+        uploadedBy: 'CUSTOMER',
+        customerCognitoSub: shipment.customerCognitoSub ?? undefined,
+      })
+      if (errors?.length) throw new Error(errors[0].message)
+
+      setShipmentIdsWithInvoices((prev) => new Set(prev).add(uploadShipmentId))
       toast.success('Invoice uploaded successfully')
       setShowUploadModal(false)
       setUploadFile(null)
+      setUploadShipmentId('')
     } catch {
       toast.error('Invoice upload failed — please try again')
     } finally {
@@ -544,11 +594,40 @@ export const CustomerDashboard = () => {
                 <p className="text-sm text-gray-500 mt-0.5">Store invoice needed for customs (Amazon, Shopify, etc.)</p>
               </div>
               <button
-                onClick={() => { setShowUploadModal(false); setUploadFile(null) }}
+                onClick={() => { setShowUploadModal(false); setUploadFile(null); setUploadShipmentId('') }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* An invoice must be attached to a shipment, otherwise the file has
+                nothing to appear on and our team can never see it. */}
+            <div className="mb-4">
+              <label htmlFor="upload-shipment" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Which shipment is this invoice for?
+              </label>
+              {shipments.length === 0 ? (
+                <p className="text-sm text-gray-500 border border-gray-200 rounded-lg px-3 py-2.5 bg-gray-50">
+                  You have no shipments yet — create a pre-alert first.
+                </p>
+              ) : (
+                <select
+                  id="upload-shipment"
+                  value={uploadShipmentId}
+                  onChange={(e) => setUploadShipmentId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a shipment…</option>
+                  {[...shipments]
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.trackingNumber}{s.description ? ` — ${s.description}` : ''}
+                      </option>
+                    ))}
+                </select>
+              )}
             </div>
 
             <label className="block">
@@ -576,13 +655,13 @@ export const CustomerDashboard = () => {
             <div className="flex gap-3 mt-5">
               <button
                 onClick={handleUploadInvoice}
-                disabled={!uploadFile || uploading}
+                disabled={!uploadFile || !uploadShipmentId || uploading}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
               >
                 {uploading ? 'Uploading…' : 'Upload'}
               </button>
               <button
-                onClick={() => { setShowUploadModal(false); setUploadFile(null) }}
+                onClick={() => { setShowUploadModal(false); setUploadFile(null); setUploadShipmentId('') }}
                 className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-2.5 rounded-lg text-sm transition-colors"
               >
                 Cancel
