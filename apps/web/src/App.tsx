@@ -17,6 +17,7 @@ import { AdminCustomers } from './pages/AdminCustomers'
 import { AdminCustomerDetail } from './pages/AdminCustomerDetail'
 import { AdminShipmentDetails } from './pages/AdminShipmentDetails'
 import { AdminInvoices } from './pages/AdminInvoices'
+import { AdminUnassignedUploads } from './pages/AdminUnassignedUploads'
 import { AdminBroadcast } from './pages/AdminBroadcast'
 import { PendingPackages } from './pages/PendingPackages'
 import { WarehouseReceiptIntake } from './pages/WarehouseReceiptIntake'
@@ -145,6 +146,17 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AuthenticatedLayout>
                 <AdminShipmentDetails />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/unassigned-uploads"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuthenticatedLayout>
+                <AdminUnassignedUploads />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

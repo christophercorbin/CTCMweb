@@ -229,6 +229,19 @@ const schema = a
         allow.ownerDefinedIn("customerCognitoSub"),
         allow.group("admin"),
       ]),
+    // ─── DismissedUpload ─────────────────────────────────────────────
+    // Tombstone for an orphaned S3 upload that staff reviewed and judged
+    // not to be a customer invoice. /admin/unassigned-uploads subtracts
+    // these keys from its worklist so the list can actually reach zero.
+    // Reversible: delete the row and the file returns to the list.
+    DismissedUpload: a
+      .model({
+        s3Key: a.string().required(),
+        reason: a.string(),
+        dismissedBy: a.string(), // admin email
+      })
+      .authorization((allow) => [allow.group("admin")]),
+
     // ─── Broadcast (email broadcast history) ─────────────────────────
     Broadcast: a
       .model({
