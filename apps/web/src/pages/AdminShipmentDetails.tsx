@@ -418,9 +418,18 @@ export const AdminShipmentDetails = () => {
       }
 
       if (pdfFile) {
-        const s3Key = `invoices/${customer.cognitoSub}/${newInvoice.id}.pdf`
-        await uploadData({ path: s3Key, data: pdfFile, options: { contentType: 'application/pdf' } }).result
-        await client.models.Invoice.update({ id: newInvoice.id, s3Key })
+        // S3 keys are scoped by Cognito IDENTITY id, not cognitoSub. Writing under
+        // cognitoSub produces an object the customer can never read, so skip the
+        // upload rather than leave an unreachable file behind.
+        if (!customer.identityId) {
+          toast.error(
+            'Invoice saved, but the PDF was not attached — this customer has no storage identity yet. Ask them to sign in once, then re-upload.'
+          )
+        } else {
+          const s3Key = `invoices/${customer.identityId}/${newInvoice.id}.pdf`
+          await uploadData({ path: s3Key, data: pdfFile, options: { contentType: 'application/pdf' } }).result
+          await client.models.Invoice.update({ id: newInvoice.id, s3Key })
+        }
       }
 
       toast.success('Invoice created successfully')
@@ -487,10 +496,17 @@ export const AdminShipmentDetails = () => {
         status: editForm.status as Schema['Invoice']['type']['status'],
       })
 
-      if (editPdfFile && customer?.cognitoSub) {
-        const s3Key = `invoices/${customer.cognitoSub}/${editingInvoiceId}.pdf`
-        await uploadData({ path: s3Key, data: editPdfFile, options: { contentType: 'application/pdf' } }).result
-        await client.models.Invoice.update({ id: editingInvoiceId, s3Key })
+      if (editPdfFile) {
+        // See note in handleCreateInvoice — identity id, not cognitoSub.
+        if (!customer?.identityId) {
+          toast.error(
+            'Invoice updated, but the PDF was not attached — this customer has no storage identity yet. Ask them to sign in once, then re-upload.'
+          )
+        } else {
+          const s3Key = `invoices/${customer.identityId}/${editingInvoiceId}.pdf`
+          await uploadData({ path: s3Key, data: editPdfFile, options: { contentType: 'application/pdf' } }).result
+          await client.models.Invoice.update({ id: editingInvoiceId, s3Key })
+        }
       }
 
       toast.success('Invoice updated')

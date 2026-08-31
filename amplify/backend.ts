@@ -163,6 +163,61 @@ storageBucket.addEventNotification(
   { prefix: "receipts/" }
 );
 
+// ─── Customer group: entity-scoped S3 access ─────────────────────────────────
+// The identity pool uses Token-based role mapping, so a signed-in customer
+// assumes the customer GROUP role — never authenticatedUserIamRole. Amplify's
+// allow.groups() cannot substitute {entity_id}, so it would emit a literal
+// wildcard (documents/*) granting every customer access to every other
+// customer's files. The group rule was removed from storage/resource.ts and the
+// equivalent, identity-scoped policy is attached here instead.
+//
+// Without this block the customer group role would have NO S3 access at all.
+const customerGroup = backend.auth.resources.groups["customer"];
+if (!customerGroup) {
+  throw new Error(
+    "Expected a 'customer' Cognito group — S3 access policy cannot be attached"
+  );
+}
+
+// Plain string (not a template literal) so TS does not interpolate it — this is
+// an IAM policy variable resolved by AWS at request time.
+const IDENTITY_VAR = "${cognito-identity.amazonaws.com:sub}";
+const ownPrefix = (folder: string) => `${folder}/${IDENTITY_VAR}/*`;
+const ownObjects = (folder: string) =>
+  `${storageBucket.bucketArn}/${ownPrefix(folder)}`;
+
+new iam.Policy(storageBucket.stack, "CustomerGroupScopedStorageAccess", {
+  roles: [customerGroup.role],
+  statements: [
+    // Own documents + receipts: full access
+    new iam.PolicyStatement({
+      actions: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      resources: [ownObjects("documents"), ownObjects("receipts")],
+    }),
+    // Own invoices + shipment attachments: read-only
+    new iam.PolicyStatement({
+      actions: ["s3:GetObject"],
+      resources: [ownObjects("invoices"), ownObjects("shipments")],
+    }),
+    // Listing is constrained to the caller's own prefixes, so filenames
+    // belonging to other customers are not enumerable.
+    new iam.PolicyStatement({
+      actions: ["s3:ListBucket"],
+      resources: [storageBucket.bucketArn],
+      conditions: {
+        StringLike: {
+          "s3:prefix": [
+            ownPrefix("documents"),
+            ownPrefix("receipts"),
+            ownPrefix("invoices"),
+            ownPrefix("shipments"),
+          ],
+        },
+      },
+    }),
+  ],
+});
+
 // ─── SES: status-notifier email permissions ──────────────────────────────────
 const statusNotifierFn = backend.statusNotifier.resources.lambda as lambda.Function;
 const SES_IDENTITY_ARN = `arn:aws:ses:us-east-1:${backend.auth.resources.cfnResources.cfnUserPool.stack.account}:identity/cargolinkbarbados.com`;

@@ -55,6 +55,10 @@ const schema = a
         airSkyboxAddress: a.string(),
         seaSkyboxAddress: a.string(),
         cognitoSub: a.string(), // set by post-confirmation trigger
+        // Cognito IDENTITY id (identity-pool), distinct from cognitoSub.
+        // S3 keys are scoped by identity id, so admins need this to write an
+        // invoice PDF the customer can actually read. Backfilled on customer login.
+        identityId: a.string(),
         // Marketing email preferences — set by unsubscribe link or SES bounce/complaint handler.
         // Broadcasts skip customers with emailOptOut=true; transactional email is unaffected.
         emailOptOut: a.boolean(),
@@ -225,6 +229,19 @@ const schema = a
         allow.ownerDefinedIn("customerCognitoSub"),
         allow.group("admin"),
       ]),
+    // ─── DismissedUpload ─────────────────────────────────────────────
+    // Tombstone for an orphaned S3 upload that staff reviewed and judged
+    // not to be a customer invoice. /admin/unassigned-uploads subtracts
+    // these keys from its worklist so the list can actually reach zero.
+    // Reversible: delete the row and the file returns to the list.
+    DismissedUpload: a
+      .model({
+        s3Key: a.string().required(),
+        reason: a.string(),
+        dismissedBy: a.string(), // admin email
+      })
+      .authorization((allow) => [allow.group("admin")]),
+
     // ─── Broadcast (email broadcast history) ─────────────────────────
     Broadcast: a
       .model({

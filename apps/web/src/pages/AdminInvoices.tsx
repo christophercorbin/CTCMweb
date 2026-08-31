@@ -45,10 +45,22 @@ export const AdminInvoices = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { data: invList, errors } = await client.models.Invoice.list()
-      if (errors?.length) throw new Error(errors[0].message)
+      // Paginated: a single list() page caps at 100 records. Without this the
+      // legacy-receipt count undercounts and "Migrate now" silently strands
+      // every record past the first page.
+      const invList: AppSyncInvoice[] = []
+      let cursor: string | undefined
+      do {
+        const { data, errors, nextToken } = await client.models.Invoice.list({
+          limit: 1000,
+          nextToken: cursor,
+        })
+        if (errors?.length) throw new Error(errors[0].message)
+        invList.push(...(data ?? []))
+        cursor = nextToken ?? undefined
+      } while (cursor)
 
-      const sorted = [...(invList ?? [])].sort(
+      const sorted = [...invList].sort(
         (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
       )
       // Legacy customer order receipts were stored as $0 DRAFT Invoice records.
