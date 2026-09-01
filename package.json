@@ -5,7 +5,6 @@
   "type": "module",
   "workspaces": [
     "apps/web",
-    "packages/*",
     "amplify"
   ],
   "scripts": {
@@ -21,11 +20,9 @@
   "dependencies": {
     "@aws-amplify/backend": "^1.21.0",
     "@aws-amplify/backend-cli": "^1.8.2",
-    "@aws-sdk/client-lambda": "^3.1065.0",
     "aws-amplify": "^6.16.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-ses": "^3.1000.0",
     "@eslint/js": "^9.9.1",
     "@types/node": "^22.20.0",
     "@types/react": "^18.3.5",

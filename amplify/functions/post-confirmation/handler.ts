@@ -71,13 +71,30 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
   // postConfirmation is in the auth stack (not listed in data allow.resource()).
   let endpoint = process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT;
   if (!endpoint) {
-    // Discover the AppSync endpoint by listing APIs and matching by name pattern
+    // Discover the AppSync endpoint at runtime. Every Amplify Gen 2 environment
+    // names its API "amplifyData", so the name alone cannot distinguish
+    // develop / main / sandbox — matching by name picked whichever API the
+    // ListGraphqlApis response happened to return first, which could silently
+    // write this signup's Customer record into ANOTHER environment's table.
+    // The amplify:branch-name tag is the reliable discriminator; AMPLIFY_BRANCH
+    // is injected at synth time from the Amplify build's AWS_BRANCH. Fail
+    // closed (block the signup, fire the error alarm) rather than guess.
+    const branch = process.env.AMPLIFY_BRANCH;
     const { AppSyncClient, ListGraphqlApisCommand } = await import("@aws-sdk/client-appsync");
     const appsync = new AppSyncClient({});
     const apis = await appsync.send(new ListGraphqlApisCommand({ maxResults: 25 }));
-    const api = apis.graphqlApis?.find((a) => a.name?.includes("amplifyData"));
-    if (!api?.uris?.GRAPHQL) throw new Error("Could not discover AppSync endpoint");
-    endpoint = api.uris.GRAPHQL;
+    const candidates = (apis.graphqlApis ?? []).filter((a) => a.name?.includes("amplifyData"));
+    const matches = branch
+      ? candidates.filter((a) => a.tags?.["amplify:branch-name"] === branch)
+      : candidates.filter((a) => a.tags?.["amplify:deployment-type"] === "sandbox");
+    if (matches.length !== 1 || !matches[0].uris?.GRAPHQL) {
+      throw new Error(
+        `AppSync endpoint discovery failed: expected exactly 1 amplifyData API for ` +
+          `${branch ? `branch "${branch}"` : "sandbox"}, found ${matches.length} ` +
+          `(of ${candidates.length} amplifyData APIs in the account)`
+      );
+    }
+    endpoint = matches[0].uris.GRAPHQL;
   }
 
   const { SignatureV4 } = await import("@smithy/signature-v4");
