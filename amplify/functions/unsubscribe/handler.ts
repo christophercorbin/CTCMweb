@@ -12,8 +12,9 @@ import { createHmac, timingSafeEqual } from "crypto";
 const GRAPHQL_ENDPOINT =
   process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT ??
   process.env.GRAPHQL_API_ENDPOINT!;
-const UNSUBSCRIBE_SECRET =
-  process.env.UNSUBSCRIBE_SECRET ?? "cargolink-unsubscribe-dev-secret";
+// No fallback: this endpoint is a public function URL, so a repo-committed
+// default secret would let anyone forge opt-out tokens. Fail loudly instead.
+const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET;
 
 // ── SigV4 AppSync helper ──────────────────────────────────────────────────────
 async function makeSigner() {
@@ -49,6 +50,11 @@ async function appsyncRequest(body: string): Promise<{ data?: unknown; errors?: 
 
 // ── Token verification ────────────────────────────────────────────────────────
 function verifyToken(token: string): string | null {
+  if (!UNSUBSCRIBE_SECRET) {
+    throw new Error(
+      "UNSUBSCRIBE_SECRET is not configured — set it as an Amplify environment variable"
+    );
+  }
   const dotIndex = token.lastIndexOf(".");
   if (dotIndex <= 0) return null;
   const customerId = token.slice(0, dotIndex);

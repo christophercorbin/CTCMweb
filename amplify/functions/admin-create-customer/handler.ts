@@ -3,7 +3,6 @@ import {
   AdminCreateUserCommand,
   AdminAddUserToGroupCommand,
   AdminUpdateUserAttributesCommand,
-  ListUserPoolsCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { randomUUID, randomBytes } from "crypto";
@@ -19,36 +18,19 @@ const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 const APP_URL = process.env.APP_URL ?? "https://cargolinkbarbados.com";
 
 // ── User Pool ID resolution ──────────────────────────────────────────────────
-// USER_POOL_ID cannot be injected via CDK due to a cross-stack cycle
-// (data stack → auth stack). It can be set as an Amplify Console env var
-// for deployed branches. For sandbox, we auto-discover it at runtime.
-let cachedUserPoolId: string | undefined = process.env.USER_POOL_ID;
-
+// USER_POOL_ID is set per branch (Amplify Console env var, read at synth time
+// in backend.ts). There is deliberately NO runtime discovery fallback: every
+// environment's pool matched the old name-based search, so an admin action in
+// one environment could silently target another environment's pool. Fail
+// closed instead.
 async function getUserPoolId(): Promise<string> {
-  if (cachedUserPoolId) return cachedUserPoolId;
-
-  console.log("USER_POOL_ID not set — discovering via ListUserPools...");
-  const { UserPools } = await cognito.send(
-    new ListUserPoolsCommand({ MaxResults: 60 })
-  );
-
-  // Match the Amplify-managed pool by name pattern (contains "ctcm" or "cargolink")
-  const pool = UserPools?.find(
-    (p) =>
-      p.Name?.toLowerCase().includes("ctcm") ||
-      p.Name?.toLowerCase().includes("cargolink") ||
-      p.Name?.toLowerCase().includes("amplify")
-  );
-
-  if (!pool?.Id) {
+  const id = process.env.USER_POOL_ID;
+  if (!id) {
     throw new Error(
-      "Could not discover USER_POOL_ID — no matching pool found. Set it as an environment variable."
+      "USER_POOL_ID is not set — configure it as an Amplify branch environment variable"
     );
   }
-
-  console.log(`Discovered User Pool: ${pool.Name} (${pool.Id})`);
-  cachedUserPoolId = pool.Id;
-  return cachedUserPoolId;
+  return id;
 }
 
 // ── Temp password generator (cryptographically secure, unbiased) ─────────────
