@@ -6,6 +6,7 @@ import { Card, CardSkeleton, Badge, Timeline, ShipmentProgress } from '../compon
 import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl, remove } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import { TrackingItem, ShipmentStatus } from '../types'
 import { statusLabel } from '../constants/shipmentStatuses'
 
@@ -44,14 +45,33 @@ export const ShipmentDetails = () => {
         setShipment(data)
 
         if (data) {
-          const [{ data: eventList }, { data: invoiceList }, { data: docList }] = await Promise.all([
-            client.models.ShipmentEvent.list({ filter: { shipmentId: { eq: data.id } } }),
-            client.models.Invoice.list({ filter: { shipmentId: { eq: data.id } } }),
-            client.models.ShipmentDocument.list({ filter: { shipmentId: { eq: data.id } } }),
+          // Drain every cursor: a filtered list() applies its filter after a
+          // 100-row page is read, so one call silently returns nothing once the
+          // table outgrows a page. Query the secondary index where one exists.
+          const [eventList, invoiceList, docList] = await Promise.all([
+            listAll<Schema['ShipmentEvent']['type']>((nextToken) =>
+              client.models.ShipmentEvent.listShipmentEventByShipmentIdAndEventTimestamp(
+                { shipmentId: data.id },
+                { limit: 1000, nextToken }
+              )
+            ),
+            listAll<Schema['Invoice']['type']>((nextToken) =>
+              client.models.Invoice.list({
+                filter: { shipmentId: { eq: data.id } },
+                limit: 1000,
+                nextToken,
+              })
+            ),
+            listAll<Schema['ShipmentDocument']['type']>((nextToken) =>
+              client.models.ShipmentDocument.listShipmentDocumentByShipmentId(
+                { shipmentId: data.id },
+                { limit: 1000, nextToken }
+              )
+            ),
           ])
-          setEvents(eventList ?? [])
-          setInvoices(invoiceList ?? [])
-          setDocuments(docList ?? [])
+          setEvents(eventList)
+          setInvoices(invoiceList)
+          setDocuments(docList)
         }
       } catch {
         toast.error('Failed to load shipment details')
@@ -145,7 +165,12 @@ export const ShipmentDetails = () => {
         options: { contentType: file.type },
       }).result
 
-      const { data: newDoc } = await client.models.ShipmentDocument.create({
+      // The S3 object alone is invisible to staff — the ShipmentDocument row is
+      // what puts this receipt on the shipment for admins. The Amplify Data
+      // client RESOLVES on GraphQL errors rather than throwing, so without this
+      // check an auth/validation denial is reported to the customer as success
+      // and the file is orphaned in the bucket forever.
+      const { data: newDoc, errors } = await client.models.ShipmentDocument.create({
         shipmentId: shipment.id,
         customerId: shipment.customerId,
         s3Key: result.path,
@@ -156,13 +181,17 @@ export const ShipmentDetails = () => {
         uploadedBy: 'CUSTOMER',
         customerCognitoSub: shipment.customerCognitoSub ?? undefined,
       })
+      if (errors?.length) throw new Error(errors[0].message)
       if (newDoc) setDocuments((prev) => [...prev, newDoc])
 
       toast.success('Receipt uploaded successfully')
       setUploadStatus('success')
       // Keep the confirmed state visible, then reset so another file can be added.
       window.setTimeout(() => setUploadStatus('idle'), 4000)
-    } catch {
+    } catch (err) {
+      // Log the underlying cause — an AppSync auth/validation message here is
+      // the only clue to why a receipt failed to attach.
+      console.error('Receipt upload failed', err)
       toast.error('Failed to upload receipt')
       setUploadStatus('idle')
     } finally {

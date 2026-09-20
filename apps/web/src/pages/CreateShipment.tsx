@@ -125,7 +125,12 @@ export const CreateShipment = () => {
               data: file,
               options: { contentType: file.type },
             }).result
-            await client.models.ShipmentDocument.create({
+            // The S3 object alone is invisible to staff — the ShipmentDocument
+            // row is what puts this invoice on the shipment for admins. The
+            // Amplify Data client RESOLVES on GraphQL errors rather than
+            // throwing, so without this check allSettled counts a denied write
+            // as fulfilled and the file is orphaned in the bucket forever.
+            const { errors: docErrors } = await client.models.ShipmentDocument.create({
               shipmentId: shipment.id,
               customerId,
               s3Key: result.path,
@@ -136,9 +141,15 @@ export const CreateShipment = () => {
               uploadedBy: 'CUSTOMER',
               customerCognitoSub: customerSub ?? undefined,
             })
+            if (docErrors?.length) throw new Error(docErrors[0].message)
           })
         )
         const anyFailed = uploadResults.some((r) => r.status === 'rejected')
+        // Log the underlying cause — an AppSync auth/validation message here is
+        // the only clue to why an invoice failed to attach to the pre-alert.
+        uploadResults.forEach((r) => {
+          if (r.status === 'rejected') console.error('Invoice upload failed', r.reason)
+        })
         if (anyFailed) {
           toast('Pre-alert created — some invoices failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
         } else {

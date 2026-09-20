@@ -128,4 +128,24 @@ describe('ShipmentDetails — receipt upload feedback', () => {
     );
     expect(screen.queryByText(/uploaded successfully/i)).not.toBeInTheDocument();
   });
+
+  it('does not report success when the database write fails', async () => {
+    // The Amplify Data client resolves (does not throw) on GraphQL errors, so
+    // an auth/validation denial here leaves the S3 object orphaned and invisible
+    // to admins. The customer must not be told the receipt was uploaded.
+    h.docCreate.mockResolvedValue({ data: null, errors: [{ message: 'Unauthorized' }] });
+
+    const { container } = render(<ShipmentDetails />);
+    await waitFor(() =>
+      expect(container.querySelector('input[type="file"]')).toBeInTheDocument()
+    );
+
+    uploadFile(container);
+
+    await waitFor(() =>
+      expect(h.toastFn.error).toHaveBeenCalledWith('Failed to upload receipt')
+    );
+    expect(h.toastFn.success).not.toHaveBeenCalled();
+    expect(screen.queryByText(/uploaded successfully/i)).not.toBeInTheDocument();
+  });
 });
