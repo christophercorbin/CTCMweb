@@ -1,0 +1,6 @@
+// Fixture: an undrained list() with an explicit opt-out.
+export const load = async () => {
+  // pagination-ok: only the 50 most recent are shown
+  const { data } = await client.models.Broadcast.list({ limit: 50 })
+  return data
+}

@@ -1,0 +1,5 @@
+// Fixture: an undrained list() the guard must reject.
+export const load = async () => {
+  const { data } = await client.models.Invoice.list({ filter: { shipmentId: { eq: id } } })
+  return data
+}

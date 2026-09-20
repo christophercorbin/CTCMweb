@@ -12,6 +12,7 @@ import { SHIPMENT_STATUS_OPTIONS } from '../constants/shipmentStatuses'
 import { useShipments } from '../hooks/useShipments'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 
 const client = generateClient<Schema>()
 
@@ -85,18 +86,36 @@ export const AdminDashboard = () => {
   const handleDeleteShipment = async (shipment: DynamoShipment) => {
     setDeletingId(shipment.id)
     try {
-      // Cascade-delete all child records first
+      // Cascade-delete all child records first. Every cursor is drained: an
+      // undrained filtered list() reads one page and applies the filter after,
+      // so children past that page survive the delete as orphan rows.
       const [pkgs, evts, charges, invs] = await Promise.all([
-        client.models.Package.list({ filter: { shipmentId: { eq: shipment.id } } }),
-        client.models.ShipmentEvent.list({ filter: { shipmentId: { eq: shipment.id } } }),
-        client.models.ShipmentCharge.list({ filter: { shipmentId: { eq: shipment.id } } }),
-        client.models.Invoice.list({ filter: { shipmentId: { eq: shipment.id } } }),
+        listAll<Schema['Package']['type']>((nextToken) =>
+          client.models.Package.list({
+            filter: { shipmentId: { eq: shipment.id } }, limit: 1000, nextToken,
+          })
+        ),
+        listAll<Schema['ShipmentEvent']['type']>((nextToken) =>
+          client.models.ShipmentEvent.listShipmentEventByShipmentIdAndEventTimestamp(
+            { shipmentId: shipment.id }, { limit: 1000, nextToken }
+          )
+        ),
+        listAll<Schema['ShipmentCharge']['type']>((nextToken) =>
+          client.models.ShipmentCharge.list({
+            filter: { shipmentId: { eq: shipment.id } }, limit: 1000, nextToken,
+          })
+        ),
+        listAll<Schema['Invoice']['type']>((nextToken) =>
+          client.models.Invoice.list({
+            filter: { shipmentId: { eq: shipment.id } }, limit: 1000, nextToken,
+          })
+        ),
       ])
       await Promise.all([
-        ...pkgs.data.map(p => client.models.Package.delete({ id: p.id })),
-        ...evts.data.map(e => client.models.ShipmentEvent.delete({ id: e.id })),
-        ...charges.data.map(c => client.models.ShipmentCharge.delete({ id: c.id })),
-        ...invs.data.map(i => client.models.Invoice.delete({ id: i.id })),
+        ...pkgs.map(p => client.models.Package.delete({ id: p.id })),
+        ...evts.map(e => client.models.ShipmentEvent.delete({ id: e.id })),
+        ...charges.map(c => client.models.ShipmentCharge.delete({ id: c.id })),
+        ...invs.map(i => client.models.Invoice.delete({ id: i.id })),
       ])
       await client.models.Shipment.delete({ id: shipment.id })
       toast.success(`${shipment.trackingNumber} deleted`)

@@ -16,7 +16,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "preview": "npm run preview --workspace=apps/web",
-    "sandbox": "npm run sandbox --workspace=amplify"
+    "sandbox": "npm run sandbox --workspace=amplify",
+    "check:pagination": "node scripts/check-pagination.mjs"
   },
   "dependencies": {
     "@aws-amplify/backend": "^1.21.0",

@@ -1,0 +1,3 @@
+// Fixture: a drained list() the guard must accept.
+export const load = async () =>
+  listAll((nextToken) => client.models.Invoice.list({ limit: 1000, nextToken }))

@@ -12,6 +12,18 @@ on:
     branches: [main, develop]
 
 jobs:
+  # Undrained list() queries silently drop records once a table outgrows one
+  # page — the failure that hid 54% of customer invoices from admins. Needs no
+  # AWS credentials or amplify_outputs.json: it is a static source scan.
+  pagination:
+    name: Pagination Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - run: node scripts/check-pagination.mjs
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

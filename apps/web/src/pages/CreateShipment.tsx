@@ -10,6 +10,7 @@ import { generateClient } from 'aws-amplify/data'
 import { uploadData, remove } from 'aws-amplify/storage'
 import { fetchUserAttributes } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 
 const client = generateClient<Schema>()
 
@@ -55,22 +56,32 @@ export const CreateShipment = () => {
 
         // 2. Customer.list() — works when allow.owner() or allow.ownerDefinedIn("cognitoSub") match
         // Also now works for admin-created accounts via allow.ownerDefinedIn("email")
-        // limit:1000 so auth-filtered records aren't hidden by AppSync's 100-item scan page
-        const { data } = await client.models.Customer.list({ limit: 1000 })
-        if (data?.[0]) { setCustomerId(data[0].id); return }
+        // Drained: auth-filtered records are applied after each page is read,
+        // so a single page can come back empty while the caller's own record
+        // sits further in.
+        const data = await listAll<Schema['Customer']['type']>((nextToken) =>
+          client.models.Customer.list({ limit: 1000, nextToken })
+        )
+        if (data[0]) { setCustomerId(data[0].id); return }
 
         // 3. Explicit email filter — belt-and-suspenders for edge cases
         const email = attrs['email']
         if (email) {
-          const { data: byEmail } = await client.models.Customer.list({
-            filter: { email: { eq: email } },
-          })
-          if (byEmail?.[0]) setCustomerId(byEmail[0].id)
+          const byEmail = await listAll<Schema['Customer']['type']>((nextToken) =>
+            client.models.Customer.list({
+              filter: { email: { eq: email } },
+              limit: 1000,
+              nextToken,
+            })
+          )
+          if (byEmail[0]) setCustomerId(byEmail[0].id)
         }
       })
       .catch(() => {
-        client.models.Customer.list({ limit: 1000 }).then(({ data }) => {
-          if (data?.[0]) setCustomerId(data[0].id)
+        listAll<Schema['Customer']['type']>((nextToken) =>
+          client.models.Customer.list({ limit: 1000, nextToken })
+        ).then((data) => {
+          if (data[0]) setCustomerId(data[0].id)
         })
       })
       .finally(() => setCustomerLoading(false))
