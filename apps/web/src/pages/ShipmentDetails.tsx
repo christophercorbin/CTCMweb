@@ -181,7 +181,15 @@ export const ShipmentDetails = () => {
         uploadedBy: 'CUSTOMER',
         customerCognitoSub: shipment.customerCognitoSub ?? undefined,
       })
-      if (errors?.length) throw new Error(errors[0].message)
+      if (errors?.length) {
+        // Drop the S3 object we just wrote. AdminUnassignedUploads only
+        // surfaces orphans under the legacy documents/{id}/invoices/ prefix,
+        // so a shipment-prefixed file with no row would be invisible to every
+        // view. Better no file than an unreachable one — the customer is told
+        // to retry.
+        await remove({ path: result.path }).catch(() => {})
+        throw new Error(errors.map((e) => e.message).join('; '))
+      }
       if (newDoc) setDocuments((prev) => [...prev, newDoc])
 
       toast.success('Receipt uploaded successfully')

@@ -133,44 +133,44 @@ export const AdminShipmentDetails = () => {
         // page — which is how customer-uploaded invoices vanished from this
         // page. Where the schema defines a secondary index, query it instead of
         // scanning.
-        const eventList = await listAll<Schema['ShipmentEvent']['type']>((nextToken) =>
-          client.models.ShipmentEvent.listShipmentEventByShipmentIdAndEventTimestamp(
-            { shipmentId: s.id },
-            { limit: 1000, nextToken }
-          )
-        )
+        const [eventList, packageList, invoiceList, docList] = await Promise.all([
+          listAll<Schema['ShipmentEvent']['type']>((nextToken) =>
+            client.models.ShipmentEvent.listShipmentEventByShipmentIdAndEventTimestamp(
+              { shipmentId: s.id },
+              { limit: 1000, nextToken }
+            )
+          ),
+          listAll<Schema['Package']['type']>((nextToken) =>
+            client.models.Package.list({
+              filter: { shipmentId: { eq: s.id } },
+              limit: 1000,
+              nextToken,
+            })
+          ),
+          // Invoice has no shipmentId index, so this stays a scan — but a
+          // drained one. Add index("shipmentId") to Invoice to make it a query.
+          listAll<Schema['Invoice']['type']>((nextToken) =>
+            client.models.Invoice.list({
+              filter: { shipmentId: { eq: s.id } },
+              limit: 1000,
+              nextToken,
+            })
+          ),
+          listAll<Schema['ShipmentDocument']['type']>((nextToken) =>
+            client.models.ShipmentDocument.listShipmentDocumentByShipmentId(
+              { shipmentId: s.id },
+              { limit: 1000, nextToken }
+            )
+          ),
+        ])
+
         setEvents(
           [...eventList].sort(
             (a, b) => new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
           )
         )
-
-        const packageList = await listAll<Schema['Package']['type']>((nextToken) =>
-          client.models.Package.list({
-            filter: { shipmentId: { eq: s.id } },
-            limit: 1000,
-            nextToken,
-          })
-        )
         setPackages(packageList)
-
-        // Invoice has no shipmentId index, so this stays a scan — but a drained
-        // one. Add index("shipmentId") to the Invoice model to make it a query.
-        const invoiceList = await listAll<Schema['Invoice']['type']>((nextToken) =>
-          client.models.Invoice.list({
-            filter: { shipmentId: { eq: s.id } },
-            limit: 1000,
-            nextToken,
-          })
-        )
         setInvoices(invoiceList)
-
-        const docList = await listAll<Schema['ShipmentDocument']['type']>((nextToken) =>
-          client.models.ShipmentDocument.listShipmentDocumentByShipmentId(
-            { shipmentId: s.id },
-            { limit: 1000, nextToken }
-          )
-        )
         setShipmentDocs(docList)
       }
     } catch {
@@ -234,10 +234,16 @@ export const AdminShipmentDetails = () => {
     if (!shipment) return
     setDeletingShipment(true)
     try {
-      // Fetch charges separately (not in local state)
-      const { data: charges } = await client.models.ShipmentCharge.list({
-        filter: { shipmentId: { eq: shipment.id } },
-      })
+      // Fetch charges separately (not in local state). Drained: an undrained
+      // filtered list() would miss charges past the first page and strand them
+      // as orphan rows after the shipment is deleted.
+      const charges = await listAll<Schema['ShipmentCharge']['type']>((nextToken) =>
+        client.models.ShipmentCharge.list({
+          filter: { shipmentId: { eq: shipment.id } },
+          limit: 1000,
+          nextToken,
+        })
+      )
       await Promise.all([
         ...packages.map(p => client.models.Package.delete({ id: p.id })),
         ...events.map(e => client.models.ShipmentEvent.delete({ id: e.id })),

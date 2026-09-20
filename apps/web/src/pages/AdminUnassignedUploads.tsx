@@ -45,7 +45,6 @@ function parseKey(s3Key: string, size: number, lastModified?: Date): Orphan | nu
   }
 }
 
-
 const fmtDate = (d: Date) =>
   d.getTime() ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
 

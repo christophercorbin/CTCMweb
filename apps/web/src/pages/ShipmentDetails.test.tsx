@@ -11,6 +11,8 @@ const h = vi.hoisted(() => {
     invoiceList: vi.fn(),
     docList: vi.fn(),
     docCreate: vi.fn(),
+    docDelete: vi.fn(),
+    invoiceDelete: vi.fn(),
     onUpdate: vi.fn(),
     uploadData: vi.fn(),
     getUrl: vi.fn(),
@@ -30,9 +32,13 @@ vi.mock('aws-amplify/data', () => ({
   generateClient: () => ({
     models: {
       Shipment: { get: h.shipmentGet, onUpdate: h.onUpdate },
-      ShipmentEvent: { list: h.eventList },
-      Invoice: { list: h.invoiceList },
-      ShipmentDocument: { list: h.docList, create: h.docCreate },
+      ShipmentEvent: { listShipmentEventByShipmentIdAndEventTimestamp: h.eventList },
+      Invoice: { list: h.invoiceList, delete: h.invoiceDelete },
+      ShipmentDocument: {
+        listShipmentDocumentByShipmentId: h.docList,
+        create: h.docCreate,
+        delete: h.docDelete,
+      },
     },
   }),
 }));
@@ -64,6 +70,9 @@ describe('ShipmentDetails — receipt upload feedback', () => {
     h.eventList.mockResolvedValue({ data: [] });
     h.invoiceList.mockResolvedValue({ data: [] });
     h.docList.mockResolvedValue({ data: [] });
+    h.docDelete.mockResolvedValue({ data: null });
+    h.remove.mockResolvedValue({});
+    h.invoiceDelete.mockResolvedValue({ data: null });
     h.onUpdate.mockReturnValue({ subscribe: () => ({ unsubscribe: vi.fn() }) });
     h.uploadData.mockReturnValue({
       result: Promise.resolve({ path: 'documents/id/shipments/ship-1/1-test.pdf' }),
@@ -147,5 +156,41 @@ describe('ShipmentDetails — receipt upload feedback', () => {
     );
     expect(h.toastFn.success).not.toHaveBeenCalled();
     expect(screen.queryByText(/uploaded successfully/i)).not.toBeInTheDocument();
+    // The S3 object is cleaned up, so no file is left that no admin view lists.
+    expect(h.remove).toHaveBeenCalledWith({
+      path: 'documents/id/shipments/ship-1/1-test.pdf',
+    });
+  });
+
+  it('loads the shipment without falling into the error path', async () => {
+    // Guards the mocks against drifting away from the queries the component
+    // actually calls: when they diverge the fetch throws, the catch swallows
+    // it, and every other test in this file passes while asserting nothing.
+    const { container } = render(<ShipmentDetails />);
+    await waitFor(() =>
+      expect(container.querySelector('input[type="file"]')).toBeInTheDocument()
+    );
+    expect(h.toastFn.error).not.toHaveBeenCalledWith('Failed to load shipment details');
+    expect(h.eventList).toHaveBeenCalled();
+    expect(h.docList).toHaveBeenCalled();
+  });
+
+  it('renders documents from every page, not just the first', async () => {
+    // The reported bug: a single page was read and the rest silently dropped.
+    h.docList
+      .mockResolvedValueOnce({
+        data: [{ id: 'd1', fileName: 'page-one.pdf', s3Key: 'k1', createdAt: '2026-01-01T00:00:00.000Z' }],
+        nextToken: 'cursor-1',
+      })
+      .mockResolvedValueOnce({
+        data: [{ id: 'd2', fileName: 'page-two.pdf', s3Key: 'k2', createdAt: '2026-01-02T00:00:00.000Z' }],
+        nextToken: null,
+      });
+
+    render(<ShipmentDetails />);
+
+    expect(await screen.findByText('page-one.pdf')).toBeInTheDocument();
+    expect(await screen.findByText('page-two.pdf')).toBeInTheDocument();
+    expect(h.docList).toHaveBeenCalledTimes(2);
   });
 });

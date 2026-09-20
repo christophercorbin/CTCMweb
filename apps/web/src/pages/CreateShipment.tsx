@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Upload, X, FileText, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Textarea, Card, Select } from '../components'
 import { generateClient } from 'aws-amplify/data'
-import { uploadData } from 'aws-amplify/storage'
+import { uploadData, remove } from 'aws-amplify/storage'
 import { fetchUserAttributes } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
 
@@ -141,7 +141,13 @@ export const CreateShipment = () => {
               uploadedBy: 'CUSTOMER',
               customerCognitoSub: customerSub ?? undefined,
             })
-            if (docErrors?.length) throw new Error(docErrors[0].message)
+            if (docErrors?.length) {
+              // Drop the S3 object we just wrote — a shipment-prefixed file
+              // with no row is invisible to every admin view, including the
+              // unassigned-uploads recovery list.
+              await remove({ path: result.path }).catch(() => {})
+              throw new Error(docErrors.map((e) => e.message).join('; '))
+            }
           })
         )
         const anyFailed = uploadResults.some((r) => r.status === 'rejected')

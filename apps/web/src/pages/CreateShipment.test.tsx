@@ -11,6 +11,7 @@ const h = vi.hoisted(() => {
     shipmentDocCreate: vi.fn(),
     customerList: vi.fn(),
     uploadData: vi.fn(),
+    remove: vi.fn(),
     fetchUserAttributes: vi.fn(),
   };
 });
@@ -32,7 +33,7 @@ vi.mock('aws-amplify/data', () => ({
   }),
 }));
 
-vi.mock('aws-amplify/storage', () => ({ uploadData: h.uploadData }));
+vi.mock('aws-amplify/storage', () => ({ uploadData: h.uploadData, remove: h.remove }));
 vi.mock('aws-amplify/auth', () => ({ fetchUserAttributes: h.fetchUserAttributes }));
 
 import { CreateShipment } from './CreateShipment';
@@ -56,6 +57,7 @@ describe('CreateShipment — submit feedback', () => {
       'custom:customerId': 'cust-1',
     });
     h.shipmentCreate.mockResolvedValue({ data: { id: 'ship-1' }, errors: null });
+    h.remove.mockResolvedValue({});
   });
 
   it('shows a success state on the button and a success toast after submitting', async () => {
