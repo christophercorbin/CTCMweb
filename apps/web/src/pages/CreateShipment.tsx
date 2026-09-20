@@ -7,9 +7,10 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Upload, X, FileText, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Textarea, Card, Select } from '../components'
 import { generateClient } from 'aws-amplify/data'
-import { uploadData } from 'aws-amplify/storage'
+import { uploadData, remove } from 'aws-amplify/storage'
 import { fetchUserAttributes } from 'aws-amplify/auth'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 
 const client = generateClient<Schema>()
 
@@ -55,22 +56,32 @@ export const CreateShipment = () => {
 
         // 2. Customer.list() — works when allow.owner() or allow.ownerDefinedIn("cognitoSub") match
         // Also now works for admin-created accounts via allow.ownerDefinedIn("email")
-        // limit:1000 so auth-filtered records aren't hidden by AppSync's 100-item scan page
-        const { data } = await client.models.Customer.list({ limit: 1000 })
-        if (data?.[0]) { setCustomerId(data[0].id); return }
+        // Drained: auth-filtered records are applied after each page is read,
+        // so a single page can come back empty while the caller's own record
+        // sits further in.
+        const data = await listAll<Schema['Customer']['type']>((nextToken) =>
+          client.models.Customer.list({ limit: 1000, nextToken })
+        )
+        if (data[0]) { setCustomerId(data[0].id); return }
 
         // 3. Explicit email filter — belt-and-suspenders for edge cases
         const email = attrs['email']
         if (email) {
-          const { data: byEmail } = await client.models.Customer.list({
-            filter: { email: { eq: email } },
-          })
-          if (byEmail?.[0]) setCustomerId(byEmail[0].id)
+          const byEmail = await listAll<Schema['Customer']['type']>((nextToken) =>
+            client.models.Customer.list({
+              filter: { email: { eq: email } },
+              limit: 1000,
+              nextToken,
+            })
+          )
+          if (byEmail[0]) setCustomerId(byEmail[0].id)
         }
       })
       .catch(() => {
-        client.models.Customer.list({ limit: 1000 }).then(({ data }) => {
-          if (data?.[0]) setCustomerId(data[0].id)
+        listAll<Schema['Customer']['type']>((nextToken) =>
+          client.models.Customer.list({ limit: 1000, nextToken })
+        ).then((data) => {
+          if (data[0]) setCustomerId(data[0].id)
         })
       })
       .finally(() => setCustomerLoading(false))
@@ -125,7 +136,12 @@ export const CreateShipment = () => {
               data: file,
               options: { contentType: file.type },
             }).result
-            await client.models.ShipmentDocument.create({
+            // The S3 object alone is invisible to staff — the ShipmentDocument
+            // row is what puts this invoice on the shipment for admins. The
+            // Amplify Data client RESOLVES on GraphQL errors rather than
+            // throwing, so without this check allSettled counts a denied write
+            // as fulfilled and the file is orphaned in the bucket forever.
+            const { errors: docErrors } = await client.models.ShipmentDocument.create({
               shipmentId: shipment.id,
               customerId,
               s3Key: result.path,
@@ -136,9 +152,21 @@ export const CreateShipment = () => {
               uploadedBy: 'CUSTOMER',
               customerCognitoSub: customerSub ?? undefined,
             })
+            if (docErrors?.length) {
+              // Drop the S3 object we just wrote — a shipment-prefixed file
+              // with no row is invisible to every admin view, including the
+              // unassigned-uploads recovery list.
+              await remove({ path: result.path }).catch(() => {})
+              throw new Error(docErrors.map((e) => e.message).join('; '))
+            }
           })
         )
         const anyFailed = uploadResults.some((r) => r.status === 'rejected')
+        // Log the underlying cause — an AppSync auth/validation message here is
+        // the only clue to why an invoice failed to attach to the pre-alert.
+        uploadResults.forEach((r) => {
+          if (r.status === 'rejected') console.error('Invoice upload failed', r.reason)
+        })
         if (anyFailed) {
           toast('Pre-alert created — some invoices failed to upload. You can retry from the shipment page.', { icon: '⚠️' })
         } else {

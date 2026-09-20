@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import { Badge, Card, CardSkeleton } from '../components'
 import { AdminCreateShipmentModal } from './admin/AdminCreateShipmentModal'
 import { ShipmentStatus } from '../types'
@@ -37,17 +38,21 @@ export const AdminCustomerDetail = () => {
     let cancelled = false
     const fetchData = async () => {
       try {
-        const [customerResult, shipmentsResult] = await Promise.all([
+        const [customerResult, shipmentRows] = await Promise.all([
           client.models.Customer.get({ id }),
-          client.models.Shipment.list({
-            filter: { customerId: { eq: id } },
-            limit: 500,
-          }),
+          // Index query + drained cursor: a filtered list() applies its filter
+          // after one page, so this customer's older shipments went missing.
+          listAll<Schema['Shipment']['type']>((nextToken) =>
+            client.models.Shipment.listShipmentByCustomerId(
+              { customerId: id },
+              { limit: 1000, nextToken }
+            )
+          ),
         ])
         if (cancelled) return
         setCustomer(customerResult.data)
         setShipments(
-          (shipmentsResult.data ?? []).sort((a, b) => {
+          [...shipmentRows].sort((a, b) => {
             const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
             const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
             return bTime - aTime

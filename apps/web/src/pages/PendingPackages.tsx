@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import { useShipments } from '../hooks/useShipments'
 import {
   Package, Send, Clock, Box, Scale, CheckCircle2, AlertCircle,
@@ -174,10 +175,14 @@ export const PendingPackages = () => {
     pending.forEach(async (s) => {
       if (fetchedRef.current.has(s.id)) return
       fetchedRef.current.add(s.id)
-      const { data } = await client.models.Package.list({
-        filter: { shipmentId: { eq: s.id } },
-      })
-      if (data?.length) {
+      // Drained: an undrained filtered list() reads one page and filters
+      // after, so packages past that page never reach the warehouse view.
+      const data = await listAll<Schema['Package']['type']>((nextToken) =>
+        client.models.Package.list({
+          filter: { shipmentId: { eq: s.id } }, limit: 1000, nextToken,
+        })
+      )
+      if (data.length) {
         setPkgMap((prev) => ({ ...prev, [s.id]: data }))
       }
     })

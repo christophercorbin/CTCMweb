@@ -12,6 +12,8 @@ const h = vi.hoisted(() => {
     customerUpdate: vi.fn(),
     shipmentDelete: vi.fn(),
     docCreate: vi.fn(),
+    docByShipment: vi.fn(),
+    docDelete: vi.fn(),
     docList: vi.fn(),
     uploadData: vi.fn(),
     fetchAuthSession: vi.fn(),
@@ -32,7 +34,12 @@ vi.mock('aws-amplify/data', () => ({
       Invoice: { list: h.invoiceList, delete: h.invoiceDelete },
       Customer: { list: h.customerList, update: h.customerUpdate },
       Shipment: { delete: h.shipmentDelete },
-      ShipmentDocument: { create: h.docCreate, list: h.docList },
+      ShipmentDocument: {
+        create: h.docCreate,
+        list: h.docList,
+        listShipmentDocumentByShipmentId: h.docByShipment,
+        delete: h.docDelete,
+      },
     },
   }),
 }))
@@ -81,6 +88,10 @@ describe('CustomerDashboard — invoice upload is persisted, not orphaned in S3'
     h.invoiceList.mockResolvedValue({ data: [], nextToken: null })
     h.docList.mockResolvedValue({ data: [], nextToken: null })
     h.customerList.mockResolvedValue({ data: [] })
+    h.docByShipment.mockResolvedValue({ data: [], nextToken: null })
+    h.docDelete.mockResolvedValue({ data: null })
+    h.invoiceDelete.mockResolvedValue({ data: null })
+    h.shipmentDelete.mockResolvedValue({ data: null })
     h.fetchAuthSession.mockResolvedValue({ identityId: 'us-east-1:abc' })
     h.uploadData.mockReturnValue({
       result: Promise.resolve({
@@ -142,5 +153,28 @@ describe('CustomerDashboard — invoice upload is persisted, not orphaned in S3'
     // No shipment selected yet -> Upload must stay disabled.
     expect(screen.getByRole('button', { name: /^Upload$/ })).toBeDisabled()
     expect(h.uploadData).not.toHaveBeenCalled()
+  })
+
+  it('deletes uploaded documents along with the pre-alert, leaving no orphan rows', async () => {
+    // Deleting a pre-alert used to remove only Invoice rows, so the
+    // ShipmentDocument rows customers now upload against survived their parent
+    // shipment and became unreachable.
+    h.docByShipment.mockResolvedValue({
+      data: [{ id: 'doc-1' }, { id: 'doc-2' }],
+      nextToken: null,
+    })
+    h.invoiceList.mockResolvedValue({ data: [{ id: 'inv-1' }], nextToken: null })
+    // The delete control only renders for customer-created pre-alerts.
+    h.shipments = [{ ...SHIPMENT, shipmentSource: 'CUSTOMER' }]
+
+    render(<CustomerDashboard />)
+
+    fireEvent.click(await screen.findByTitle(/delete pre-alert/i))
+    fireEvent.click(await screen.findByRole('button', { name: /yes, delete/i }))
+
+    await waitFor(() => expect(h.shipmentDelete).toHaveBeenCalledWith({ id: 'ship-1' }))
+    expect(h.docDelete).toHaveBeenCalledWith({ id: 'doc-1' })
+    expect(h.docDelete).toHaveBeenCalledWith({ id: 'doc-2' })
+    expect(h.invoiceDelete).toHaveBeenCalledWith({ id: 'inv-1' })
   })
 })

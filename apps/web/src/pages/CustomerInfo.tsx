@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
+import { listAll } from '../lib/listAll'
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -148,15 +149,15 @@ export const CustomerInfo = () => {
   const fetchCustomerInfo = async () => {
     try {
       setLoading(true);
-      const { data, errors } = await client.models.Customer.list({ limit: 1000 });
+      // Drained: auth filtering is applied after each page is read, so one
+      // page can come back empty while the caller's own record sits further in.
+      // listAll throws when a page errors with no usable rows; the catch below
+      // already surfaces that.
+      const data = await listAll<Schema['Customer']['type']>((nextToken) =>
+        client.models.Customer.list({ limit: 1000, nextToken })
+      );
 
-      if (errors?.length) {
-        console.error('[CustomerInfo] AppSync errors:', errors);
-        toast.error('Failed to load customer information');
-        return;
-      }
-
-      const row = data?.[0];
+      const row = data[0];
       if (!row) {
         setLoading(false);
         return;

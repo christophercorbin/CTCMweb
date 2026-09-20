@@ -148,6 +148,7 @@ export const AdminBroadcast = () => {
   const fetchHistory = async () => {
     try {
       setLoadingHistory(true);
+      // pagination-ok: history panel deliberately shows only the 50 most recent broadcasts
       const result = await client.models.Broadcast.list({ limit: 50 });
       if (result.errors?.length) throw new Error(result.errors[0].message);
       const sorted = [...result.data].sort(

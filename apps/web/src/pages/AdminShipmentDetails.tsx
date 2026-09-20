@@ -6,6 +6,7 @@ import { Button, Card, CardSkeleton, Badge, Timeline } from '../components'
 import { generateClient } from 'aws-amplify/data'
 import { uploadData, getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import { TrackingItem, ShipmentStatus } from '../types'
 import { StatusUpdatePanel } from './admin/StatusUpdatePanel'
 
@@ -126,29 +127,51 @@ export const AdminShipmentDetails = () => {
         const { data: c } = await client.models.Customer.get({ id: s.customerId })
         setCustomer(c)
 
-        const { data: eventList } = await client.models.ShipmentEvent.list({
-          filter: { shipmentId: { eq: s.id } },
-        })
+        // Every one of these must drain its cursor. A filtered list() is a
+        // table scan whose filter is applied *after* a 100-row page is read, so
+        // a single call silently returns nothing once the table outgrows one
+        // page — which is how customer-uploaded invoices vanished from this
+        // page. Where the schema defines a secondary index, query it instead of
+        // scanning.
+        const [eventList, packageList, invoiceList, docList] = await Promise.all([
+          listAll<Schema['ShipmentEvent']['type']>((nextToken) =>
+            client.models.ShipmentEvent.listShipmentEventByShipmentIdAndEventTimestamp(
+              { shipmentId: s.id },
+              { limit: 1000, nextToken }
+            )
+          ),
+          listAll<Schema['Package']['type']>((nextToken) =>
+            client.models.Package.list({
+              filter: { shipmentId: { eq: s.id } },
+              limit: 1000,
+              nextToken,
+            })
+          ),
+          // Invoice has no shipmentId index, so this stays a scan — but a
+          // drained one. Add index("shipmentId") to Invoice to make it a query.
+          listAll<Schema['Invoice']['type']>((nextToken) =>
+            client.models.Invoice.list({
+              filter: { shipmentId: { eq: s.id } },
+              limit: 1000,
+              nextToken,
+            })
+          ),
+          listAll<Schema['ShipmentDocument']['type']>((nextToken) =>
+            client.models.ShipmentDocument.listShipmentDocumentByShipmentId(
+              { shipmentId: s.id },
+              { limit: 1000, nextToken }
+            )
+          ),
+        ])
+
         setEvents(
-          [...(eventList ?? [])].sort(
+          [...eventList].sort(
             (a, b) => new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
           )
         )
-
-        const { data: packageList } = await client.models.Package.list({
-          filter: { shipmentId: { eq: s.id } },
-        })
-        setPackages(packageList ?? [])
-
-        const { data: invoiceList } = await client.models.Invoice.list({
-          filter: { shipmentId: { eq: s.id } },
-        })
-        setInvoices(invoiceList ?? [])
-
-        const { data: docList } = await client.models.ShipmentDocument.list({
-          filter: { shipmentId: { eq: s.id } },
-        })
-        setShipmentDocs(docList ?? [])
+        setPackages(packageList)
+        setInvoices(invoiceList)
+        setShipmentDocs(docList)
       }
     } catch {
       toast.error('Failed to load shipment details')
@@ -211,10 +234,16 @@ export const AdminShipmentDetails = () => {
     if (!shipment) return
     setDeletingShipment(true)
     try {
-      // Fetch charges separately (not in local state)
-      const { data: charges } = await client.models.ShipmentCharge.list({
-        filter: { shipmentId: { eq: shipment.id } },
-      })
+      // Fetch charges separately (not in local state). Drained: an undrained
+      // filtered list() would miss charges past the first page and strand them
+      // as orphan rows after the shipment is deleted.
+      const charges = await listAll<Schema['ShipmentCharge']['type']>((nextToken) =>
+        client.models.ShipmentCharge.list({
+          filter: { shipmentId: { eq: shipment.id } },
+          limit: 1000,
+          nextToken,
+        })
+      )
       await Promise.all([
         ...packages.map(p => client.models.Package.delete({ id: p.id })),
         ...events.map(e => client.models.ShipmentEvent.delete({ id: e.id })),

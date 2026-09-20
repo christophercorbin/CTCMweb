@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import {
   Plus, Search, Eye, Package, Truck, CheckCircle,
   FileText, MapPin, Phone, ChevronRight, Upload, Warehouse, X, PauseCircle, Copy, Check, Trash2,
@@ -79,11 +80,27 @@ export const CustomerDashboard = () => {
     if (!deleteTarget) return
     setDeletingShipment(true)
     try {
-      // Remove any invoices the customer uploaded against this pre-alert
-      const { data: invs } = await client.models.Invoice.list({
-        filter: { shipmentId: { eq: deleteTarget.id } },
-      })
-      await Promise.all(invs.map(i => client.models.Invoice.delete({ id: i.id })))
+      // Remove anything the customer uploaded against this pre-alert. Both
+      // cursors are drained — an undrained filtered list() reads one page and
+      // filters after, leaving the rest behind as orphan rows once the parent
+      // shipment is gone. ShipmentDocument is included because uploads now
+      // land there rather than as $0 DRAFT Invoice records.
+      const [invs, docs] = await Promise.all([
+        listAll<Schema['Invoice']['type']>((nextToken) =>
+          client.models.Invoice.list({
+            filter: { shipmentId: { eq: deleteTarget.id } }, limit: 1000, nextToken,
+          })
+        ),
+        listAll<Schema['ShipmentDocument']['type']>((nextToken) =>
+          client.models.ShipmentDocument.listShipmentDocumentByShipmentId(
+            { shipmentId: deleteTarget.id }, { limit: 1000, nextToken }
+          )
+        ),
+      ])
+      await Promise.all([
+        ...invs.map(i => client.models.Invoice.delete({ id: i.id })),
+        ...docs.map(d => client.models.ShipmentDocument.delete({ id: d.id })),
+      ])
       await client.models.Shipment.delete({ id: deleteTarget.id })
       toast.success('Pre-alert deleted')
       setDeleteTarget(null)
@@ -105,7 +122,9 @@ export const CustomerDashboard = () => {
 
   // Fetch this customer's skybox addresses and invoices
   useEffect(() => {
-    client.models.Customer.list({ limit: 1000 }).then(async ({ data }) => {
+    listAll<Schema['Customer']['type']>((nextToken) =>
+      client.models.Customer.list({ limit: 1000, nextToken })
+    ).then(async (data) => {
       if (!data.length) return
       const me = data[0]
       setSkybox({ air: me.airSkyboxAddress, sea: me.seaSkyboxAddress })
