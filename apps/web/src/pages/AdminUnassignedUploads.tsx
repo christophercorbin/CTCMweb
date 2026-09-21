@@ -14,12 +14,24 @@ type Customer = Schema['Customer']['type']
 type Shipment = Schema['Shipment']['type']
 
 /**
- * Orphaned upload: `documents/{identityId}/invoices/{file}` with no shipment
- * segment. These came from the old CustomerDashboard "Upload Invoice" action,
- * which wrote the S3 object but never a database row — so nothing linked the
- * file to a shipment and no admin view could surface it.
+ * An orphaned upload is an S3 object with no ShipmentDocument row, so nothing
+ * links it to a shipment and no other admin view can surface it. Two key shapes
+ * exist, and both must be matched — the nested one accounts for the majority of
+ * orphans in production, and matching only the flat shape left them invisible
+ * everywhere, including on this page.
+ *
+ *   FLAT    documents/{identityId}/invoices/{file}
+ *           From the old CustomerDashboard "Upload Invoice" action. Carries no
+ *           shipment reference, so a human has to pick the shipment.
+ *
+ *   NESTED  documents/{identityId}/invoices/{shipmentId}/{file}
+ *           documents/{identityId}/shipments/{shipmentId}/{file}
+ *           The shipment id is in the key, so it is pre-selected below and the
+ *           reviewer only has to confirm it.
  */
-const ORPHAN_RE = /^documents\/([^/]+)\/invoices\/([^/]+)$/
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const ORPHAN_FLAT = /^documents\/([^/]+)\/invoices\/([^/]+)$/
+const ORPHAN_NESTED = new RegExp(`^documents/([^/]+)/(?:invoices|shipments)/(${UUID})/(.+)$`)
 
 type Orphan = {
   s3Key: string
@@ -27,22 +39,32 @@ type Orphan = {
   fileName: string
   size: number
   uploadedAt: Date
+  /** Present only for nested keys, where the shipment id is part of the path. */
+  shipmentId?: string
 }
 
-/** Keys are `{epoch_ms}-{safeName}`; fall back to the S3 timestamp. */
-function parseKey(s3Key: string, size: number, lastModified?: Date): Orphan | null {
-  const m = ORPHAN_RE.exec(s3Key)
-  if (!m) return null
-  const [, identityId, raw] = m
+/** File names may be prefixed `{epoch_ms}-`; fall back to the S3 timestamp. */
+function splitStamp(raw: string, lastModified?: Date) {
   const head = raw.split('-', 1)[0]
   const hasStamp = /^\d{12,}$/.test(head)
   return {
-    s3Key,
-    identityId,
     fileName: hasStamp ? raw.slice(head.length + 1) || raw : raw,
-    size,
     uploadedAt: hasStamp ? new Date(Number(head)) : (lastModified ?? new Date(0)),
   }
+}
+
+function parseKey(s3Key: string, size: number, lastModified?: Date): Orphan | null {
+  const nested = ORPHAN_NESTED.exec(s3Key)
+  if (nested) {
+    const [, identityId, shipmentId, raw] = nested
+    return { s3Key, identityId, shipmentId, size, ...splitStamp(raw, lastModified) }
+  }
+  const flat = ORPHAN_FLAT.exec(s3Key)
+  if (flat) {
+    const [, identityId, raw] = flat
+    return { s3Key, identityId, size, ...splitStamp(raw, lastModified) }
+  }
+  return null
 }
 
 const fmtDate = (d: Date) =>
@@ -60,7 +82,7 @@ export const AdminUnassignedUploads = () => {
   const [identityMap, setIdentityMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [picked, setPicked] = useState<Record<string, { customerId?: string; shipmentId?: string }>>({})
+  const [picked, setPicked] = useState<Record<string, { customerId?: string; shipmentId?: string | null }>>({})
   const [busy, setBusy] = useState<Record<string, boolean>>({})
 
   const fetchData = useCallback(async () => {
@@ -135,6 +157,23 @@ export const AdminUnassignedUploads = () => {
 
   const chosenCustomerId = (o: Orphan) => picked[o.s3Key]?.customerId ?? identityMap[o.identityId]
 
+  // A nested key already names its shipment, so pre-select it and let the
+  // reviewer confirm rather than hunt for it. An explicit choice always wins;
+  // selecting the empty option records `null` so the pre-selection can be
+  // cleared rather than springing back.
+  const chosenShipmentId = (o: Orphan) => {
+    const p = picked[o.s3Key]
+    if (p && 'shipmentId' in p && p.shipmentId !== undefined) return p.shipmentId ?? ''
+    // Only pre-select a shipment that is actually on offer. Some keys name a
+    // shipment that has since been deleted, or one belonging to a different
+    // customer; surfacing that as a selection would leave the dropdown looking
+    // blank while Assign stayed enabled, failing only on click.
+    if (!o.shipmentId) return ''
+    const target = shipments.find((s) => s.id === o.shipmentId)
+    if (!target || target.customerId !== chosenCustomerId(o)) return ''
+    return o.shipmentId
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return orphans
@@ -157,7 +196,7 @@ export const AdminUnassignedUploads = () => {
 
   const handleAssign = async (o: Orphan) => {
     const customerId = chosenCustomerId(o)
-    const shipmentId = picked[o.s3Key]?.shipmentId
+    const shipmentId = chosenShipmentId(o)
     if (!customerId || !shipmentId) return
 
     const shipment = shipments.find((s) => s.id === shipmentId)
@@ -262,7 +301,7 @@ export const AdminUnassignedUploads = () => {
             {filtered.map((o) => {
               const customerId = chosenCustomerId(o)
               const known = !!identityMap[o.identityId]
-              const shipmentId = picked[o.s3Key]?.shipmentId ?? ''
+              const shipmentId = chosenShipmentId(o)
               const options = shipments
                 .filter((s) => s.customerId === customerId)
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -304,7 +343,7 @@ export const AdminUnassignedUploads = () => {
                         onChange={(e) =>
                           setPicked((p) => ({
                             ...p,
-                            [o.s3Key]: { customerId: e.target.value || undefined, shipmentId: undefined },
+                            [o.s3Key]: { customerId: e.target.value || undefined },
                           }))
                         }
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
@@ -326,7 +365,7 @@ export const AdminUnassignedUploads = () => {
                       onChange={(e) =>
                         setPicked((p) => ({
                           ...p,
-                          [o.s3Key]: { ...p[o.s3Key], shipmentId: e.target.value || undefined },
+                          [o.s3Key]: { ...p[o.s3Key], shipmentId: e.target.value || null },
                         }))
                       }
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white disabled:bg-gray-50"
