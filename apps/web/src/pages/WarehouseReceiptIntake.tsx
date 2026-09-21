@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
+import { listAll } from '../lib/listAll'
 import { Package, Plus, Trash2, Save, Link, PlusCircle, ChevronDown, X } from 'lucide-react';
 import { Card, Button, Input, Select, Textarea, DocumentScanner } from '../components';
 import toast from 'react-hot-toast';
@@ -160,8 +161,11 @@ export const WarehouseReceiptIntake = ({ onSuccess }: Props = {}) => {
 
   const fetchShipments = async () => {
     try {
-      const { data } = await client.models.Shipment.list();
-      const list = data ?? [];
+      // Drained: an uncapped list() returns one 100-row page, so the intake
+      // picker silently showed a fraction of all shipments.
+      const list = await listAll<Schema['Shipment']['type']>((nextToken) =>
+        client.models.Shipment.list({ limit: 1000, nextToken })
+      );
       // Fetch customer names in parallel
       const uniqueCustomerIds = [...new Set(list.map(s => s.customerId).filter(Boolean))];
       const customerResults = await Promise.all(

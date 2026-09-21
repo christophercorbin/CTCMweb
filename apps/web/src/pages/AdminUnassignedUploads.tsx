@@ -4,6 +4,7 @@ import { FileQuestion, ExternalLink, Search } from 'lucide-react'
 import { generateClient } from 'aws-amplify/data'
 import { list, getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../../../amplify/data/resource'
+import { listAll } from '../lib/listAll'
 import { Card } from '../components/Card'
 import { useAuth } from '../contexts/useAuth'
 
@@ -42,20 +43,6 @@ function parseKey(s3Key: string, size: number, lastModified?: Date): Orphan | nu
     size,
     uploadedAt: hasStamp ? new Date(Number(head)) : (lastModified ?? new Date(0)),
   }
-}
-
-/** Drain every page — a single list() call caps at 100 records. */
-async function listAll<T>(
-  fetchPage: (token?: string) => Promise<{ data?: T[] | null; nextToken?: string | null }>
-): Promise<T[]> {
-  const out: T[] = []
-  let cursor: string | undefined
-  do {
-    const { data, nextToken } = await fetchPage(cursor)
-    out.push(...(data ?? []))
-    cursor = nextToken ?? undefined
-  } while (cursor)
-  return out
 }
 
 const fmtDate = (d: Date) =>

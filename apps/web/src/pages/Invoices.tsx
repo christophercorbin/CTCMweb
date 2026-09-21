@@ -9,6 +9,7 @@ import { FileText, Download, Calendar, DollarSign, CheckCircle, Clock, XCircle, 
 import { generateClient } from 'aws-amplify/data';
 import { getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
+import { listAll } from '../lib/listAll'
 
 const client = generateClient<Schema>();
 type AppSyncInvoice = Schema['Invoice']['type'];
@@ -35,9 +36,12 @@ export const Invoices = () => {
       setLoading(true);
       setError(null);
 
-      const { data, errors } = await client.models.Invoice.list();
-      if (errors?.length) throw new Error(errors[0].message);
-      const sorted = [...(data ?? [])]
+      // Drained: an undrained list() caps at one page, so once the Invoice
+      // table outgrows it customers silently stop seeing their own invoices.
+      const data = await listAll<Schema['Invoice']['type']>((nextToken) =>
+        client.models.Invoice.list({ limit: 1000, nextToken })
+      );
+      const sorted = [...data]
         // Legacy uploaded receipts ($0 DRAFT records) live on the shipment
         // details page, not the invoice list
         .filter((inv) => inv.notes !== 'Order receipt')

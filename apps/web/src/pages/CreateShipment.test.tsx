@@ -11,6 +11,7 @@ const h = vi.hoisted(() => {
     shipmentDocCreate: vi.fn(),
     customerList: vi.fn(),
     uploadData: vi.fn(),
+    remove: vi.fn(),
     fetchUserAttributes: vi.fn(),
   };
 });
@@ -32,7 +33,7 @@ vi.mock('aws-amplify/data', () => ({
   }),
 }));
 
-vi.mock('aws-amplify/storage', () => ({ uploadData: h.uploadData }));
+vi.mock('aws-amplify/storage', () => ({ uploadData: h.uploadData, remove: h.remove }));
 vi.mock('aws-amplify/auth', () => ({ fetchUserAttributes: h.fetchUserAttributes }));
 
 import { CreateShipment } from './CreateShipment';
@@ -56,6 +57,7 @@ describe('CreateShipment — submit feedback', () => {
       'custom:customerId': 'cust-1',
     });
     h.shipmentCreate.mockResolvedValue({ data: { id: 'ship-1' }, errors: null });
+    h.remove.mockResolvedValue({});
   });
 
   it('shows a success state on the button and a success toast after submitting', async () => {
@@ -120,5 +122,43 @@ describe('CreateShipment — submit feedback', () => {
     // Button is back to its idle label so the user can retry.
     expect(screen.getByRole('button', { name: /submit pre-alert/i })).toBeInTheDocument();
     expect(h.navigate).not.toHaveBeenCalled();
+  });
+
+  it('warns instead of claiming success when an invoice row fails to persist', async () => {
+    // A customer attaches an Amazon invoice to the pre-alert. The S3 upload
+    // succeeds but the ShipmentDocument write is denied. The Amplify Data client
+    // RESOLVES on GraphQL errors, so Promise.allSettled counts this as fulfilled
+    // unless the errors array is inspected — leaving the file orphaned in S3 and
+    // invisible to admins while the customer is told it uploaded fine.
+    h.uploadData.mockReturnValue({
+      result: Promise.resolve({ path: 'documents/id/shipments/ship-1/1-amazon.pdf' }),
+    });
+    h.shipmentDocCreate.mockResolvedValue({
+      data: null,
+      errors: [{ message: 'Unauthorized' }],
+    });
+
+    const { container } = render(<CreateShipment />);
+    const submitBtn = await screen.findByRole('button', { name: /submit pre-alert/i });
+    fillValidForm();
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['dummy'], 'amazon.pdf', { type: 'application/pdf' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(h.shipmentDocCreate).toHaveBeenCalled());
+    expect(h.toastFn.success).not.toHaveBeenCalledWith(
+      'Pre-alert submitted — invoice(s) uploaded successfully'
+    );
+    expect(h.toastFn).toHaveBeenCalledWith(
+      expect.stringMatching(/some invoices failed to upload/i),
+      expect.anything()
+    );
+
+    await waitFor(() => expect(h.navigate).toHaveBeenCalledWith('/dashboard'), {
+      timeout: 2500,
+    });
   });
 });
