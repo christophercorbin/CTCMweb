@@ -326,7 +326,6 @@ adminCreateCustomerFn.addToRolePolicy(
       "cognito-idp:AdminCreateUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminUpdateUserAttributes",
-      "cognito-idp:ListUserPools",
     ],
     resources: ["*"],
   })
@@ -361,11 +360,7 @@ const adminDeleteCustomerFn = backend.adminDeleteCustomer.resources.lambda as la
 // because auth stack already depends on data stack (postConfirmation trigger).
 adminDeleteCustomerFn.addToRolePolicy(
   new iam.PolicyStatement({
-    actions: [
-      "cognito-idp:AdminDeleteUser",
-      "cognito-idp:AdminGetUser",
-      "cognito-idp:ListUserPools",
-    ],
+    actions: ["cognito-idp:AdminDeleteUser", "cognito-idp:AdminGetUser"],
     resources: ["*"],
   })
 );
@@ -384,7 +379,7 @@ const syncCustomersFn = backend.syncCustomers.resources.lambda as lambda.Functio
 // USER_POOL_ID is set as a branch-specific env var in the Amplify Console — not here.
 syncCustomersFn.addToRolePolicy(
   new iam.PolicyStatement({
-    actions: ["cognito-idp:ListUsersInGroup", "cognito-idp:ListUserPools"],
+    actions: ["cognito-idp:ListUsersInGroup"],
     resources: ["*"],
   })
 );
@@ -435,10 +430,14 @@ postConfirmationFn.addEnvironment("ADMIN_NOTIFY_EMAIL", "info@cargolinkbarbados.
 
 // IMPORTANT: Cannot use CDK tokens from data stack here because data already
 // depends on auth (UserPool) — any auth→data reference creates a cycle.
-// The postConfirmation Lambda resolves the endpoint at runtime by calling
-// AppSync DescribeGraphqlApi or reading from SSM. We grant broad appsync:*
-// and ssm:GetParameter permissions, and the Lambda handler falls back to
-// looking up the endpoint dynamically if AMPLIFY_DATA_GRAPHQL_ENDPOINT is unset.
+// The postConfirmation Lambda resolves the endpoint at runtime via
+// ListGraphqlApis. Every Amplify Gen 2 environment names its API "amplifyData",
+// so the handler disambiguates by the amplify:branch-name tag using
+// AMPLIFY_BRANCH (a plain string at synth time — no cross-stack token). When
+// unset (local sandbox), the handler matches the sandbox-tagged API instead.
+if (process.env.AWS_BRANCH) {
+  postConfirmationFn.addEnvironment("AMPLIFY_BRANCH", process.env.AWS_BRANCH);
+}
 
 // ─── Error alerting: CloudWatch alarms → SNS → email ─────────────────────────
 // The alerts topic lives in its OWN stack so every other stack can reference it
