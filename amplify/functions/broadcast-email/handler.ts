@@ -11,8 +11,9 @@ const GRAPHQL_ENDPOINT =
   process.env.GRAPHQL_API_ENDPOINT!;
 const SENDER = process.env.SENDER_EMAIL ?? "info@cargolinkbarbados.com";
 const UNSUBSCRIBE_URL = process.env.UNSUBSCRIBE_URL; // public function URL of the unsubscribe Lambda
-const UNSUBSCRIBE_SECRET =
-  process.env.UNSUBSCRIBE_SECRET ?? "cargolink-unsubscribe-dev-secret";
+// No fallback: the unsubscribe endpoint is public, so a repo-committed default
+// secret would let anyone forge opt-out tokens. Fail loudly instead.
+const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET;
 
 /** Emails sent per batch; SES default send rate is ~14/sec */
 const BATCH_SIZE = 10;
@@ -179,6 +180,11 @@ async function updateBroadcastRecord(
 
 // ── Unsubscribe token: customerId + HMAC signature ───────────────────────────
 function unsubscribeToken(customerId: string): string {
+  if (!UNSUBSCRIBE_SECRET) {
+    throw new Error(
+      "UNSUBSCRIBE_SECRET is not configured — set it as an Amplify environment variable"
+    );
+  }
   const sig = createHmac("sha256", UNSUBSCRIBE_SECRET)
     .update(customerId)
     .digest("hex");

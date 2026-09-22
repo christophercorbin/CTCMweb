@@ -68,7 +68,11 @@ const schema = a
         invoices: a.hasMany("Invoice", "customerId"),
       })
       .authorization((allow) => [
-        allow.owner(),                                                // customer self-registered records
+        // read/update only — Customer records are created by postConfirmation /
+        // adminCreateCustomer (IAM). Full allow.owner() would let any signed-in
+        // user mint arbitrary Customer rows that surface in admin listings and
+        // the broadcast recipient list.
+        allow.owner().to(["read", "update"]),
         allow.ownerDefinedIn("cognitoSub"),                          // post-confirmation Lambda records
         allow.ownerDefinedIn("email").identityClaim("email"),        // admin-created accounts (no cognitoSub)
         allow.group("admin"),
@@ -360,7 +364,9 @@ const schema = a
       .handler(a.handler.function(broadcastEmail)),
   })
   .authorization((allow) => [
-    allow.authenticated(),
+    // No blanket allow.authenticated() default: every model and custom
+    // operation declares its own rules, and a schema-wide authenticated grant
+    // would silently give full CRUD to anything added without explicit rules.
     allow.resource(ocrProcessor),
     allow.resource(syncCustomers),
     allow.resource(adminCreateCustomer),

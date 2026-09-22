@@ -50,8 +50,13 @@ const ORPHAN = `documents/${IDENTITY}/invoices/1777477485809-Amazon_April_12th.p
 const ASSIGNED = `documents/${IDENTITY}/invoices/1777477485000-Already_Assigned.pdf`
 const DISMISSED = `documents/us-east-1:junk/invoices/1777477480000-CargoLink_Logo.pdf`
 const UNKNOWN = `documents/us-east-1:mystery/invoices/1777477999999-Capacitor_No.2.pdf`
-// Correctly-filed upload: has a /shipments/ segment, so it is NOT an orphan.
-const PROPER = `documents/${IDENTITY}/shipments/ship-1/1777477485111-Proper.pdf`
+// Correctly-filed upload: it has a ShipmentDocument row, so it is NOT an
+// orphan. A /shipments/ prefix alone does not make a file filed — one with no
+// row is exactly the orphan a failed write leaves behind, and must be listed.
+const SHIP_UUID = '11111111-2222-4333-8444-555555555555'
+const PROPER = `documents/${IDENTITY}/shipments/${SHIP_UUID}/1777477485111-Proper.pdf`
+// Nested orphan: the shipment id is in the key, so it can be pre-selected.
+const NESTED = `documents/${IDENTITY}/invoices/${SHIP_UUID}/Temu Web Document.pdf`
 
 const page = (items: string[]) => ({
   items: items.map((path) => ({ path, size: 1234, lastModified: new Date('2026-04-12') })),
@@ -61,11 +66,14 @@ const page = (items: string[]) => ({
 describe('AdminUnassignedUploads', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    h.list.mockResolvedValue(page([ORPHAN, ASSIGNED, DISMISSED, UNKNOWN, PROPER]))
+    h.list.mockResolvedValue(page([ORPHAN, ASSIGNED, DISMISSED, UNKNOWN, PROPER, NESTED]))
 
     // ASSIGNED is already linked to a shipment document.
     h.docList.mockResolvedValue({
-      data: [{ id: 'doc-1', s3Key: ASSIGNED, customerId: 'cust-1', shipmentId: 'ship-1' }],
+      data: [
+        { id: 'doc-1', s3Key: ASSIGNED, customerId: 'cust-1', shipmentId: 'ship-1' },
+        { id: 'doc-2', s3Key: PROPER, customerId: 'cust-1', shipmentId: SHIP_UUID },
+      ],
       nextToken: null,
     })
     // Invoice rows pair identityId -> customer for the derivation map.
@@ -85,6 +93,7 @@ describe('AdminUnassignedUploads', () => {
         { id: 'ship-1', trackingNumber: 'TBA-111', customerId: 'cust-1', customerCognitoSub: 'sub-1', createdAt: '2026-04-01T00:00:00Z' },
         { id: 'ship-2', trackingNumber: 'TBA-222', customerId: 'cust-1', customerCognitoSub: 'sub-1', createdAt: '2026-04-05T00:00:00Z' },
         { id: 'ship-9', trackingNumber: 'OTHER-9', customerId: 'cust-2', customerCognitoSub: 'sub-2', createdAt: '2026-04-05T00:00:00Z' },
+        { id: SHIP_UUID, trackingNumber: 'NESTED-777', customerId: 'cust-1', customerCognitoSub: 'sub-1', createdAt: '2026-04-06T00:00:00Z' },
       ],
       nextToken: null,
     })
@@ -108,7 +117,8 @@ describe('AdminUnassignedUploads', () => {
   it('resolves the customer from the identityId map', async () => {
     render(<AdminUnassignedUploads />)
     await screen.findByText('Amazon_April_12th.pdf')
-    expect(screen.getByText('Carol Cumberbatch')).toBeInTheDocument()
+    // Two orphans now resolve to this customer (flat + nested).
+    expect(screen.getAllByText('Carol Cumberbatch').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/unknown/i).length).toBeGreaterThan(0)
   })
 
@@ -119,7 +129,7 @@ describe('AdminUnassignedUploads', () => {
     const row = screen.getByTestId(`row-${ORPHAN}`)
     // Only the resolved customer's shipments are offered.
     const shipmentPicker = within$(row, 'shipment')
-    expect(shipmentPicker.querySelectorAll('option')).toHaveLength(3) // placeholder + 2
+    expect(shipmentPicker.querySelectorAll('option')).toHaveLength(4) // placeholder + 3
 
     fireEvent.change(shipmentPicker, { target: { value: 'ship-2' } })
     fireEvent.click(within$(row, 'assign'))
@@ -183,6 +193,77 @@ describe('AdminUnassignedUploads', () => {
     await waitFor(() => expect(h.toastFn.error).toHaveBeenCalled())
     expect(screen.getByText('Amazon_April_12th.pdf')).toBeInTheDocument()
     expect(h.toastFn.success).not.toHaveBeenCalled()
+  })
+
+  it('surfaces nested-key orphans, which no admin view could reach before', async () => {
+    // Production holds far more of these than the flat shape. Matching only the
+    // flat one left them invisible everywhere, including on this page.
+    render(<AdminUnassignedUploads />)
+    expect(await screen.findByText('Temu Web Document.pdf')).toBeInTheDocument()
+  })
+
+  it('pre-selects the shipment named in the key so the reviewer only confirms', async () => {
+    render(<AdminUnassignedUploads />)
+    await screen.findByText('Temu Web Document.pdf')
+
+    const row = screen.getByTestId(`row-${NESTED}`)
+    expect((within$(row, 'shipment') as HTMLSelectElement).value).toBe(SHIP_UUID)
+  })
+
+  it('assigns a nested orphan without the reviewer picking a shipment', async () => {
+    render(<AdminUnassignedUploads />)
+    await screen.findByText('Temu Web Document.pdf')
+
+    const row = screen.getByTestId(`row-${NESTED}`)
+    fireEvent.click(within$(row, 'assign'))
+
+    await waitFor(() => expect(h.docCreate).toHaveBeenCalledTimes(1))
+    expect(h.docCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shipmentId: SHIP_UUID,
+        customerId: 'cust-1',
+        s3Key: NESTED,
+        fileName: 'Temu Web Document.pdf',
+        docType: 'ORDER_RECEIPT',
+        uploadedBy: 'CUSTOMER',
+      })
+    )
+  })
+
+  it('does not pre-select a shipment that no longer exists', async () => {
+    // 17 production orphans name a deleted shipment. Pre-selecting one would
+    // leave the dropdown blank while Assign stayed enabled, failing on click.
+    h.shipmentList.mockResolvedValue({
+      data: [
+        { id: 'ship-1', trackingNumber: 'TBA-111', customerId: 'cust-1', customerCognitoSub: 'sub-1', createdAt: '2026-04-01T00:00:00Z' },
+        { id: 'ship-2', trackingNumber: 'TBA-222', customerId: 'cust-1', customerCognitoSub: 'sub-1', createdAt: '2026-04-05T00:00:00Z' },
+      ],
+      nextToken: null,
+    })
+
+    render(<AdminUnassignedUploads />)
+    await screen.findByText('Temu Web Document.pdf')
+
+    const row = screen.getByTestId(`row-${NESTED}`)
+    expect((within$(row, 'shipment') as HTMLSelectElement).value).toBe('')
+    expect(within$(row, 'assign')).toBeDisabled()
+  })
+
+  it('lets the reviewer override the pre-selected shipment', async () => {
+    // The key is a strong hint, not proof — a reviewer who spots a wrong
+    // shipment must be able to correct it, and clearing must not spring back.
+    render(<AdminUnassignedUploads />)
+    await screen.findByText('Temu Web Document.pdf')
+
+    const row = screen.getByTestId(`row-${NESTED}`)
+    const picker = within$(row, 'shipment') as HTMLSelectElement
+
+    fireEvent.change(picker, { target: { value: 'ship-2' } })
+    expect(picker.value).toBe('ship-2')
+
+    fireEvent.change(picker, { target: { value: '' } })
+    expect(picker.value).toBe('')
+    expect(within$(row, 'assign')).toBeDisabled()
   })
 })
 
