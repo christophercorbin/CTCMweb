@@ -35,6 +35,9 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('shipments')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  // "On hold" is not a ShipmentStatus — it lives on customerInstruction, so it
+  // cannot be expressed through statusFilter and needs its own dimension.
+  const [holdOnly, setHoldOnly] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'' | 'AIR' | 'SEA'>('')
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({})
   const [customerList, setCustomerList] = useState<AppCustomer[]>([])
@@ -213,6 +216,7 @@ export const AdminDashboard = () => {
     const q = search.toLowerCase()
     return adminShipments
       .filter((s) => statusFilter === '' || s.status === statusFilter)
+      .filter((s) => !holdOnly || s.customerInstruction === 'HOLD')
       .filter((s) => typeFilter === '' || s.type === typeFilter)
       .filter((s) => {
         if (!q) return true
@@ -229,7 +233,7 @@ export const AdminDashboard = () => {
         const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
         return bTime - aTime
       })
-  }, [adminShipments, statusFilter, typeFilter, search, customerMap])
+  }, [adminShipments, statusFilter, holdOnly, typeFilter, search, customerMap])
 
   const filteredPreAlerts = useMemo(() => {
     const q = search.toLowerCase()
@@ -427,7 +431,7 @@ export const AdminDashboard = () => {
               value={customsShipments.length}
               subtitle="Requires clearance"
               color="bg-orange-600"
-              onClick={() => setStatusFilter('CUSTOMS_HOLD')}
+              onClick={() => { setStatusFilter('CUSTOMS_HOLD'); setHoldOnly(false) }}
             />
             <MetricCard
               icon={CheckCircle2}
@@ -435,7 +439,7 @@ export const AdminDashboard = () => {
               value={shipments.filter((s) => s.status === 'DELIVERED').length}
               subtitle="Successfully delivered"
               color="bg-green-600"
-              onClick={() => setStatusFilter('DELIVERED')}
+              onClick={() => { setStatusFilter('DELIVERED'); setHoldOnly(false) }}
             />
             <MetricCard
               icon={Clock}
@@ -443,14 +447,15 @@ export const AdminDashboard = () => {
               value={delayedShipments.length}
               subtitle="Needs attention"
               color="bg-red-600"
-              onClick={() => setStatusFilter('RETURNED')}
+              onClick={() => { setStatusFilter('RETURNED'); setHoldOnly(false) }}
             />
             <MetricCard
               icon={PauseCircle}
               title="On Hold"
               value={heldShipments.length}
-              subtitle="Customer requested hold"
+              subtitle={holdOnly ? 'Filtering — click to clear' : 'Customer requested hold'}
               color="bg-amber-500"
+              onClick={() => { setHoldOnly((v) => !v); setStatusFilter('') }}
             />
           </div>
 
@@ -468,7 +473,7 @@ export const AdminDashboard = () => {
                 <Select
                   options={statusOptions}
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => { setStatusFilter(e.target.value); setHoldOnly(false) }}
                 />
                 <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium">
                   {(['', 'AIR', 'SEA'] as const).map((t) => (
@@ -494,7 +499,7 @@ export const AdminDashboard = () => {
               <EmptyState
                 title="No shipments found"
                 message={
-                  search || statusFilter
+                  search || statusFilter || holdOnly
                     ? 'Try adjusting your filters'
                     : 'No shipments in the system yet'
                 }
